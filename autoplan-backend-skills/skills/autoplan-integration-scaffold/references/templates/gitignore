@@ -1,0 +1,64 @@
+# Rename to .gitignore when scaffolding.
+#
+# The first entry is the one that matters most: local.settings.json holds live credentials.
+# Verify it is ignored BEFORE the first commit — adding it later neither untracks the file
+# nor removes it from history. See references/configuration.md.
+
+# Azure Functions local settings — SECRETS, never commit
+local.settings.json
+
+# Build results
+[Dd]ebug/
+[Rr]elease/
+[Bb]in/
+[Oo]bj/
+x64/
+x86/
+artifacts/
+
+# Visual Studio / Rider / VS Code
+.vs/
+.idea/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.sln.iml
+
+# Test results
+[Tt]est[Rr]esult*/
+TestResult.xml
+*.trx
+
+# NuGet
+*.nupkg
+**/packages/*
+!**/packages/build/
+*.nuget.props
+*.nuget.targets
+
+# Publish output
+publish/
+*.[Pp]ublish.xml
+*.azurePubxml
+*.publishsettings
+PublishScripts/
+
+# Certificates and keys — never commit
+*.pfx
+*.snk
+*.p12
+
+# SQL Server files
+*.mdf
+*.ldf
+
+# Logs and temp
+*.log
+*.tmp
+*.cache
+~$*
+*~
+
+# Node (only if the repo carries tooling)
+node_modules/

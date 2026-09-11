@@ -1,0 +1,17 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+    "FUNCTIONS_WORKER_RUNTIME": "dotnet-isolated",
+
+    "//": "Leave empty locally: Program.cs only exports to App Insights when this is set.",
+    "APPLICATIONINSIGHTS_CONNECTION_STRING": "",
+
+    "//External API": "Copy to local.settings.json (git-ignored) and fill in.",
+    "<Name>:BaseUrl": "https://api.example.com",
+    "<Name>:ApiKey": "",
+
+    "//Storage": "Kept separate from AzureWebJobsStorage so business data can live elsewhere.",
+    "<Name>:DataStorageConnection": "UseDevelopmentStorage=true"
+  }
+}

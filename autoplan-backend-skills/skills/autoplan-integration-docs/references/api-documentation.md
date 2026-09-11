@@ -1,0 +1,130 @@
+# Documenting the external API
+
+Section 2 of `DOCUMENTATION.md` is the highest-value part of the file, because it is the only place
+the vendor's *actual* behaviour is written down. Vendor Swagger tells you the shape. It does not
+tell you that an unknown VIN returns `200` with an empty body.
+
+## Label what you verified
+
+Echoes puts it in the headings:
+
+```markdown
+## 2. The Echoes API (as verified against live Swagger)
+### Authentication (two tokens — verified against the live API)
+```
+
+and in the sentences:
+
+> The two are mutually exclusive: verified live, `Apikey` on `/assets` => **401**, and `Privacykey`
+> on `/accounts/{id}` => **401**.
+
+"Verified live" means someone made the call and saw the response. Without that phrase, a reader
+cannot distinguish an observation from an inference, and inferences about third-party APIs are wrong
+often enough to matter.
+
+Where you have not verified, say so. Section 9:
+
+> Live API calls **not** executed (no credentials configured) — that is the actual test to perform
+> next.
+
+That single sentence is worth more than the rest of the section, because it tells the next person
+exactly what is still unknown.
+
+## Record the quirks, not the happy path
+
+The endpoint table earns its space through the `Notes` column:
+
+| Purpose | Method & path | Notes |
+|---|---|---|
+| Look up vehicle by VIN | `GET /api/accounts/{accountId}/assets/vins?vin={vin}&archived=false` | Unknown VIN => **200 with an empty body** (not 404); the client maps both to `null` |
+| Odometer fallback | `GET /api/accounts/{accountId}/assets?offset=&limit=100` | Page size is capped at 100, so the client pages internally |
+
+`200`-with-empty-body and the hard page cap are the two facts that will actually bite someone. The
+paths can be recovered from the code; these cannot.
+
+Things worth writing down every time:
+
+- Status codes that do not mean what they usually mean (`200` for not-found, `400` for
+  "feature unavailable")
+- Undocumented pagination limits and whether the API enforces or silently truncates
+- Fields whose type varies between responses
+- Auth schemes where the scheme name is part of the token value
+- Rate limits, and what the response looks like when you hit one
+- Record types you must filter out (Easypark's `ONETIME_FEE`, `SUBSCRIPTION_FEE`,
+  `AUTOMATIC_DISCOUNT`)
+- Units. Echoes odometer values are **in meters**, recorded in section 10.
+
+## Document the diagnosis, not just the symptom
+
+The strongest passage in the estate:
+
+> The mileage report is the preferred source, but on account 2073 it currently answers:
+> ```
+> HTTP 400  { "description" : "Not yet available" }
+> ```
+> Verified live: the same 400 is returned with and without `assetId`/`from` filters, and
+> `reports/mileage/top_odometer` behaves identically, while `reports/fleet_repartition` returns 200.
+> So this is a **server-side availability flag on the odometer report family**, not a request or
+> authentication problem.
+
+This records the *experiments* -- with filters, without filters, a sibling endpoint, an unrelated
+endpoint -- and then the conclusion they support. Six months later, when someone wonders whether the
+400 is their fault, the answer and the evidence are both there.
+
+Then it states what the code does about it:
+
+> `OdometerRetrievalService` therefore:
+> 1. Skips the call entirely when no vehicle has an Echoes asset id.
+> 2. Calls the odometer report.
+> 3. On `400`, `404` or `501`, falls back to `listAssets`. Other failures (5xx, 401) propagate --
+>    they are real errors, not "feature unavailable".
+
+Behaviour, plus the reason the exception list is what it is. That last clause is what stops someone
+"simplifying" the fallback to catch everything.
+
+## Link the doc to the code
+
+> **How the project handles this** (`Api/EchoesPrivacyKeyProvider.cs`,
+> `Http/EchoesPrivacyKeyHandler.cs`)
+
+Name the files. A reader who wants detail goes straight there, and a reader who changes those files
+has a chance of noticing the document.
+
+## The decisions log
+
+Section 11. A two-column table, decision and rationale:
+
+| Decision | Rationale |
+|---|---|
+| Activation = vehicle creation, deactivation = deletion | Matches the Echoes API model (no separate activate/deactivate commands for the asset itself) |
+| Desired-state table with VIN + active flag | User requirement; VIN is the vehicle identifier |
+| Hourly activation-sync timer | Reasonable default for observing lifecycle transitions; adjustable via CRON |
+
+Rules that make it work:
+
+- **One row per decision, added when the decision is made.** Reconstructing it later produces
+  plausible-sounding rationales that are not the real ones.
+- **"User choice" is a valid rationale** and appears three times. It is more useful than an invented
+  technical justification, because it tells you the decision is negotiable.
+- **Record decisions that look obvious.** "Activation = creation" is only obvious once you know the
+  API has no activate command.
+
+This is the only section that cannot be regenerated by reading the code, and the only one worth
+writing even when you are short of time.
+
+## Keep it current, and notice when you have not
+
+Section 9 of Echoes' own document says:
+
+> **17 unit tests pass** (xUnit + Moq)
+
+There are now 47. The reference implementation's verification section has gone stale on a count.
+
+This is not a serious error, but it is the mechanism by which every document decays: a true
+statement about a moving number. Prefer describing *what* is covered over *how many*:
+
+> Unit tests cover the API client request/response contract including error handling,
+> activation/deactivation reconciliation including archived-VIN and failure isolation, and odometer
+> retrieval including VIN filtering and enrichment.
+
+That sentence stays true as tests are added. The number does not.
