@@ -80,3 +80,6 @@ policies — see [gaps.md](references/gaps.md) gap 8.
 - [deployment-steps.md](references/deployment-steps.md) -- the Bicep deploy and function app deploy tasks in full.
 - [secrets-and-variables.md](references/secrets-and-variables.md) -- pipeline variables, service connections, quoting.
 - [gaps.md](references/gaps.md) -- no PR validation, ungated deploy stages, no what-if, no rollback, no smoke test.
+
+If the repository is deploying from GitHub Actions instead of Azure DevOps, use
+`autoplan-github-pipeline`.

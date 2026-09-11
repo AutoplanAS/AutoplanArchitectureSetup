@@ -114,7 +114,8 @@ To add `staging`:
 
 1. Create `parameters.staging.bicepparam` with `environmentName = 'staging'`.
 2. Add the pipeline stages, gated on a parameter, with `environment: '<integration>-staging'`.
-3. Create the Azure DevOps environment and its approval gate.
+3. Create the deployment environment and its approval gate (`<integration>-staging` in Azure
+   DevOps environments or GitHub environments).
 4. Decide `useSharedDataStorage` and `enableMonitoringAlerts` explicitly.
 
 No template change is needed -- `environmentName` is a free string. Watch the storage name length

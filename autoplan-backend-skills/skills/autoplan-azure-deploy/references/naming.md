@@ -80,6 +80,6 @@ a silent retrofit.
 2. **Never hard-code a region.** `location` defaults to `resourceGroup().location` and is set
    explicitly in the `.bicepparam`. All environments are `norwayeast`.
 3. **Lowercase, hyphen-separated, short.** The integration name is a single word where possible.
-4. **The pipeline environment name matches the prefix.** `environment: 'echoes-dev'` in the YAML
-   corresponds to `rg-echoes-dev`. This is convention only -- Azure DevOps will happily let them
+4. **The deployment environment name matches the prefix.** `environment: 'echoes-dev'` in the CI
+   YAML corresponds to `rg-echoes-dev`. This is convention only -- either platform can let them
    diverge, and then approval gates apply to the wrong thing.

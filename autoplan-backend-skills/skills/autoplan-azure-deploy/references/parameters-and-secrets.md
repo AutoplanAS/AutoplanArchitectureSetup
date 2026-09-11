@@ -8,7 +8,7 @@ secrets end up in git.
 | Route | Where it lives | Use for |
 |---|---|---|
 | `.bicepparam` | committed to the repo | non-sensitive per-environment values |
-| `--parameters name='$(Var)'` at deploy time | Azure DevOps pipeline variable, secret-flagged | every secret |
+| `--parameters ...` at deploy time | CI secret store (Azure DevOps secret variable or GitHub Actions `secrets.*`) | every secret |
 | `@description` default in `main.bicep` | committed | stable non-sensitive defaults |
 
 ## Declaring a secret parameter
@@ -100,11 +100,11 @@ az deployment group create \
 - **Single-quote every `$(Var)`.** Unquoted, a value containing a space or `;` -- which storage
   connection strings always do -- is split into separate arguments and the deploy fails or, worse,
   silently truncates.
-- **`$(EchoesApiKey)` must be marked secret in the pipeline variables UI.** Azure DevOps then masks
-  it in logs. An unmarked variable is echoed in full.
-- **No pipeline uses a variable group** -- all six read pipeline-scoped variables set in the UI.
-  That is a deliberate simplification, but it means the same secret is entered once per pipeline
-  and there is no single place to rotate it.
+- **Azure DevOps:** `$(EchoesApiKey)` must be marked secret in the pipeline variables UI.
+- **GitHub Actions:** store the equivalent as `secrets.ECHOES_API_KEY` in repo or environment
+  secrets.
+- Secrets are per-pipeline or per-environment by default, so shared secret rotation still requires
+  an explicit central strategy (for example Key Vault-backed rotation workflows).
 
 ## What must never happen
 
