@@ -17,7 +17,7 @@ What someone needs to run it, change a setting, or find out what it does. Echoes
 ## Configuration
 ## Getting started
 ## Project structure
-## CI/CD (Azure DevOps)
+## CI/CD
 ## Original scaffold notes (kept for history)
 ```
 
@@ -34,6 +34,8 @@ Notes on the choices:
   exactly when time matters.
 - **`## Configuration` lists every app setting** with its purpose and whether it is a secret. This
   must match `infra/main.bicep` -- see `autoplan-azure-deploy/references/parameters-and-secrets.md`.
+- **`## CI/CD` is provider-neutral in the heading.** If needed, split subsections into
+  `### Azure DevOps` and `### GitHub Actions`, but keep one CI/CD section in the operator flow.
 - **`## Original scaffold notes (kept for history)`** is the honest way to retain the template text
   that came with `func init`, rather than leaving it interleaved with real content. Three repos in
   the estate never did this and their README is *only* the template.
@@ -107,7 +109,7 @@ rather than indexing it.
 
 ## New integration checklist
 
-- [ ] `readme.md` written -- **the default Azure DevOps template deleted, not left in place**
+- [ ] `readme.md` written -- **the default scaffold/template text deleted, not left in place**
 - [ ] `DOCUMENTATION.md` with sections 1-11
 - [ ] Every app setting in `## Configuration` matches `infra/main.bicep`
 - [ ] Section 2 records observed API behaviour, with quirks

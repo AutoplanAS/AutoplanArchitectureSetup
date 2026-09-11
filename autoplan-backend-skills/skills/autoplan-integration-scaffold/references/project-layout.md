@@ -20,10 +20,15 @@ Taken from `EchoesIntegration`, which is the reference implementation.
 ├── host.json
 ├── local.settings.json          (git-ignored)
 ├── local.settings.example.json  (committed)
-├── azure-pipelines.yml
+├── azure-pipelines.yml          (if using Azure DevOps)
+├── .github/
+│   └── workflows/
+│       └── deploy.yml           (if using GitHub Actions)
 ├── DOCUMENTATION.md
 └── Program.cs
 ```
+
+Exactly one CI path is required in a new repo: Azure DevOps pipeline or GitHub Actions workflow.
 
 ## What goes where
 

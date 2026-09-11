@@ -9,7 +9,7 @@ Report gaps before changing anything.
 - [ ] `git ls-files | Select-String "local.settings"` returns nothing
 - [ ] No API keys, passwords or connection strings in tracked files, including `.bicepparam`
 - [ ] `local.settings.example.json` is committed with empty secret values
-- [ ] Pipeline secrets are secret variables, injected via `--parameters`
+- [ ] CI secrets are in secret stores (Azure DevOps secret variables / variable groups, or GitHub secrets), injected via `--parameters`
 - [ ] `CopyToPublishDirectory=Never` on `local.settings.json`
 
 A failure here blocks everything else. Rotate the credential before fixing the file.
@@ -78,11 +78,13 @@ Detail: **`autoplan-integration-auth`**.
 
 ## CI/CD and infrastructure
 
-- [ ] `azure-pipelines.yml` with Build → DevInfra → DevApp → ProdInfra → ProdApp
+- [ ] CI workflow exists: `azure-pipelines.yml` (Azure DevOps) or `.github/workflows/deploy.yml` (GitHub Actions)
+- [ ] Five-step release flow: Build → DevInfra → DevApp → ProdInfra → ProdApp
 - [ ] Prod stages depend on dev success
-- [ ] `dotnet test` runs via `bash`, not `DotNetCoreCLI@2` (see [known-issues.md](known-issues.md))
+- [ ] Tests run in CI and block deploys
+- [ ] Azure DevOps only: if repo-level `NuGet.config` is present, use `bash: dotnet test` (see [known-issues.md](known-issues.md))
 - [ ] `infra/main.bicep` + `parameters.<env>.bicepparam` per environment
-- [ ] Secrets as `@secure()` params supplied from pipeline variables
+- [ ] Secrets as `@secure()` params supplied from CI secret store
 
 ## Documentation
 

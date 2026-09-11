@@ -73,6 +73,7 @@ own, you just lose the automated check.
 | `autoplan-data-persistence` | Designing table entities and keys, batch upserts, blob archival, storage DI |
 | `autoplan-azure-deploy` | Writing or changing `infra/main.bicep`, app settings, environments, provisioning |
 | `autoplan-devops-pipeline` | Writing or changing `azure-pipelines.yml`, deploy stages, CI testing |
+| `autoplan-github-pipeline` | Writing or changing `.github/workflows/*.yml` for GitHub-based deploy and PR-safe release gates |
 | `autoplan-integration-testing` | Writing unit tests, faking HTTP or Table Storage, deciding what is worth testing |
 | `autoplan-integration-docs` | Writing a README or `DOCUMENTATION.md`, documenting an API, cleaning up doc sprawl |
 
@@ -102,6 +103,8 @@ none of them modify anything.
 | `Check-BicepBaseline.ps1` | Missing items from the 15-point Function App baseline, and parameters that look like secrets but lack `@secure()`. |
 | `Check-PipelineTestEnforcement.ps1` | Test steps that don't gate a deployment — commented-out test tasks, orphaned `PublishTestResults`, queue-time skip switches. |
 | `Check-PipelineDeployGating.ps1` | `Deploy*`/`Update*Config` stages whose condition omits `ne(variables['Build.Reason'], 'PullRequest')` — meaning a PR validation build would deploy to production. Also flags `pr:` triggers, which Azure Repos Git ignores. |
+| `Check-GitHubWorkflowTestEnforcement.ps1` | GitHub workflows with deploy jobs but no live `dotnet test`, or tests made non-blocking (`continue-on-error` / `|| true`). |
+| `Check-GitHubWorkflowDeployGating.ps1` | GitHub deploy jobs that are not gated off `pull_request` events and default-branch constraints. |
 | `Check-TestSuiteHealth.ps1` | Zero-byte test files, test projects with no `[Fact]`, non-reserved hostnames in tests. |
 | `Check-DocsHygiene.ps1` | Episodic `*_SUMMARY`/`*_FIX`/`FINAL_*` documents, the untouched Azure DevOps README template, missing `DOCUMENTATION.md`. |
 

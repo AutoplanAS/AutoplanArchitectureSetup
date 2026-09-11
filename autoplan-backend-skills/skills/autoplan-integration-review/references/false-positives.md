@@ -159,9 +159,10 @@ and confirm the hit sits on an `[HttpTrigger(...)]` attribute in non-test code.
 
 ## 10. Absence of a file is not absence of the capability
 
-Autoplan API has no `azure-pipelines.yml` and no Bicep — a real finding. But before reporting "no
-IaC", check whether deployment is centralised elsewhere (a shared pipeline repo, a platform team's
-template). Ask rather than assert when the repo is otherwise mature.
+Autoplan API has no CI workflow (`azure-pipelines.yml` or `.github/workflows/*.yml`) and no Bicep —
+a real finding. But before reporting "no IaC", check whether deployment is centralised elsewhere (a
+shared pipeline repo, a platform team's template). Ask rather than assert when the repo is
+otherwise mature.
 
 ## Reporting standard
 

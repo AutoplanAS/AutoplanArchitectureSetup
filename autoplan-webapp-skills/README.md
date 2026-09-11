@@ -20,7 +20,7 @@ Each skill follows the portable agent-skill layout:
 
 `SKILL.md` is the task-facing instruction entrypoint. `references/` contains deeper implementation guidance.
 
-## Install to Copilot CLI skills folder
+## Install
 
 Run from repository root:
 
@@ -28,26 +28,36 @@ Run from repository root:
 .\autoplan-webapp-skills\scripts\Install-Skills.ps1
 ```
 
-By default, skills are copied into:
+Default target:
 
 ```text
 ~\.agents\skills
 ```
 
-Custom target folder:
+Other agents:
 
 ```powershell
-.\autoplan-webapp-skills\scripts\Install-Skills.ps1 -TargetRoot "C:\Temp\skills"
+.\autoplan-webapp-skills\scripts\Install-Skills.ps1 -Target Claude
+.\autoplan-webapp-skills\scripts\Install-Skills.ps1 -Target Copilot,Claude,Codex,Gemini
 ```
 
-Optional symlink mode:
+Mode selection:
 
 ```powershell
-.\autoplan-webapp-skills\scripts\Install-Skills.ps1 -Mode link
+.\autoplan-webapp-skills\scripts\Install-Skills.ps1 -Mode Symlink
+.\autoplan-webapp-skills\scripts\Install-Skills.ps1 -Mode Copy
 ```
+
+`-Mode Auto` is the default: symlink when possible, otherwise copy.
 
 ## Uninstall
 
 ```powershell
 .\autoplan-webapp-skills\scripts\Uninstall-Skills.ps1
+```
+
+Multi-agent uninstall:
+
+```powershell
+.\autoplan-webapp-skills\scripts\Uninstall-Skills.ps1 -Target Copilot,Claude
 ```

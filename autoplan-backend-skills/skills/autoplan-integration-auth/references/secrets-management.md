@@ -7,7 +7,8 @@
 | Local dev | `local.settings.json` | **git-ignored**, never committed |
 | Azure | Function App application settings | set by pipeline or `provision.ps1`, not in the Bicep file |
 | Azure (preferred) | Key Vault reference | `@Microsoft.KeyVault(SecretUri=...)` in an app setting |
-| CI/CD | Pipeline secret variables or a variable group | never in `azure-pipelines.yml` |
+| CI/CD (Azure DevOps) | Pipeline secret variables or a variable group | never in `azure-pipelines.yml` |
+| CI/CD (GitHub Actions) | Repository or environment secrets | never in `.github/workflows/*.yml` |
 
 Committed to the repo, always: `local.settings.example.json` with empty values, documenting which
 settings exist.
@@ -48,8 +49,8 @@ Remediation, in order:
 2. `git rm --cached OFVIntegration/local.settings.json`
 3. Add `local.settings.json` to `.gitignore`, commit both together.
 4. Commit `local.settings.example.json` with the keys and empty values.
-5. Decide on history: rewriting Azure Repos history breaks every clone and is usually not worth it *if* step 1 is done. Record the decision.
-6. Check the pipeline for the same values, and other repos for the same mistake.
+5. Decide on history: rewriting repository history breaks every clone and is usually not worth it *if* step 1 is done. Record the decision.
+6. Check the CI configuration for the same values, and other repos for the same mistake.
 
 Do the same check in any repo you touch. It takes one command.
 
@@ -114,8 +115,8 @@ Secrets are passed in as `@secure()` parameters, never literals:
 param ofvPassword string
 ```
 
-`@secure()` keeps the value out of deployment history and portal output. Supply it from a pipeline
-secret variable or a Key Vault reference.
+`@secure()` keeps the value out of deployment history and portal output. Supply it from a CI secret
+store or a Key Vault reference.
 
 Key Vault reference in an app setting, so the value never enters the deployment at all:
 
@@ -124,6 +125,18 @@ Key Vault reference in an app setting, so the value never enters the deployment 
 ```
 
 Requires the Function App's managed identity to have **Key Vault Secrets User**.
+
+CI examples:
+
+```bash
+# Azure DevOps
+--parameters ofvPassword='$(OFV_PASSWORD)'
+```
+
+```bash
+# GitHub Actions
+--parameters ofvPassword='${{ secrets.OFV_PASSWORD }}'
+```
 
 ## If a secret leaks
 

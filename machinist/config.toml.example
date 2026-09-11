@@ -1,0 +1,54 @@
+[server]
+listen = "127.0.0.1:7331"
+database = "~/.machinist/server/machinist.db"
+worker_token_file = "~/.machinist/server/worker.token"
+max_concurrent_jobs = 1
+
+[commands.autoplan-factory-foreman]
+executor = "codex"
+prompt_file = "prompts/autoplan-factory-foreman.md"
+timeout = "120m"
+
+[commands.autoplan-backend-delivery]
+executor = "codex"
+prompt_file = "prompts/autoplan-backend-delivery.md"
+timeout = "120m"
+
+[commands.autoplan-webapp-delivery]
+executor = "codex"
+prompt_file = "prompts/autoplan-webapp-delivery.md"
+timeout = "120m"
+
+[commands.autoplan-integration-audit]
+executor = "codex"
+prompt_file = "prompts/autoplan-integration-audit.md"
+timeout = "90m"
+
+[github.repositories]
+autoplan-architecture-setup = "AutoplanAS/AutoplanArchitectureSetup"
+
+[triggers.github.requested]
+every = "2m"
+label = "machinist:requested"
+command = "autoplan-factory-foreman"
+model = "terra"
+
+[triggers.github.requested-backend]
+every = "2m"
+label = "machinist:requested-backend"
+command = "autoplan-backend-delivery"
+model = "terra"
+
+[triggers.github.requested-webapp]
+every = "2m"
+label = "machinist:requested-webapp"
+command = "autoplan-webapp-delivery"
+model = "terra"
+
+[triggers.cron.integration-audit]
+schedule = "0 6 * * 1"
+timezone = "UTC"
+repository = "autoplan-architecture-setup"
+command = "autoplan-integration-audit"
+model = "luna"
+prompt = "Run a conformance audit, return prioritized gaps with file references, and do not modify code."

@@ -183,32 +183,36 @@ Public async methods on clients and services should accept and forward a `Cancel
 ## D1 ⛔ Tests actually execute
 
 ```powershell
-Get-ChildItem $repo -Recurse -Filter "azure-pipelines*.yml" | ForEach-Object {
-  $l = Get-Content $_.FullName
-  [pscustomobject]@{
-    File      = $_.Name
-    TestProj  = (Get-ChildItem $repo -Recurse -Filter *.Tests.csproj).Count
-    LiveTest  = ($l | Where-Object { ($_ -match 'dotnet test' -or $_ -match "command:\s*'?test") -and $_ -notmatch '^\s*#' }).Count
-    DeadTest  = ($l | Where-Object { $_ -match 'dotnet test' -and $_ -match '^\s*#' }).Count
-    Publish   = ($l | Where-Object { $_ -match 'PublishTestResults' -and $_ -notmatch '^\s*#' }).Count
-  }
+$ado = Get-ChildItem $repo -Recurse -Filter "azure-pipelines*.yml" -ErrorAction SilentlyContinue
+$gha = Get-ChildItem (Join-Path $repo ".github\workflows") -Filter *.y*ml -ErrorAction SilentlyContinue
+
+if ($ado) {
+  .\scripts\Check-PipelineTestEnforcement.ps1 -Path $repo
+}
+if ($gha) {
+  .\scripts\Check-GitHubWorkflowTestEnforcement.ps1 -Path $repo
 }
 ```
 
-⛔ Critical when `Publish > 0` and `LiveTest = 0` — the build reports a test run that never happened.
+⛔ Critical when CI reports test publishing or deploy readiness while no live test step executes.
 
-`DeadTest > 0` with `LiveTest > 0` is usually an explanatory comment above a working step (Echoes).
-Read it before reporting.
+For Azure DevOps, `DeadTest > 0` with `LiveTest > 0` is usually an explanatory comment above a
+working step (Echoes). Read it before reporting.
 
 ## D2 ⚠️ Pipeline and IaC exist
 
 ```powershell
-Get-ChildItem $repo -Recurse -Filter "azure-pipelines*.yml"
+$ado = Get-ChildItem $repo -Recurse -Filter "azure-pipelines*.yml" -ErrorAction SilentlyContinue
+$gha = Get-ChildItem (Join-Path $repo ".github\workflows") -Filter *.y*ml -ErrorAction SilentlyContinue
+
+$ado | Select-Object FullName
+$gha | Select-Object FullName
 Get-ChildItem $repo -Recurse -Filter "*.bicep"
 ```
 
-Neither present, in a deployed integration, is High. Confirm deployment is not centralised elsewhere
-before asserting.
+No CI workflow plus no IaC, in a deployed integration, is High. CI may be Azure DevOps or GitHub
+Actions; either is acceptable if deploy controls are equivalent. Confirm deployment is not
+centralised elsewhere before asserting.
 
 ## D3 Low — artifact separation
 
@@ -218,12 +222,24 @@ so a config-only change can be redeployed without rebuilding.
 ## D4 ⛔ Deploy stages gated on build reason
 
 ```powershell
-.\scripts\Check-PipelineDeployGating.ps1 -Path $repo
+$ado = Get-ChildItem $repo -Recurse -Filter "azure-pipelines*.yml" -ErrorAction SilentlyContinue
+$gha = Get-ChildItem (Join-Path $repo ".github\workflows") -Filter *.y*ml -ErrorAction SilentlyContinue
+
+if ($ado) {
+  .\scripts\Check-PipelineDeployGating.ps1 -Path $repo
+}
+if ($gha) {
+  .\scripts\Check-GitHubWorkflowDeployGating.ps1 -Path $repo
+}
 ```
 
-Every `Deploy*` / `Update*Config` stage condition must begin with
-`ne(variables['Build.Reason'], 'PullRequest')`. Without it, a Build Validation policy — which runs
-the full pipeline against the pull request merge commit — deploys the pull request to production.
+Azure DevOps: every `Deploy*` / `Update*Config` stage condition must begin with
+`ne(variables['Build.Reason'], 'PullRequest')`.
+
+GitHub Actions: every deploy job must gate on
+`github.event_name != 'pull_request'` and a default-branch guard.
+
+Without these guards, pull request validation can deploy pull request code to production.
 
 ⛔ Critical when the repo has, or is about to get, PR validation. Report it as Critical regardless,
 because it also means any manual queue on any branch reaches prod.

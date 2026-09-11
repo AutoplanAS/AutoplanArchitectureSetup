@@ -11,7 +11,8 @@ metadata:
 # Autoplan Azure Deploy
 
 Every integration is provisioned by one `infra/main.bicep` plus a `.bicepparam` per environment,
-deployed by the pipeline (see `autoplan-devops-pipeline`) or by `infra/provision.ps1` locally.
+deployed by CI (`autoplan-devops-pipeline` or `autoplan-github-pipeline`) or by
+`infra/provision.ps1` locally.
 
 Reference: `EchoesIntegration/infra/`. All six integrations already share this shape -- verified
 2026-08-19, all six pass the full baseline check. **This is the most consistent artifact in the

@@ -15,7 +15,7 @@ by preference.
 
 ## Rules
 
-1. ⛔ **No secrets in source or in tracked files.** `local.settings.json` is git-ignored; Azure app settings or Key Vault in the cloud; pipeline secret variables in CI. This has already gone wrong once — see [secrets-management.md](references/secrets-management.md).
+1. ⛔ **No secrets in source or in tracked files.** `local.settings.json` is git-ignored; Azure app settings or Key Vault in the cloud; CI secret stores (Azure DevOps secret variables / variable groups or GitHub secrets) in delivery. This has already gone wrong once — see [secrets-management.md](references/secrets-management.md).
 2. **Token caches are singletons.** A per-instance or per-scope cache mints a new token on every call.
 3. **A 401 must invalidate the cache and retry exactly once.** Never retry more — a genuinely wrong credential would loop.
 4. **Clone the request before retrying** when it may carry a body. An `HttpRequestMessage` and its content stream cannot reliably be sent twice.
