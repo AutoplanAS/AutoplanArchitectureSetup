@@ -10,6 +10,9 @@ run repeatable issue-to-PR delivery while still using the same skill layers:
 Machinist stays the execution/orchestration layer. Skills stay the implementation and review
 guidance layer.
 
+If you need human-gated automation instead of queue workers, use the Autobot reusable workflows in
+`.github/autobot/` as the middle-ground model.
+
 ## What is included
 
 | Path | Purpose |

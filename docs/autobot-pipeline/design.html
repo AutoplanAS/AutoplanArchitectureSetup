@@ -1,0 +1,772 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data:; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'">
+  <meta name="document-kind" content="design">
+  <meta name="source-path" content="docs\autobot-pipeline\design.md">
+  <meta name="source-sha256" content="e600791ce4755348e4f196db75ae45b44458535ded81e978f5f3982407094a10">
+  <meta name="generator" content="blueprint/html-doc@1">
+  <title>Autobot pipeline: GitHub Actions agents for spec, planning, and implementation</title>
+  <style>:root {
+  color-scheme: light;
+  --paper: #f7f9fb;
+  --surface: #ffffff;
+  --surface-soft: #edf2f5;
+  --ink: #172630;
+  --muted: #526773;
+  --line: #ccd8df;
+  --line-strong: #8fa5b3;
+  --accent: #385e75;
+  --accent-soft: #dbe5ec;
+  --focus: #176b93;
+  --risk: #6b4f28;
+  --risk-soft: #f3ecdf;
+  --radius: 12px;
+  --shadow: 0 16px 42px rgb(31 54 68 / 10%);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 16px;
+  line-height: 1.65;
+  background: var(--paper);
+  color: var(--ink);
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { margin: 0; background: var(--paper); }
+a { color: var(--accent); text-underline-offset: 0.16em; }
+a:hover { text-decoration-thickness: 2px; }
+a:focus-visible, summary:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 3px;
+  border-radius: 3px;
+}
+
+.skip-link {
+  position: fixed;
+  z-index: 10;
+  left: 1rem;
+  top: 1rem;
+  padding: .65rem .9rem;
+  background: var(--ink);
+  color: white;
+  transform: translateY(-180%);
+}
+.skip-link:focus { transform: translateY(0); }
+
+.document-header {
+  border-bottom: 1px solid var(--line);
+  background: linear-gradient(145deg, #e5edf2 0%, #f7f9fb 70%);
+}
+.document-header__inner,
+.page-shell,
+.document-footer {
+  width: min(1180px, calc(100% - 2rem));
+  margin-inline: auto;
+}
+.document-header__inner { padding: 3.8rem 0 3rem; }
+.eyebrow {
+  margin: 0 0 .8rem;
+  color: var(--accent);
+  font-size: .78rem;
+  font-weight: 750;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+.document-title {
+  max-width: 900px;
+  margin: 0;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(2.25rem, 5vw, 4.6rem);
+  font-weight: 500;
+  line-height: 1.05;
+  letter-spacing: -.035em;
+}
+.metadata {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .55rem 1.25rem;
+  margin: 1.6rem 0 0;
+  color: var(--muted);
+  font-size: .88rem;
+}
+.metadata dt { font-weight: 700; color: var(--ink); }
+.metadata dd { margin: 0; overflow-wrap: anywhere; }
+.metadata__item { display: grid; grid-template-columns: auto 1fr; gap: .35rem; }
+
+.page-shell {
+  display: grid;
+  grid-template-columns: minmax(190px, 250px) minmax(0, 1fr);
+  gap: clamp(2rem, 5vw, 5rem);
+  align-items: start;
+  padding-block: 3rem 5rem;
+}
+.toc {
+  position: sticky;
+  top: 1rem;
+  max-height: calc(100vh - 2rem);
+  overflow: auto;
+  padding: 1.1rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: rgb(255 255 255 / 78%);
+}
+.toc-title { margin: 0 0 .75rem; font: 750 .78rem/1.2 Inter, sans-serif; letter-spacing: .09em; text-transform: uppercase; }
+.toc ol { list-style: none; padding: 0; margin: 0; }
+.toc li + li { margin-top: .34rem; }
+.toc li[data-level="3"] { padding-left: .8rem; font-size: .88rem; }
+.toc a { display: block; color: var(--muted); text-decoration: none; line-height: 1.35; }
+.toc a:hover { color: var(--ink); }
+
+.document-content {
+  min-width: 0;
+  padding: clamp(1.4rem, 4vw, 3.8rem);
+  border: 1px solid var(--line);
+  border-radius: calc(var(--radius) + 4px);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+.source-block { min-width: 0; }
+.source-block > :first-child { margin-top: 0; }
+.source-block > :last-child { margin-bottom: 0; }
+.source-block + .source-block { margin-top: 1rem; }
+.source-block:has(> h1), .source-block:has(> h2) { margin-top: 3.7rem; }
+.source-block:first-child { margin-top: 0; }
+h1, h2, h3, h4 { color: var(--ink); line-height: 1.2; scroll-margin-top: 1.5rem; }
+.document-content h1 { font: 500 clamp(2rem, 5vw, 3.2rem)/1.08 Georgia, serif; letter-spacing: -.025em; }
+.document-content h2 { padding-top: .4rem; font: 500 clamp(1.7rem, 3vw, 2.3rem)/1.15 Georgia, serif; letter-spacing: -.018em; }
+.document-content h3 { font-size: 1.12rem; }
+.document-content h4 { font-size: 1rem; }
+p, ul, ol, blockquote, pre, table, figure { margin-block: 1rem; }
+blockquote {
+  margin-inline: 0;
+  padding: .8rem 1rem;
+  border-left: 4px solid var(--line-strong);
+  background: var(--surface-soft);
+  color: #314854;
+}
+blockquote > :first-child { margin-top: 0; }
+blockquote > :last-child { margin-bottom: 0; }
+.role-requirements, .role-acceptance-criteria, .role-invariants,
+.role-decisions, .role-risks, .role-open-questions {
+  margin-top: 1.25rem;
+  padding: 1rem 1.2rem;
+  border-left: 4px solid var(--line-strong);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  background: var(--surface-soft);
+}
+.role-risks, .role-open-questions { border-left-color: var(--risk); background: var(--risk-soft); }
+code, pre { font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace; }
+code { padding: .12em .32em; border-radius: 4px; background: var(--surface-soft); font-size: .9em; }
+code { overflow-wrap: anywhere; word-break: break-word; }
+pre {
+  max-width: 100%;
+  overflow: auto;
+  padding: 1rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #132630;
+  color: #edf4f7;
+  line-height: 1.48;
+}
+pre code { padding: 0; background: transparent; color: inherit; }
+.table-wrap { max-width: 100%; overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: .93rem; }
+th, td { padding: .68rem .75rem; border: 1px solid var(--line); text-align: left; vertical-align: top; }
+th, td { overflow-wrap: anywhere; word-break: break-word; }
+th { background: var(--surface-soft); font-weight: 720; }
+tbody tr:nth-child(even) { background: #f9fbfc; }
+.diagram {
+  padding: 1rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: #fbfcfd;
+}
+.diagram img { display: block; width: 100%; height: auto; max-height: 650px; object-fit: contain; }
+.diagram figcaption { margin-top: .75rem; color: var(--muted); font-size: .86rem; }
+.diagram details { margin-top: .8rem; }
+.diagram summary { cursor: pointer; color: var(--accent); font-weight: 650; }
+.diagram details pre { max-height: 18rem; }
+.document-footer { padding: 0 0 3rem; color: var(--muted); font-size: .82rem; }
+
+@media (max-width: 760px) {
+  .document-header__inner { padding: 2.7rem 0 2.2rem; }
+  .page-shell { grid-template-columns: 1fr; gap: 1.2rem; padding-top: 1.25rem; }
+  .toc { position: static; max-height: none; }
+  .document-content { padding: 1.25rem; border-radius: var(--radius); }
+  .source-block:has(> h1), .source-block:has(> h2) { margin-top: 2.7rem; }
+}
+
+@media print {
+  :root { background: white; font-size: 10.5pt; }
+  @page { size: auto; margin: 16mm; }
+  .skip-link, .toc { display: none; }
+  .document-header { background: white; }
+  .document-header__inner, .page-shell, .document-footer { width: 100%; }
+  .document-header__inner { padding: 0 0 12mm; }
+  .document-title { font-size: 28pt; }
+  .page-shell { display: block; padding: 0; }
+  .document-content { padding: 0; border: 0; box-shadow: none; }
+  h1, h2, h3, h4 { break-after: avoid-page; }
+  table, figure, pre, blockquote { break-inside: avoid; }
+  thead { display: table-header-group; }
+  pre { white-space: pre-wrap; overflow-wrap: anywhere; }
+  .document-footer { padding: 10mm 0 0; }
+}
+</style>
+</head>
+<body>
+  <a class="skip-link" href="#document-content">Skip to document</a>
+  <header class="document-header">
+    <div class="document-header__inner">
+      <p class="eyebrow">Technical design</p>
+      <p class="document-title">Autobot pipeline: GitHub Actions agents for spec, planning, and implementation</p>
+      <dl class="metadata">
+        <div class="metadata__item"><dt>Status</dt><dd>Proposed for review</dd></div>
+        <div class="metadata__item"><dt>Source</dt><dd>docs\autobot-pipeline\design.md</dd></div>
+        <div class="metadata__item"><dt>SHA-256</dt><dd><code>e600791ce4755348e4f196db75ae45b44458535ded81e978f5f3982407094a10</code></dd></div>
+      </dl>
+    </div>
+  </header>
+  <div class="page-shell">
+    <nav class="toc" aria-label="Document contents"><p class="toc-title">Contents</p><ol><li data-level="2"><a href="#1-requirements-what-and-why">1. Requirements: what and why</a></li><li data-level="2"><a href="#2-user-experience">2. User experience</a></li><li data-level="2"><a href="#3-technical-design-and-choices">3. Technical design and choices</a></li><li data-level="3"><a href="#shape">Shape</a></li><li data-level="3"><a href="#labels">Labels</a></li><li data-level="3"><a href="#agent-runtime">Agent runtime</a></li><li data-level="3"><a href="#secrets-and-permissions">Secrets and permissions</a></li><li data-level="3"><a href="#failure-concurrency-and-limits">Failure, concurrency, and limits</a></li><li data-level="2"><a href="#4-acceptance-and-proof">4. Acceptance and proof</a></li><li data-level="2"><a href="#5-open-questions">5. Open questions</a></li></ol></nav>
+    <main id="document-content" class="document-content" data-source-block-count="43">
+<section
+id="autobot-pipeline-github-actions-agents-for-spec-planning-and-implementation"
+class="source-block" data-source-block="1"
+data-source-sha256="32c20a4f324440e94c75b3592d469127d2c7db96065a98966bd9c78c4032b8ce">
+<h1>Autobot pipeline: GitHub Actions agents for spec, planning, and
+implementation</h1>
+</section>
+<div class="source-block" data-source-block="2"
+data-source-sha256="f3cfda141bb0d969e973d91600064c759ac4c936fa82e9f2c3f6bb2a60fbb270">
+<blockquote>
+<p><strong>Status:</strong> Proposed for review</p>
+</blockquote>
+</div>
+<section id="1-requirements-what-and-why" class="source-block"
+data-source-block="3"
+data-source-sha256="97c886c1e41bd4a5bb4fe29a0dbfa859d88226e2df3d51627c0eea774bb6a981">
+<h2>1. Requirements: what and why</h2>
+</section>
+<div class="source-block" data-source-block="4"
+data-source-sha256="fec37a7ab7883e5b3e65bf0b5a9007e3df97ae32a5efd73cf4f93e0c0d9e393e">
+<p>The Machinist package in <a
+href="../../machinist/README.md"><code>machinist/</code></a> gives
+Autoplan a fully autonomous coding factory: a self-hosted worker polls
+labels and runs an agent end to end. That is more automation than most
+Autoplan teams want today, because a human never sees the design before
+code is written, and it requires a worker host that someone must
+own.</p>
+</div>
+<div class="source-block" data-source-block="5"
+data-source-sha256="03b6f483dcd5fa6366912c23f1935e2d1fd0e3321736eac1163b26c181bd3b6a">
+<p>Teams need a middle ground. The delivery flow already has phases on a
+GitHub Project board: a feature arrives in <strong>Ready for
+spec</strong>, a specification is written and reviewed in
+<strong>Creating specification</strong>, tasks are built in
+<strong>Implementing</strong>, and finished work waits in <strong>In
+review</strong>. Today a person drives every transition by hand: writing
+the design with the <code>design</code> skill, running
+<code>architecture-review</code>, splitting the design into issues with
+<code>plan</code>, and running <code>task-to-pr</code> for each issue.
+The work is mechanical, but the human judgement between phases is the
+part worth keeping.</p>
+</div>
+<div class="source-block" data-source-block="6"
+data-source-sha256="94509050e20a740f9f40d0fb2f0e603498ecbf99c5d1b32b1df018118118861a">
+<p>The pipeline must:</p>
+</div>
+<div class="source-block" data-source-block="7"
+data-source-sha256="0a779c89c4061900bc865e902a8916d7e21af44b8f22dc59432c76d29f776a5d">
+<ul>
+<li>Run each phase as a GitHub Actions job on GitHub-hosted runners, so
+no worker host is required.</li>
+<li>Trigger on labels, one label per phase, prefixed
+<code>autobot-</code>, named after the board phase.</li>
+<li>Stop after every phase and wait for a human. No phase may start the
+next one by itself.</li>
+<li>Produce artifacts a human can review in the normal GitHub surfaces:
+a pull request for the design, issues for the tasks, a pull request for
+each task.</li>
+<li>Ship from this baseline repository as reusable workflows that a
+project repository calls with a thin caller workflow, so improvements
+land in one place.</li>
+</ul>
+</div>
+<div class="source-block" data-source-block="8"
+data-source-sha256="76d2222da056381f67f05838951e99d91a1720359085a3741bb799934eeb02a6">
+<p>Out of scope: replacing Machinist (both models stay, for different
+appetites); merging pull requests; automatic board column moves as a
+trigger source; any new hosting, database, or service.</p>
+</div>
+<section id="2-user-experience" class="source-block"
+data-source-block="9"
+data-source-sha256="46fbd79d74f3e09c7eeb160eb90581b4f56dc2e628ec4f9f1910935bd1d5630e">
+<h2>2. User experience</h2>
+</section>
+<div class="source-block" data-source-block="10"
+data-source-sha256="b78a709bcb97ab19a5c409aab090b9d8641e171c78c35e0ab9c0ecc1f518796a">
+<p>The actors are a product owner or lead who owns the board, and a
+reviewer who approves the work.</p>
+</div>
+<div class="source-block" data-source-block="11"
+data-source-sha256="c66b00a3e0358ca4b244d0c19e7d33e9dc86de3a6ce7c992df7656c7682bd63c">
+<p><strong>Spec phase.</strong> A lead puts a feature issue in <em>Ready
+for spec</em> and adds the label <code>autobot-ready-for-spec</code>.
+Within about a minute a check named <code>autobot / spec</code> appears
+on the issue timeline. The agent reads the issue and the repository,
+runs <code>design</code>, then runs <code>architecture-review</code> on
+its own draft and revises it. It opens a pull request adding
+<code>docs/&lt;issue-number&gt;-&lt;slug&gt;/design.md</code> and posts
+one comment on the issue that links the pull request, lists the open
+questions the design could not settle, and names the blocking ones. The
+trigger label is removed and <code>autobot-creating-specification</code>
+is added, so the issue sits in the phase whose name it carries. The lead
+reviews the design in the pull request like any other change, comments
+or edits, and merges it when satisfied.</p>
+</div>
+<div class="source-block" data-source-block="12"
+data-source-sha256="c4ea21c78e2f42a58c9a9181754ca5854bfe20d17ededd8ae25d779e8f7d2b59">
+<p>If the agent cannot produce a design, for example the issue has no
+description or the blocking questions cannot be answered from the
+repository, it opens no pull request. It comments with what it needs,
+replaces the trigger label with <code>autobot-blocked</code>, and the
+job succeeds. A human answers in the issue and re-adds the trigger label
+to retry.</p>
+</div>
+<div class="source-block" data-source-block="13"
+data-source-sha256="b6b89d249279298934023e6de87f8fbd7587384c755347c0d2c4bdf1861b6c79">
+<p><strong>Planning phase.</strong> After merging the design pull
+request, the lead adds <code>autobot-implementing</code> to the feature
+issue. The agent reads the merged design from the default branch, runs
+<code>plan</code>, and creates one GitHub issue per task. Each new issue
+carries the label <code>autobot-task</code>, links back to the feature
+issue and to the design file, and states its dependencies by issue
+number. The feature issue gets a comment listing the created issues in
+dependency order. The task issues are added to the same project board in
+<em>Implementing</em> when the board is configured. If the design pull
+request is not merged yet, the agent comments saying so and applies
+<code>autobot-blocked</code> instead of creating issues.</p>
+</div>
+<div class="source-block" data-source-block="14"
+data-source-sha256="9e6c565d1ca87c08b38e86c5526ce90d9527f7bc6391a2b65f8c8d3a66d66266">
+<p><strong>Implementation phase.</strong> A lead assigns a task issue to
+an agent by adding <code>autobot-in-review</code> to it. The agent runs
+<code>task-to-pr</code> for that single issue: it branches, implements,
+tests, self-reviews, and opens one pull request that closes the task
+issue. It comments the pull request link on the issue and leaves
+<code>autobot-in-review</code> in place so the issue shows the phase it
+is in. It never merges. If implementation needs a decision the task does
+not contain, it stops, comments with the missing decision, and applies
+<code>autobot-blocked</code>.</p>
+</div>
+<div class="source-block" data-source-block="15"
+data-source-sha256="23fb70f5e9767e10abc51c74910a34efcb5634342fa28b40456044be1217d14c">
+<p><strong>Everywhere.</strong> Every job posts a start comment and an
+end comment on the issue so the timeline is a readable audit trail. Only
+one job runs per issue at a time; a second label event while a job is
+running is queued and then skipped as redundant. A job that crashes
+leaves a comment with the run link and applies
+<code>autobot-blocked</code>.</p>
+</div>
+<section id="3-technical-design-and-choices" class="source-block"
+data-source-block="16"
+data-source-sha256="a85017480a06b18076467a0c66aa44309a60208f66d349106c8eb1db148c4eb6">
+<h2>3. Technical design and choices</h2>
+</section>
+<section id="shape" class="source-block" data-source-block="17"
+data-source-sha256="70fec0b53f4b65c9ae88e0f45cf0408f2065c51e6c7c36080a091da00a244384">
+<h3>Shape</h3>
+</section>
+<div class="source-block" data-source-block="18"
+data-source-sha256="0f8c8ee73e116efe6419a72c2f18ec5ff3cd625bc022607c22ae8e3078b5f5d3">
+<p>Three reusable workflows live in this repository under
+<code>.github/workflows/</code>: <code>autobot-spec.yml</code>,
+<code>autobot-plan.yml</code>, <code>autobot-implement.yml</code>, each
+with <code>on: workflow_call</code>. A project repository adds one
+caller workflow, <code>.github/workflows/autobot.yml</code>, that
+listens for <code>issues: [labeled]</code> and routes the label to the
+matching reusable workflow. A fourth file,
+<code>.github/workflows/autobot-setup.yml</code> in this repository, is
+a <code>workflow_dispatch</code> job that creates the label set in a
+target repository so onboarding is one click.</p>
+</div>
+<figure class="diagram source-block" data-source-sha256="9ca5942a4f52d01973c3ae8ba80c513c053067bbc49ec4513ba196d1aad78a01" data-source-block="19"><img alt="Diagram 1 showing Issue labeled, autobot.yml caller in project repo, autobot-spec.yml, autobot-plan.yml, autobot-implement.yml, design PR + issue comment, task issues, task PR, autobot-ready-for-spec, autobot-implementing, autobot-in-review" src="data:image/svg+xml;base64,PHN2ZyBpZD0ibXktc3ZnIiB3aWR0aD0iMTAwJSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgY2xhc3M9ImZsb3djaGFydCIgc3R5bGU9Im1heC13aWR0aDogMTIzMC41NXB4OyBiYWNrZ3JvdW5kLWNvbG9yOiB0cmFuc3BhcmVudDsiIHZpZXdCb3g9IjAgMCAxMjMwLjU0Njg3NSAyNjkiIHJvbGU9ImdyYXBoaWNzLWRvY3VtZW50IGRvY3VtZW50IiBhcmlhLXJvbGVkZXNjcmlwdGlvbj0iZmxvd2NoYXJ0LXYyIj48c3R5bGU+I215LXN2Z3tmb250LWZhbWlseTpJbnRlcix1aS1zYW5zLXNlcmlmLHN5c3RlbS11aSxzYW5zLXNlcmlmO2ZvbnQtc2l6ZToxNnB4O2ZpbGw6IzE3MjYzMDt9QGtleWZyYW1lcyBlZGdlLWFuaW1hdGlvbi1mcmFtZXtmcm9te3N0cm9rZS1kYXNob2Zmc2V0OjA7fX1Aa2V5ZnJhbWVzIGRhc2h7dG97c3Ryb2tlLWRhc2hvZmZzZXQ6MDt9fSNteS1zdmcgLmVkZ2UtYW5pbWF0aW9uLXNsb3d7c3Ryb2tlLWRhc2hhcnJheTo5LDUhaW1wb3J0YW50O3N0cm9rZS1kYXNob2Zmc2V0OjkwMDthbmltYXRpb246ZGFzaCA1MHMgbGluZWFyIGluZmluaXRlO3N0cm9rZS1saW5lY2FwOnJvdW5kO30jbXktc3ZnIC5lZGdlLWFuaW1hdGlvbi1mYXN0e3N0cm9rZS1kYXNoYXJyYXk6OSw1IWltcG9ydGFudDtzdHJva2UtZGFzaG9mZnNldDo5MDA7YW5pbWF0aW9uOmRhc2ggMjBzIGxpbmVhciBpbmZpbml0ZTtzdHJva2UtbGluZWNhcDpyb3VuZDt9I215LXN2ZyAuZXJyb3ItaWNvbntmaWxsOiNmN2Y5ZmI7fSNteS1zdmcgLmVycm9yLXRleHR7ZmlsbDojMDgwNjA0O3N0cm9rZTojMDgwNjA0O30jbXktc3ZnIC5lZGdlLXRoaWNrbmVzcy1ub3JtYWx7c3Ryb2tlLXdpZHRoOjFweDt9I215LXN2ZyAuZWRnZS10aGlja25lc3MtdGhpY2t7c3Ryb2tlLXdpZHRoOjMuNXB4O30jbXktc3ZnIC5lZGdlLXBhdHRlcm4tc29saWR7c3Ryb2tlLWRhc2hhcnJheTowO30jbXktc3ZnIC5lZGdlLXRoaWNrbmVzcy1pbnZpc2libGV7c3Ryb2tlLXdpZHRoOjA7ZmlsbDpub25lO30jbXktc3ZnIC5lZGdlLXBhdHRlcm4tZGFzaGVke3N0cm9rZS1kYXNoYXJyYXk6Mzt9I215LXN2ZyAuZWRnZS1wYXR0ZXJuLWRvdHRlZHtzdHJva2UtZGFzaGFycmF5OjI7fSNteS1zdmcgLm1hcmtlcntmaWxsOiM1MjZhNzk7c3Ryb2tlOiM1MjZhNzk7fSNteS1zdmcgLm1hcmtlci5jcm9zc3tzdHJva2U6IzUyNmE3OTt9I215LXN2ZyBzdmd7Zm9udC1mYW1pbHk6SW50ZXIsdWktc2Fucy1zZXJpZixzeXN0ZW0tdWksc2Fucy1zZXJpZjtmb250LXNpemU6MTZweDt9I215LXN2ZyBwe21hcmdpbjowO30jbXktc3ZnIC5sYWJlbHtmb250LWZhbWlseTpJbnRlcix1aS1zYW5zLXNlcmlmLHN5c3RlbS11aSxzYW5zLXNlcmlmO2NvbG9yOiMxNzI2MzA7fSNteS1zdmcgLmNsdXN0ZXItbGFiZWwgdGV4dHtmaWxsOiMwODA2MDQ7fSNteS1zdmcgLmNsdXN0ZXItbGFiZWwgc3Bhbntjb2xvcjojMDgwNjA0O30jbXktc3ZnIC5jbHVzdGVyLWxhYmVsIHNwYW4gcHtiYWNrZ3JvdW5kLWNvbG9yOnRyYW5zcGFyZW50O30jbXktc3ZnIC5sYWJlbCB0ZXh0LCNteS1zdmcgc3BhbntmaWxsOiMxNzI2MzA7Y29sb3I6IzE3MjYzMDt9I215LXN2ZyAubm9kZSByZWN0LCNteS1zdmcgLm5vZGUgY2lyY2xlLCNteS1zdmcgLm5vZGUgZWxsaXBzZSwjbXktc3ZnIC5ub2RlIHBvbHlnb24sI215LXN2ZyAubm9kZSBwYXRoe2ZpbGw6I2RiZTVlYztzdHJva2U6IzYwNzk4YTtzdHJva2Utd2lkdGg6MXB4O30jbXktc3ZnIC5yb3VnaC1ub2RlIC5sYWJlbCB0ZXh0LCNteS1zdmcgLm5vZGUgLmxhYmVsIHRleHQsI215LXN2ZyAuaW1hZ2Utc2hhcGUgLmxhYmVsLCNteS1zdmcgLmljb24tc2hhcGUgLmxhYmVse3RleHQtYW5jaG9yOm1pZGRsZTt9I215LXN2ZyAubm9kZSAua2F0ZXggcGF0aHtmaWxsOiMwMDA7c3Ryb2tlOiMwMDA7c3Ryb2tlLXdpZHRoOjFweDt9I215LXN2ZyAucm91Z2gtbm9kZSAubGFiZWwsI215LXN2ZyAubm9kZSAubGFiZWwsI215LXN2ZyAuaW1hZ2Utc2hhcGUgLmxhYmVsLCNteS1zdmcgLmljb24tc2hhcGUgLmxhYmVse3RleHQtYWxpZ246Y2VudGVyO30jbXktc3ZnIC5ub2RlLmNsaWNrYWJsZXtjdXJzb3I6cG9pbnRlcjt9I215LXN2ZyAucm9vdCAuYW5jaG9yIHBhdGh7ZmlsbDojNTI2YTc5IWltcG9ydGFudDtzdHJva2Utd2lkdGg6MDtzdHJva2U6IzUyNmE3OTt9I215LXN2ZyAuYXJyb3doZWFkUGF0aHtmaWxsOiMwODA2MDQ7fSNteS1zdmcgLmVkZ2VQYXRoIC5wYXRoe3N0cm9rZTojNTI2YTc5O3N0cm9rZS13aWR0aDoxcHg7fSNteS1zdmcgLmZsb3djaGFydC1saW5re3N0cm9rZTojNTI2YTc5O2ZpbGw6bm9uZTt9I215LXN2ZyAuZWRnZUxhYmVse2JhY2tncm91bmQtY29sb3I6I2VkZjJmNTt0ZXh0LWFsaWduOmNlbnRlcjt9I215LXN2ZyAuZWRnZUxhYmVsIHB7YmFja2dyb3VuZC1jb2xvcjojZWRmMmY1O30jbXktc3ZnIC5lZGdlTGFiZWwgcmVjdHtvcGFjaXR5OjAuNTtiYWNrZ3JvdW5kLWNvbG9yOiNlZGYyZjU7ZmlsbDojZWRmMmY1O30jbXktc3ZnIC5sYWJlbEJrZ3tiYWNrZ3JvdW5kLWNvbG9yOnJnYmEoMjM3LCAyNDIsIDI0NSwgMC41KTt9I215LXN2ZyAuY2x1c3RlciByZWN0e2ZpbGw6I2Y3ZjlmYjtzdHJva2U6aHNsKDIxMCwgMCUsIDg3LjY0NzA1ODgyMzUlKTtzdHJva2Utd2lkdGg6MXB4O30jbXktc3ZnIC5jbHVzdGVyIHRleHR7ZmlsbDojMDgwNjA0O30jbXktc3ZnIC5jbHVzdGVyIHNwYW57Y29sb3I6IzA4MDYwNDt9I215LXN2ZyBkaXYubWVybWFpZFRvb2x0aXB7cG9zaXRpb246YWJzb2x1dGU7dGV4dC1hbGlnbjpjZW50ZXI7bWF4LXdpZHRoOjIwMHB4O3BhZGRpbmc6MnB4O2ZvbnQtZmFtaWx5OkludGVyLHVpLXNhbnMtc2VyaWYsc3lzdGVtLXVpLHNhbnMtc2VyaWY7Zm9udC1zaXplOjEycHg7YmFja2dyb3VuZDojZjdmOWZiO2JvcmRlcjoxcHggc29saWQgaHNsKDIxMCwgMCUsIDg3LjY0NzA1ODgyMzUlKTtib3JkZXItcmFkaXVzOjJweDtwb2ludGVyLWV2ZW50czpub25lO3otaW5kZXg6MTAwO30jbXktc3ZnIC5mbG93Y2hhcnRUaXRsZVRleHR7dGV4dC1hbmNob3I6bWlkZGxlO2ZvbnQtc2l6ZToxOHB4O2ZpbGw6IzE3MjYzMDt9I215LXN2ZyByZWN0LnRleHR7ZmlsbDpub25lO3N0cm9rZS13aWR0aDowO30jbXktc3ZnIC5pY29uLXNoYXBlLCNteS1zdmcgLmltYWdlLXNoYXBle2JhY2tncm91bmQtY29sb3I6I2VkZjJmNTt0ZXh0LWFsaWduOmNlbnRlcjt9I215LXN2ZyAuaWNvbi1zaGFwZSBwLCNteS1zdmcgLmltYWdlLXNoYXBlIHB7YmFja2dyb3VuZC1jb2xvcjojZWRmMmY1O3BhZGRpbmc6MnB4O30jbXktc3ZnIC5pY29uLXNoYXBlIC5sYWJlbCByZWN0LCNteS1zdmcgLmltYWdlLXNoYXBlIC5sYWJlbCByZWN0e29wYWNpdHk6MC41O2JhY2tncm91bmQtY29sb3I6I2VkZjJmNTtmaWxsOiNlZGYyZjU7fSNteS1zdmcgLmxhYmVsLWljb257ZGlzcGxheTppbmxpbmUtYmxvY2s7aGVpZ2h0OjFlbTtvdmVyZmxvdzp2aXNpYmxlO3ZlcnRpY2FsLWFsaWduOi0wLjEyNWVtO30jbXktc3ZnIC5ub2RlIC5sYWJlbC1pY29uIHBhdGh7ZmlsbDpjdXJyZW50Q29sb3I7c3Ryb2tlOnJldmVydDtzdHJva2Utd2lkdGg6cmV2ZXJ0O30jbXktc3ZnIC5ub2RlIC5uZW8tbm9kZXtzdHJva2U6IzYwNzk4YTt9I215LXN2ZyBbZGF0YS1sb29rPSJuZW8iXS5ub2RlIHJlY3QsI215LXN2ZyBbZGF0YS1sb29rPSJuZW8iXS5jbHVzdGVyIHJlY3QsI215LXN2ZyBbZGF0YS1sb29rPSJuZW8iXS5ub2RlIHBvbHlnb257c3Ryb2tlOnVybCgjbXktc3ZnLWdyYWRpZW50KTtmaWx0ZXI6ZHJvcC1zaGFkb3coIDFweCAycHggMnB4IHJnYmEoMTg1LDE4NSwxODUsMSkpO30jbXktc3ZnIFtkYXRhLWxvb2s9Im5lbyJdLnN3aW1sYW5lLmNsdXN0ZXIgcmVjdHtmaWx0ZXI6bm9uZTt9I215LXN2ZyBbZGF0YS1sb29rPSJuZW8iXS5ub2RlIHBhdGh7c3Ryb2tlOnVybCgjbXktc3ZnLWdyYWRpZW50KTtzdHJva2Utd2lkdGg6MXB4O30jbXktc3ZnIFtkYXRhLWxvb2s9Im5lbyJdLm5vZGUgLm91dGVyLXBhdGh7ZmlsdGVyOmRyb3Atc2hhZG93KCAxcHggMnB4IDJweCByZ2JhKDE4NSwxODUsMTg1LDEpKTt9I215LXN2ZyBbZGF0YS1sb29rPSJuZW8iXS5ub2RlIC5uZW8tbGluZSBwYXRoe3N0cm9rZTojNjA3OThhO2ZpbHRlcjpub25lO30jbXktc3ZnIFtkYXRhLWxvb2s9Im5lbyJdLm5vZGUgY2lyY2xle3N0cm9rZTp1cmwoI215LXN2Zy1ncmFkaWVudCk7ZmlsdGVyOmRyb3Atc2hhZG93KCAxcHggMnB4IDJweCByZ2JhKDE4NSwxODUsMTg1LDEpKTt9I215LXN2ZyBbZGF0YS1sb29rPSJuZW8iXS5ub2RlIGNpcmNsZSAuc3RhdGUtc3RhcnR7ZmlsbDojMDAwMDAwO30jbXktc3ZnIFtkYXRhLWxvb2s9Im5lbyJdLmljb24tc2hhcGUgLmljb257ZmlsbDp1cmwoI215LXN2Zy1ncmFkaWVudCk7ZmlsdGVyOmRyb3Atc2hhZG93KCAxcHggMnB4IDJweCByZ2JhKDE4NSwxODUsMTg1LDEpKTt9I215LXN2ZyBbZGF0YS1sb29rPSJuZW8iXS5pY29uLXNoYXBlIC5pY29uLW5lbyBwYXRoe3N0cm9rZTp1cmwoI215LXN2Zy1ncmFkaWVudCk7ZmlsdGVyOmRyb3Atc2hhZG93KCAxcHggMnB4IDJweCByZ2JhKDE4NSwxODUsMTg1LDEpKTt9I215LXN2ZyA6cm9vdHstLW1lcm1haWQtZm9udC1mYW1pbHk6InRyZWJ1Y2hldCBtcyIsdmVyZGFuYSxhcmlhbCxzYW5zLXNlcmlmO308L3N0eWxlPjxnPjxtYXJrZXIgaWQ9Im15LXN2Z19mbG93Y2hhcnQtdjItcG9pbnRFbmQiIGNsYXNzPSJtYXJrZXIgZmxvd2NoYXJ0LXYyIiB2aWV3Qm94PSIwIDAgMTAgMTAiIHJlZlg9IjUiIHJlZlk9IjUiIG1hcmtlclVuaXRzPSJ1c2VyU3BhY2VPblVzZSIgbWFya2VyV2lkdGg9IjgiIG1hcmtlckhlaWdodD0iOCIgb3JpZW50PSJhdXRvIj48cGF0aCBkPSJNIDAgMCBMIDEwIDUgTCAwIDEwIHoiIGNsYXNzPSJhcnJvd01hcmtlclBhdGgiIHN0eWxlPSJzdHJva2Utd2lkdGg6IDE7IHN0cm9rZS1kYXNoYXJyYXk6IDEsIDA7Ii8+PC9tYXJrZXI+PG1hcmtlciBpZD0ibXktc3ZnX2Zsb3djaGFydC12Mi1wb2ludFN0YXJ0IiBjbGFzcz0ibWFya2VyIGZsb3djaGFydC12MiIgdmlld0JveD0iMCAwIDEwIDEwIiByZWZYPSI0LjUiIHJlZlk9IjUiIG1hcmtlclVuaXRzPSJ1c2VyU3BhY2VPblVzZSIgbWFya2VyV2lkdGg9IjgiIG1hcmtlckhlaWdodD0iOCIgb3JpZW50PSJhdXRvIj48cGF0aCBkPSJNIDAgNSBMIDEwIDEwIEwgMTAgMCB6IiBjbGFzcz0iYXJyb3dNYXJrZXJQYXRoIiBzdHlsZT0ic3Ryb2tlLXdpZHRoOiAxOyBzdHJva2UtZGFzaGFycmF5OiAxLCAwOyIvPjwvbWFya2VyPjxtYXJrZXIgaWQ9Im15LXN2Z19mbG93Y2hhcnQtdjItcG9pbnRFbmQtbWFyZ2luIiBjbGFzcz0ibWFya2VyIGZsb3djaGFydC12MiIgdmlld0JveD0iMCAwIDExLjUgMTQiIHJlZlg9IjExLjUiIHJlZlk9IjciIG1hcmtlclVuaXRzPSJ1c2VyU3BhY2VPblVzZSIgbWFya2VyV2lkdGg9IjEwLjUiIG1hcmtlckhlaWdodD0iMTQiIG9yaWVudD0iYXV0byI+PHBhdGggZD0iTSAwIDAgTCAxMS41IDcgTCAwIDE0IHoiIGNsYXNzPSJhcnJvd01hcmtlclBhdGgiIHN0eWxlPSJzdHJva2Utd2lkdGg6IDA7IHN0cm9rZS1kYXNoYXJyYXk6IDEsIDA7Ii8+PC9tYXJrZXI+PG1hcmtlciBpZD0ibXktc3ZnX2Zsb3djaGFydC12Mi1wb2ludFN0YXJ0LW1hcmdpbiIgY2xhc3M9Im1hcmtlciBmbG93Y2hhcnQtdjIiIHZpZXdCb3g9IjAgMCAxMS41IDE0IiByZWZYPSIxIiByZWZZPSI3IiBtYXJrZXJVbml0cz0idXNlclNwYWNlT25Vc2UiIG1hcmtlcldpZHRoPSIxMS41IiBtYXJrZXJIZWlnaHQ9IjE0IiBvcmllbnQ9ImF1dG8iPjxwb2x5Z29uIHBvaW50cz0iMCw3IDExLjUsMTQgMTEuNSwwIiBjbGFzcz0iYXJyb3dNYXJrZXJQYXRoIiBzdHlsZT0ic3Ryb2tlLXdpZHRoOiAwOyBzdHJva2UtZGFzaGFycmF5OiAxLCAwOyIvPjwvbWFya2VyPjxtYXJrZXIgaWQ9Im15LXN2Z19mbG93Y2hhcnQtdjItY2lyY2xlRW5kIiBjbGFzcz0ibWFya2VyIGZsb3djaGFydC12MiIgdmlld0JveD0iMCAwIDEwIDEwIiByZWZYPSIxMSIgcmVmWT0iNSIgbWFya2VyVW5pdHM9InVzZXJTcGFjZU9uVXNlIiBtYXJrZXJXaWR0aD0iMTEiIG1hcmtlckhlaWdodD0iMTEiIG9yaWVudD0iYXV0byI+PGNpcmNsZSBjeD0iNSIgY3k9IjUiIHI9IjUiIGNsYXNzPSJhcnJvd01hcmtlclBhdGgiIHN0eWxlPSJzdHJva2Utd2lkdGg6IDE7IHN0cm9rZS1kYXNoYXJyYXk6IDEsIDA7Ii8+PC9tYXJrZXI+PG1hcmtlciBpZD0ibXktc3ZnX2Zsb3djaGFydC12Mi1jaXJjbGVTdGFydCIgY2xhc3M9Im1hcmtlciBmbG93Y2hhcnQtdjIiIHZpZXdCb3g9IjAgMCAxMCAxMCIgcmVmWD0iLTEiIHJlZlk9IjUiIG1hcmtlclVuaXRzPSJ1c2VyU3BhY2VPblVzZSIgbWFya2VyV2lkdGg9IjExIiBtYXJrZXJIZWlnaHQ9IjExIiBvcmllbnQ9ImF1dG8iPjxjaXJjbGUgY3g9IjUiIGN5PSI1IiByPSI1IiBjbGFzcz0iYXJyb3dNYXJrZXJQYXRoIiBzdHlsZT0ic3Ryb2tlLXdpZHRoOiAxOyBzdHJva2UtZGFzaGFycmF5OiAxLCAwOyIvPjwvbWFya2VyPjxtYXJrZXIgaWQ9Im15LXN2Z19mbG93Y2hhcnQtdjItY2lyY2xlRW5kLW1hcmdpbiIgY2xhc3M9Im1hcmtlciBmbG93Y2hhcnQtdjIiIHZpZXdCb3g9IjAgMCAxMCAxMCIgcmVmWT0iNSIgcmVmWD0iMTIuMjUiIG1hcmtlclVuaXRzPSJ1c2VyU3BhY2VPblVzZSIgbWFya2VyV2lkdGg9IjE0IiBtYXJrZXJIZWlnaHQ9IjE0IiBvcmllbnQ9ImF1dG8iPjxjaXJjbGUgY3g9IjUiIGN5PSI1IiByPSI1IiBjbGFzcz0iYXJyb3dNYXJrZXJQYXRoIiBzdHlsZT0ic3Ryb2tlLXdpZHRoOiAwOyBzdHJva2UtZGFzaGFycmF5OiAxLCAwOyIvPjwvbWFya2VyPjxtYXJrZXIgaWQ9Im15LXN2Z19mbG93Y2hhcnQtdjItY2lyY2xlU3RhcnQtbWFyZ2luIiBjbGFzcz0ibWFya2VyIGZsb3djaGFydC12MiIgdmlld0JveD0iMCAwIDEwIDEwIiByZWZYPSItMiIgcmVmWT0iNSIgbWFya2VyVW5pdHM9InVzZXJTcGFjZU9uVXNlIiBtYXJrZXJXaWR0aD0iMTQiIG1hcmtlckhlaWdodD0iMTQiIG9yaWVudD0iYXV0byI+PGNpcmNsZSBjeD0iNSIgY3k9IjUiIHI9IjUiIGNsYXNzPSJhcnJvd01hcmtlclBhdGgiIHN0eWxlPSJzdHJva2Utd2lkdGg6IDA7IHN0cm9rZS1kYXNoYXJyYXk6IDEsIDA7Ii8+PC9tYXJrZXI+PG1hcmtlciBpZD0ibXktc3ZnX2Zsb3djaGFydC12Mi1jcm9zc0VuZCIgY2xhc3M9Im1hcmtlciBjcm9zcyBmbG93Y2hhcnQtdjIiIHZpZXdCb3g9IjAgMCAxMSAxMSIgcmVmWD0iMTIiIHJlZlk9IjUuMiIgbWFya2VyVW5pdHM9InVzZXJTcGFjZU9uVXNlIiBtYXJrZXJXaWR0aD0iMTEiIG1hcmtlckhlaWdodD0iMTEiIG9yaWVudD0iYXV0byI+PHBhdGggZD0iTSAxLDEgbCA5LDkgTSAxMCwxIGwgLTksOSIgY2xhc3M9ImFycm93TWFya2VyUGF0aCIgc3R5bGU9InN0cm9rZS13aWR0aDogMjsgc3Ryb2tlLWRhc2hhcnJheTogMSwgMDsiLz48L21hcmtlcj48bWFya2VyIGlkPSJteS1zdmdfZmxvd2NoYXJ0LXYyLWNyb3NzU3RhcnQiIGNsYXNzPSJtYXJrZXIgY3Jvc3MgZmxvd2NoYXJ0LXYyIiB2aWV3Qm94PSIwIDAgMTEgMTEiIHJlZlg9Ii0xIiByZWZZPSI1LjIiIG1hcmtlclVuaXRzPSJ1c2VyU3BhY2VPblVzZSIgbWFya2VyV2lkdGg9IjExIiBtYXJrZXJIZWlnaHQ9IjExIiBvcmllbnQ9ImF1dG8iPjxwYXRoIGQ9Ik0gMSwxIGwgOSw5IE0gMTAsMSBsIC05LDkiIGNsYXNzPSJhcnJvd01hcmtlclBhdGgiIHN0eWxlPSJzdHJva2Utd2lkdGg6IDI7IHN0cm9rZS1kYXNoYXJyYXk6IDEsIDA7Ii8+PC9tYXJrZXI+PG1hcmtlciBpZD0ibXktc3ZnX2Zsb3djaGFydC12Mi1jcm9zc0VuZC1tYXJnaW4iIGNsYXNzPSJtYXJrZXIgY3Jvc3MgZmxvd2NoYXJ0LXYyIiB2aWV3Qm94PSIwIDAgMTUgMTUiIHJlZlg9IjE3LjciIHJlZlk9IjcuNSIgbWFya2VyVW5pdHM9InVzZXJTcGFjZU9uVXNlIiBtYXJrZXJXaWR0aD0iMTIiIG1hcmtlckhlaWdodD0iMTIiIG9yaWVudD0iYXV0byI+PHBhdGggZD0iTSAxLDEgTCAxNCwxNCBNIDEsMTQgTCAxNCwxIiBjbGFzcz0iYXJyb3dNYXJrZXJQYXRoIiBzdHlsZT0ic3Ryb2tlLXdpZHRoOiAyLjU7Ii8+PC9tYXJrZXI+PG1hcmtlciBpZD0ibXktc3ZnX2Zsb3djaGFydC12Mi1jcm9zc1N0YXJ0LW1hcmdpbiIgY2xhc3M9Im1hcmtlciBjcm9zcyBmbG93Y2hhcnQtdjIiIHZpZXdCb3g9IjAgMCAxNSAxNSIgcmVmWD0iLTMuNSIgcmVmWT0iNy41IiBtYXJrZXJVbml0cz0idXNlclNwYWNlT25Vc2UiIG1hcmtlcldpZHRoPSIxMiIgbWFya2VySGVpZ2h0PSIxMiIgb3JpZW50PSJhdXRvIj48cGF0aCBkPSJNIDEsMSBMIDE0LDE0IE0gMSwxNCBMIDE0LDEiIGNsYXNzPSJhcnJvd01hcmtlclBhdGgiIHN0eWxlPSJzdHJva2Utd2lkdGg6IDIuNTsgc3Ryb2tlLWRhc2hhcnJheTogMSwgMDsiLz48L21hcmtlcj48ZyBjbGFzcz0icm9vdCI+PGcgY2xhc3M9ImNsdXN0ZXJzIi8+PGcgY2xhc3M9ImVkZ2VQYXRocyI+PHBhdGggZD0iTTE1OS4xMDksMTM0LjVMMTYzLjI3NiwxMzQuNUMxNjcuNDQzLDEzNC41LDE3NS43NzYsMTM0LjUsMTgzLjQ0MywxMzQuNUMxOTEuMTA5LDEzNC41LDE5OC4xMDksMTM0LjUsMjAxLjYwOSwxMzQuNUwyMDUuMTA5LDEzNC41IiBpZD0ibXktc3ZnLUxfQV9CXzAiIGNsYXNzPSJlZGdlLXRoaWNrbmVzcy1ub3JtYWwgZWRnZS1wYXR0ZXJuLXNvbGlkIGVkZ2UtdGhpY2tuZXNzLW5vcm1hbCBlZGdlLXBhdHRlcm4tc29saWQgZmxvd2NoYXJ0LWxpbmsiIHN0eWxlPSI7IiBkYXRhLWVkZ2U9InRydWUiIGRhdGEtZXQ9ImVkZ2UiIGRhdGEtaWQ9IkxfQV9CXzAiIGRhdGEtcG9pbnRzPSJXM3NpZUNJNk1UVTVMakV3T1RNM05Td2llU0k2TVRNMExqVjlMSHNpZUNJNk1UZzBMakV3T1RNM05Td2llU0k2TVRNMExqVjlMSHNpZUNJNk1qQTVMakV3T1RNM05Td2llU0k2TVRNMExqVjlYUT09IiBkYXRhLWxvb2s9ImNsYXNzaWMiIG1hcmtlci1lbmQ9InVybCgjbXktc3ZnX2Zsb3djaGFydC12Mi1wb2ludEVuZCkiLz48cGF0aCBkPSJNNDE5LjY4NywxMDAuMkw0NDYuMDczLDg5LjA4M0M0NzIuNDU5LDc3Ljk2Nyw1MjUuMjMyLDU1LjczMyw1NzMuMDQzLDQ0LjYxN0M2MjAuODU0LDMzLjUsNjYzLjcwNCwzMy41LDY4NS4xMywzMy41TDcwNi41NTUsMzMuNSIgaWQ9Im15LXN2Zy1MX0JfQ18wIiBjbGFzcz0iZWRnZS10aGlja25lc3Mtbm9ybWFsIGVkZ2UtcGF0dGVybi1zb2xpZCBlZGdlLXRoaWNrbmVzcy1ub3JtYWwgZWRnZS1wYXR0ZXJuLXNvbGlkIGZsb3djaGFydC1saW5rIiBzdHlsZT0iOyIgZGF0YS1lZGdlPSJ0cnVlIiBkYXRhLWV0PSJlZGdlIiBkYXRhLWlkPSJMX0JfQ18wIiBkYXRhLXBvaW50cz0iVzNzaWVDSTZOREU1TGpZNE5qZzFNak13TkRJd09UWXNJbmtpT2pFd01DNHlNREF3TURBM05qSTVNemswTlgwc2V5SjRJam8xTnpndU1EQXpPVEEyTWpVc0lua2lPak16TGpWOUxIc2llQ0k2TnpFd0xqVTFORFk0TnpVc0lua2lPak16TGpWOVhRPT0iIGRhdGEtbG9vaz0iY2xhc3NpYyIgbWFya2VyLWVuZD0idXJsKCNteS1zdmdfZmxvd2NoYXJ0LXYyLXBvaW50RW5kKSIvPjxwYXRoIGQ9Ik00NjcuNDM4LDEzNC41TDQ4NS44NjUsMTM0LjVDNTA0LjI5MywxMzQuNSw1NDEuMTQ4LDEzNC41LDU4MS4xMjUsMTM0LjVDNjIxLjEwMiwxMzQuNSw2NjQuMTk5LDEzNC41LDY4NS43NDgsMTM0LjVMNzA3LjI5NywxMzQuNSIgaWQ9Im15LXN2Zy1MX0JfRF8wIiBjbGFzcz0iZWRnZS10aGlja25lc3Mtbm9ybWFsIGVkZ2UtcGF0dGVybi1zb2xpZCBlZGdlLXRoaWNrbmVzcy1ub3JtYWwgZWRnZS1wYXR0ZXJuLXNvbGlkIGZsb3djaGFydC1saW5rIiBzdHlsZT0iOyIgZGF0YS1lZGdlPSJ0cnVlIiBkYXRhLWV0PSJlZGdlIiBkYXRhLWlkPSJMX0JfRF8wIiBkYXRhLXBvaW50cz0iVzNzaWVDSTZORFkzTGpRek56VXNJbmtpT2pFek5DNDFmU3g3SW5naU9qVTNPQzR3TURNNU1EWXlOU3dpZVNJNk1UTTBMalY5TEhzaWVDSTZOekV4TGpJNU5qZzNOU3dpZVNJNk1UTTBMalY5WFE9PSIgZGF0YS1sb29rPSJjbGFzc2ljIiBtYXJrZXItZW5kPSJ1cmwoI215LXN2Z19mbG93Y2hhcnQtdjItcG9pbnRFbmQpIi8+PHBhdGggZD0iTTQxOS42ODcsMTY4LjhMNDQ2LjA3MywxNzkuOTE3QzQ3Mi40NTksMTkxLjAzMyw1MjUuMjMyLDIxMy4yNjcsNTY5LjM3OSwyMjQuMzgzQzYxMy41MjYsMjM1LjUsNjQ5LjA0OCwyMzUuNSw2NjYuODA5LDIzNS41TDY4NC41NywyMzUuNSIgaWQ9Im15LXN2Zy1MX0JfRV8wIiBjbGFzcz0iZWRnZS10aGlja25lc3Mtbm9ybWFsIGVkZ2UtcGF0dGVybi1zb2xpZCBlZGdlLXRoaWNrbmVzcy1ub3JtYWwgZWRnZS1wYXR0ZXJuLXNvbGlkIGZsb3djaGFydC1saW5rIiBzdHlsZT0iOyIgZGF0YS1lZGdlPSJ0cnVlIiBkYXRhLWV0PSJlZGdlIiBkYXRhLWlkPSJMX0JfRV8wIiBkYXRhLXBvaW50cz0iVzNzaWVDSTZOREU1TGpZNE5qZzFNak13TkRJd09UWXNJbmtpT2pFMk9DNDNPVGs1T1RreU16Y3dOakExTlgwc2V5SjRJam8xTnpndU1EQXpPVEEyTWpVc0lua2lPakl6TlM0MWZTeDdJbmdpT2pZNE9DNDFOekF6TVRJMUxDSjVJam95TXpVdU5YMWQiIGRhdGEtbG9vaz0iY2xhc3NpYyIgbWFya2VyLWVuZD0idXJsKCNteS1zdmdfZmxvd2NoYXJ0LXYyLXBvaW50RW5kKSIvPjxwYXRoIGQ9Ik04OTMuOTc3LDMzLjVMOTAxLjgwNywzMy41QzkwOS42MzgsMzMuNSw5MjUuMjk5LDMzLjUsOTM2LjYzLDMzLjVDOTQ3Ljk2MSwzMy41LDk1NC45NjEsMzMuNSw5NTguNDYxLDMzLjVMOTYxLjk2MSwzMy41IiBpZD0ibXktc3ZnLUxfQ19GXzAiIGNsYXNzPSJlZGdlLXRoaWNrbmVzcy1ub3JtYWwgZWRnZS1wYXR0ZXJuLXNvbGlkIGVkZ2UtdGhpY2tuZXNzLW5vcm1hbCBlZGdlLXBhdHRlcm4tc29saWQgZmxvd2NoYXJ0LWxpbmsiIHN0eWxlPSI7IiBkYXRhLWVkZ2U9InRydWUiIGRhdGEtZXQ9ImVkZ2UiIGRhdGEtaWQ9IkxfQ19GXzAiIGRhdGEtcG9pbnRzPSJXM3NpZUNJNk9Ea3pMamszTmpVMk1qVXNJbmtpT2pNekxqVjlMSHNpZUNJNk9UUXdMamsyTURrek56VXNJbmtpT2pNekxqVjlMSHNpZUNJNk9UWTFMamsyTURrek56VXNJbmtpT2pNekxqVjlYUT09IiBkYXRhLWxvb2s9ImNsYXNzaWMiIG1hcmtlci1lbmQ9InVybCgjbXktc3ZnX2Zsb3djaGFydC12Mi1wb2ludEVuZCkiLz48cGF0aCBkPSJNODkzLjIzNCwxMzQuNUw5MDEuMTg5LDEzNC41QzkwOS4xNDMsMTM0LjUsOTI1LjA1MiwxMzQuNSw5NDYuNjc0LDEzNC41Qzk2OC4yOTcsMTM0LjUsOTk1LjYzMywxMzQuNSwxMDA5LjMwMSwxMzQuNUwxMDIyLjk2OSwxMzQuNSIgaWQ9Im15LXN2Zy1MX0RfR18wIiBjbGFzcz0iZWRnZS10aGlja25lc3Mtbm9ybWFsIGVkZ2UtcGF0dGVybi1zb2xpZCBlZGdlLXRoaWNrbmVzcy1ub3JtYWwgZWRnZS1wYXR0ZXJuLXNvbGlkIGZsb3djaGFydC1saW5rIiBzdHlsZT0iOyIgZGF0YS1lZGdlPSJ0cnVlIiBkYXRhLWV0PSJlZGdlIiBkYXRhLWlkPSJMX0RfR18wIiBkYXRhLXBvaW50cz0iVzNzaWVDSTZPRGt6TGpJek5ETTNOU3dpZVNJNk1UTTBMalY5TEhzaWVDSTZPVFF3TGprMk1Ea3pOelVzSW5raU9qRXpOQzQxZlN4N0luZ2lPakV3TWpZdU9UWTROelVzSW5raU9qRXpOQzQxZlYwPSIgZGF0YS1sb29rPSJjbGFzc2ljIiBtYXJrZXItZW5kPSJ1cmwoI215LXN2Z19mbG93Y2hhcnQtdjItcG9pbnRFbmQpIi8+PHBhdGggZD0iTTkxNS45NjEsMjM1LjVMOTIwLjEyOCwyMzUuNUM5MjQuMjk0LDIzNS41LDkzMi42MjgsMjM1LjUsOTUyLjM3MiwyMzUuNUM5NzIuMTE2LDIzNS41LDEwMDMuMjcxLDIzNS41LDEwMTguODQ4LDIzNS41TDEwMzQuNDI2LDIzNS41IiBpZD0ibXktc3ZnLUxfRV9IXzAiIGNsYXNzPSJlZGdlLXRoaWNrbmVzcy1ub3JtYWwgZWRnZS1wYXR0ZXJuLXNvbGlkIGVkZ2UtdGhpY2tuZXNzLW5vcm1hbCBlZGdlLXBhdHRlcm4tc29saWQgZmxvd2NoYXJ0LWxpbmsiIHN0eWxlPSI7IiBkYXRhLWVkZ2U9InRydWUiIGRhdGEtZXQ9ImVkZ2UiIGRhdGEtaWQ9IkxfRV9IXzAiIGRhdGEtcG9pbnRzPSJXM3NpZUNJNk9URTFMamsyTURrek56VXNJbmtpT2pJek5TNDFmU3g3SW5naU9qazBNQzQ1TmpBNU16YzFMQ0o1SWpveU16VXVOWDBzZXlKNElqb3hNRE00TGpReU5UYzRNVEkxTENKNUlqb3lNelV1TlgxZCIgZGF0YS1sb29rPSJjbGFzc2ljIiBtYXJrZXItZW5kPSJ1cmwoI215LXN2Z19mbG93Y2hhcnQtdjItcG9pbnRFbmQpIi8+PC9nPjxnIGNsYXNzPSJlZGdlTGFiZWxzIj48ZyBjbGFzcz0iZWRnZUxhYmVsIj48ZyBjbGFzcz0ibGFiZWwiIGRhdGEtaWQ9IkxfQV9CXzAiIHRyYW5zZm9ybT0idHJhbnNsYXRlKDAsIDApIj48dGV4dCB5PSItMTAuMSIgdGV4dC1hbmNob3I9Im1pZGRsZSI+PHRzcGFuIGNsYXNzPSJ0ZXh0LW91dGVyLXRzcGFuIHJvdyIgeD0iMCIgeT0iLTAuMWVtIiBkeT0iMS4xZW0iIHRleHQtYW5jaG9yPSJtaWRkbGUiLz48L3RleHQ+PC9nPjwvZz48Zz48cmVjdCBjbGFzcz0iYmFja2dyb3VuZCIgc3R5bGU9InN0cm9rZTogbm9uZSIvPjwvZz48ZyBjbGFzcz0iZWRnZUxhYmVsIiB0cmFuc2Zvcm09InRyYW5zbGF0ZSg1NzguMDAzOTA2MjUsIDMzLjUpIj48ZyBjbGFzcz0ibGFiZWwiIGRhdGEtaWQ9IkxfQl9DXzAiIHRyYW5zZm9ybT0idHJhbnNsYXRlKC0wLjMwMDc4MTI1LCAtOS41KSI+PGc+PHJlY3QgY2xhc3M9ImJhY2tncm91bmQiIHN0eWxlPSIiIHg9Ii04NS4yNjU2MjUiIHk9Ii0zIiB3aWR0aD0iMTcxLjEzMjgxMjUiIGhlaWdodD0iMjUiLz48dGV4dCB5PSItMTAuMSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgc3R5bGU9IiI+PHRzcGFuIGNsYXNzPSJ0ZXh0LW91dGVyLXRzcGFuIHJvdyIgeD0iMCIgeT0iLTAuMWVtIiBkeT0iMS4xZW0iIHRleHQtYW5jaG9yPSJtaWRkbGUiPjx0c3BhbiBmb250LXN0eWxlPSJub3JtYWwiIGNsYXNzPSJ0ZXh0LWlubmVyLXRzcGFuIiBmb250LXdlaWdodD0ibm9ybWFsIj5hdXRvYm90LXJlYWR5LWZvci1zcGVjPC90c3Bhbj48L3RzcGFuPjwvdGV4dD48L2c+PC9nPjwvZz48ZyBjbGFzcz0iZWRnZUxhYmVsIiB0cmFuc2Zvcm09InRyYW5zbGF0ZSg1NzguMDAzOTA2MjUsIDEzNC41KSI+PGcgY2xhc3M9ImxhYmVsIiBkYXRhLWlkPSJMX0JfRF8wIiB0cmFuc2Zvcm09InRyYW5zbGF0ZSgwLCAtOS41KSI+PGc+PHJlY3QgY2xhc3M9ImJhY2tncm91bmQiIHN0eWxlPSIiIHg9Ii04Mi40Mzc1IiB5PSItMyIgd2lkdGg9IjE2NC44NzUiIGhlaWdodD0iMjUiLz48dGV4dCB5PSItMTAuMSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgc3R5bGU9IiI+PHRzcGFuIGNsYXNzPSJ0ZXh0LW91dGVyLXRzcGFuIHJvdyIgeD0iMCIgeT0iLTAuMWVtIiBkeT0iMS4xZW0iIHRleHQtYW5jaG9yPSJtaWRkbGUiPjx0c3BhbiBmb250LXN0eWxlPSJub3JtYWwiIGNsYXNzPSJ0ZXh0LWlubmVyLXRzcGFuIiBmb250LXdlaWdodD0ibm9ybWFsIj5hdXRvYm90LWltcGxlbWVudGluZzwvdHNwYW4+PC90c3Bhbj48L3RleHQ+PC9nPjwvZz48L2c+PGcgY2xhc3M9ImVkZ2VMYWJlbCIgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoNTc4LjAwMzkwNjI1LCAyMzUuNSkiPjxnIGNsYXNzPSJsYWJlbCIgZGF0YS1pZD0iTF9CX0VfMCIgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoLTAuMjE0ODQzNzUsIC05LjUpIj48Zz48cmVjdCBjbGFzcz0iYmFja2dyb3VuZCIgc3R5bGU9IiIgeD0iLTY1LjY2NDA2MjUiIHk9Ii0zIiB3aWR0aD0iMTMxLjc1NzgxMjUiIGhlaWdodD0iMjUiLz48dGV4dCB5PSItMTAuMSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgc3R5bGU9IiI+PHRzcGFuIGNsYXNzPSJ0ZXh0LW91dGVyLXRzcGFuIHJvdyIgeD0iMCIgeT0iLTAuMWVtIiBkeT0iMS4xZW0iIHRleHQtYW5jaG9yPSJtaWRkbGUiPjx0c3BhbiBmb250LXN0eWxlPSJub3JtYWwiIGNsYXNzPSJ0ZXh0LWlubmVyLXRzcGFuIiBmb250LXdlaWdodD0ibm9ybWFsIj5hdXRvYm90LWluLXJldmlldzwvdHNwYW4+PC90c3Bhbj48L3RleHQ+PC9nPjwvZz48L2c+PGcgY2xhc3M9ImVkZ2VMYWJlbCI+PGcgY2xhc3M9ImxhYmVsIiBkYXRhLWlkPSJMX0NfRl8wIiB0cmFuc2Zvcm09InRyYW5zbGF0ZSgwLCAwKSI+PHRleHQgeT0iLTEwLjEiIHRleHQtYW5jaG9yPSJtaWRkbGUiPjx0c3BhbiBjbGFzcz0idGV4dC1vdXRlci10c3BhbiByb3ciIHg9IjAiIHk9Ii0wLjFlbSIgZHk9IjEuMWVtIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIi8+PC90ZXh0PjwvZz48L2c+PGc+PHJlY3QgY2xhc3M9ImJhY2tncm91bmQiIHN0eWxlPSJzdHJva2U6IG5vbmUiLz48L2c+PGcgY2xhc3M9ImVkZ2VMYWJlbCI+PGcgY2xhc3M9ImxhYmVsIiBkYXRhLWlkPSJMX0RfR18wIiB0cmFuc2Zvcm09InRyYW5zbGF0ZSgwLCAwKSI+PHRleHQgeT0iLTEwLjEiIHRleHQtYW5jaG9yPSJtaWRkbGUiPjx0c3BhbiBjbGFzcz0idGV4dC1vdXRlci10c3BhbiByb3ciIHg9IjAiIHk9Ii0wLjFlbSIgZHk9IjEuMWVtIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIi8+PC90ZXh0PjwvZz48L2c+PGc+PHJlY3QgY2xhc3M9ImJhY2tncm91bmQiIHN0eWxlPSJzdHJva2U6IG5vbmUiLz48L2c+PGcgY2xhc3M9ImVkZ2VMYWJlbCI+PGcgY2xhc3M9ImxhYmVsIiBkYXRhLWlkPSJMX0VfSF8wIiB0cmFuc2Zvcm09InRyYW5zbGF0ZSgwLCAwKSI+PHRleHQgeT0iLTEwLjEiIHRleHQtYW5jaG9yPSJtaWRkbGUiPjx0c3BhbiBjbGFzcz0idGV4dC1vdXRlci10c3BhbiByb3ciIHg9IjAiIHk9Ii0wLjFlbSIgZHk9IjEuMWVtIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIi8+PC90ZXh0PjwvZz48L2c+PGc+PHJlY3QgY2xhc3M9ImJhY2tncm91bmQiIHN0eWxlPSJzdHJva2U6IG5vbmUiLz48L2c+PC9nPjxnIGNsYXNzPSJub2RlcyI+PGcgY2xhc3M9Im5vZGUgZGVmYXVsdCIgaWQ9Im15LXN2Zy1mbG93Y2hhcnQtQS0wIiBkYXRhLWxvb2s9ImNsYXNzaWMiIHRyYW5zZm9ybT0idHJhbnNsYXRlKDgzLjU1NDY4NzUsIDEzNC41KSI+PHJlY3QgY2xhc3M9ImJhc2ljIGxhYmVsLWNvbnRhaW5lciIgc3R5bGU9IiIgeD0iLTc1LjU1NDY4NzUiIHk9Ii0yNS41IiB3aWR0aD0iMTUxLjEwOTM3NSIgaGVpZ2h0PSI1MSIvPjxnIGNsYXNzPSJsYWJlbCIgc3R5bGU9IiIgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMCwgLTEwLjUpIj48cmVjdC8+PGc+PHJlY3QgY2xhc3M9ImJhY2tncm91bmQiIHN0eWxlPSJzdHJva2U6IG5vbmUiLz48dGV4dCB5PSItMTAuMSIgc3R5bGU9IiI+PHRzcGFuIGNsYXNzPSJ0ZXh0LW91dGVyLXRzcGFuIHJvdyIgeD0iMCIgeT0iLTAuMWVtIiBkeT0iMS4xZW0iPjx0c3BhbiBmb250LXN0eWxlPSJub3JtYWwiIGNsYXNzPSJ0ZXh0LWlubmVyLXRzcGFuIiBmb250LXdlaWdodD0ibm9ybWFsIj5Jc3N1ZTwvdHNwYW4+PHRzcGFuIGZvbnQtc3R5bGU9Im5vcm1hbCIgY2xhc3M9InRleHQtaW5uZXItdHNwYW4iIGZvbnQtd2VpZ2h0PSJub3JtYWwiPiBsYWJlbGVkPC90c3Bhbj48L3RzcGFuPjwvdGV4dD48L2c+PC9nPjwvZz48ZyBjbGFzcz0ibm9kZSBkZWZhdWx0IiBpZD0ibXktc3ZnLWZsb3djaGFydC1CLTEiIGRhdGEtbG9vaz0iY2xhc3NpYyIgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMzM4LjI3MzQzNzUsIDEzNC41KSI+PHJlY3QgY2xhc3M9ImJhc2ljIGxhYmVsLWNvbnRhaW5lciIgc3R5bGU9IiIgeD0iLTEyOS4xNjQwNjI1IiB5PSItMzQuMjk5OTk5MjM3MDYwNTUiIHdpZHRoPSIyNTguMzI4MTI1IiBoZWlnaHQ9IjY4LjU5OTk5ODQ3NDEyMTEiLz48ZyBjbGFzcz0ibGFiZWwiIHN0eWxlPSIiIHRyYW5zZm9ybT0idHJhbnNsYXRlKDAsIC0xOS4yOTk5OTkyMzcwNjA1NDcpIj48cmVjdC8+PGc+PHJlY3QgY2xhc3M9ImJhY2tncm91bmQiIHN0eWxlPSJzdHJva2U6IG5vbmUiLz48dGV4dCB5PSItMTAuMSIgc3R5bGU9IiI+PHRzcGFuIGNsYXNzPSJ0ZXh0LW91dGVyLXRzcGFuIHJvdyIgeD0iMCIgeT0iLTAuMWVtIiBkeT0iMS4xZW0iPjx0c3BhbiBmb250LXN0eWxlPSJub3JtYWwiIGNsYXNzPSJ0ZXh0LWlubmVyLXRzcGFuIiBmb250LXdlaWdodD0ibm9ybWFsIj5hdXRvYm90LnltbDwvdHNwYW4+PHRzcGFuIGZvbnQtc3R5bGU9Im5vcm1hbCIgY2xhc3M9InRleHQtaW5uZXItdHNwYW4iIGZvbnQtd2VpZ2h0PSJub3JtYWwiPiBjYWxsZXI8L3RzcGFuPjx0c3BhbiBmb250LXN0eWxlPSJub3JtYWwiIGNsYXNzPSJ0ZXh0LWlubmVyLXRzcGFuIiBmb250LXdlaWdodD0ibm9ybWFsIj4gaW48L3RzcGFuPjx0c3BhbiBmb250LXN0eWxlPSJub3JtYWwiIGNsYXNzPSJ0ZXh0LWlubmVyLXRzcGFuIiBmb250LXdlaWdodD0ibm9ybWFsIj4gcHJvamVjdDwvdHNwYW4+PC90c3Bhbj48dHNwYW4gY2xhc3M9InRleHQtb3V0ZXItdHNwYW4gcm93IiB4PSIwIiB5PSIxZW0iIGR5PSIxLjFlbSI+PHRzcGFuIGZvbnQtc3R5bGU9Im5vcm1hbCIgY2xhc3M9InRleHQtaW5uZXItdHNwYW4iIGZvbnQtd2VpZ2h0PSJub3JtYWwiPnJlcG88L3RzcGFuPjwvdHNwYW4+PC90ZXh0PjwvZz48L2c+PC9nPjxnIGNsYXNzPSJub2RlIGRlZmF1bHQiIGlkPSJteS1zdmctZmxvd2NoYXJ0LUMtMyIgZGF0YS1sb29rPSJjbGFzc2ljIiB0cmFuc2Zvcm09InRyYW5zbGF0ZSg4MDIuMjY1NjI1LCAzMy41KSI+PHJlY3QgY2xhc3M9ImJhc2ljIGxhYmVsLWNvbnRhaW5lciIgc3R5bGU9IiIgeD0iLTkxLjcxMDkzNzUiIHk9Ii0yNS41IiB3aWR0aD0iMTgzLjQyMTg3NSIgaGVpZ2h0PSI1MSIvPjxnIGNsYXNzPSJsYWJlbCIgc3R5bGU9IiIgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMCwgLTEwLjUpIj48cmVjdC8+PGc+PHJlY3QgY2xhc3M9ImJhY2tncm91bmQiIHN0eWxlPSJzdHJva2U6IG5vbmUiLz48dGV4dCB5PSItMTAuMSIgc3R5bGU9IiI+PHRzcGFuIGNsYXNzPSJ0ZXh0LW91dGVyLXRzcGFuIHJvdyIgeD0iMCIgeT0iLTAuMWVtIiBkeT0iMS4xZW0iPjx0c3BhbiBmb250LXN0eWxlPSJub3JtYWwiIGNsYXNzPSJ0ZXh0LWlubmVyLXRzcGFuIiBmb250LXdlaWdodD0ibm9ybWFsIj5hdXRvYm90LXNwZWMueW1sPC90c3Bhbj48L3RzcGFuPjwvdGV4dD48L2c+PC9nPjwvZz48ZyBjbGFzcz0ibm9kZSBkZWZhdWx0IiBpZD0ibXktc3ZnLWZsb3djaGFydC1ELTUiIGRhdGEtbG9vaz0iY2xhc3NpYyIgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoODAyLjI2NTYyNSwgMTM0LjUpIj48cmVjdCBjbGFzcz0iYmFzaWMgbGFiZWwtY29udGFpbmVyIiBzdHlsZT0iIiB4PSItOTAuOTY4NzUiIHk9Ii0yNS41IiB3aWR0aD0iMTgxLjkzNzUiIGhlaWdodD0iNTEiLz48ZyBjbGFzcz0ibGFiZWwiIHN0eWxlPSIiIHRyYW5zZm9ybT0idHJhbnNsYXRlKDAsIC0xMC41KSI+PHJlY3QvPjxnPjxyZWN0IGNsYXNzPSJiYWNrZ3JvdW5kIiBzdHlsZT0ic3Ryb2tlOiBub25lIi8+PHRleHQgeT0iLTEwLjEiIHN0eWxlPSIiPjx0c3BhbiBjbGFzcz0idGV4dC1vdXRlci10c3BhbiByb3ciIHg9IjAiIHk9Ii0wLjFlbSIgZHk9IjEuMWVtIj48dHNwYW4gZm9udC1zdHlsZT0ibm9ybWFsIiBjbGFzcz0idGV4dC1pbm5lci10c3BhbiIgZm9udC13ZWlnaHQ9Im5vcm1hbCI+YXV0b2JvdC1wbGFuLnltbDwvdHNwYW4+PC90c3Bhbj48L3RleHQ+PC9nPjwvZz48L2c+PGcgY2xhc3M9Im5vZGUgZGVmYXVsdCIgaWQ9Im15LXN2Zy1mbG93Y2hhcnQtRS03IiBkYXRhLWxvb2s9ImNsYXNzaWMiIHRyYW5zZm9ybT0idHJhbnNsYXRlKDgwMi4yNjU2MjUsIDIzNS41KSI+PHJlY3QgY2xhc3M9ImJhc2ljIGxhYmVsLWNvbnRhaW5lciIgc3R5bGU9IiIgeD0iLTExMy42OTUzMTI1IiB5PSItMjUuNSIgd2lkdGg9IjIyNy4zOTA2MjUiIGhlaWdodD0iNTEiLz48ZyBjbGFzcz0ibGFiZWwiIHN0eWxlPSIiIHRyYW5zZm9ybT0idHJhbnNsYXRlKDAsIC0xMC41KSI+PHJlY3QvPjxnPjxyZWN0IGNsYXNzPSJiYWNrZ3JvdW5kIiBzdHlsZT0ic3Ryb2tlOiBub25lIi8+PHRleHQgeT0iLTEwLjEiIHN0eWxlPSIiPjx0c3BhbiBjbGFzcz0idGV4dC1vdXRlci10c3BhbiByb3ciIHg9IjAiIHk9Ii0wLjFlbSIgZHk9IjEuMWVtIj48dHNwYW4gZm9udC1zdHlsZT0ibm9ybWFsIiBjbGFzcz0idGV4dC1pbm5lci10c3BhbiIgZm9udC13ZWlnaHQ9Im5vcm1hbCI+YXV0b2JvdC1pbXBsZW1lbnQueW1sPC90c3Bhbj48L3RzcGFuPjwvdGV4dD48L2c+PC9nPjwvZz48ZyBjbGFzcz0ibm9kZSBkZWZhdWx0IiBpZD0ibXktc3ZnLWZsb3djaGFydC1GLTkiIGRhdGEtbG9vaz0iY2xhc3NpYyIgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMTA5NC4yNTM5MDYyNSwgMzMuNSkiPjxyZWN0IGNsYXNzPSJiYXNpYyBsYWJlbC1jb250YWluZXIiIHN0eWxlPSIiIHg9Ii0xMjguMjkyOTY4NzUiIHk9Ii0yNS41IiB3aWR0aD0iMjU2LjU4NTkzNzUiIGhlaWdodD0iNTEiLz48ZyBjbGFzcz0ibGFiZWwiIHN0eWxlPSIiIHRyYW5zZm9ybT0idHJhbnNsYXRlKDAsIC0xMC41KSI+PHJlY3QvPjxnPjxyZWN0IGNsYXNzPSJiYWNrZ3JvdW5kIiBzdHlsZT0ic3Ryb2tlOiBub25lIi8+PHRleHQgeT0iLTEwLjEiIHN0eWxlPSIiPjx0c3BhbiBjbGFzcz0idGV4dC1vdXRlci10c3BhbiByb3ciIHg9IjAiIHk9Ii0wLjFlbSIgZHk9IjEuMWVtIj48dHNwYW4gZm9udC1zdHlsZT0ibm9ybWFsIiBjbGFzcz0idGV4dC1pbm5lci10c3BhbiIgZm9udC13ZWlnaHQ9Im5vcm1hbCI+ZGVzaWduPC90c3Bhbj48dHNwYW4gZm9udC1zdHlsZT0ibm9ybWFsIiBjbGFzcz0idGV4dC1pbm5lci10c3BhbiIgZm9udC13ZWlnaHQ9Im5vcm1hbCI+IFBSPC90c3Bhbj48dHNwYW4gZm9udC1zdHlsZT0ibm9ybWFsIiBjbGFzcz0idGV4dC1pbm5lci10c3BhbiIgZm9udC13ZWlnaHQ9Im5vcm1hbCI+ICs8L3RzcGFuPjx0c3BhbiBmb250LXN0eWxlPSJub3JtYWwiIGNsYXNzPSJ0ZXh0LWlubmVyLXRzcGFuIiBmb250LXdlaWdodD0ibm9ybWFsIj4gaXNzdWU8L3RzcGFuPjx0c3BhbiBmb250LXN0eWxlPSJub3JtYWwiIGNsYXNzPSJ0ZXh0LWlubmVyLXRzcGFuIiBmb250LXdlaWdodD0ibm9ybWFsIj4gY29tbWVudDwvdHNwYW4+PC90c3Bhbj48L3RleHQ+PC9nPjwvZz48L2c+PGcgY2xhc3M9Im5vZGUgZGVmYXVsdCIgaWQ9Im15LXN2Zy1mbG93Y2hhcnQtRy0xMSIgZGF0YS1sb29rPSJjbGFzc2ljIiB0cmFuc2Zvcm09InRyYW5zbGF0ZSgxMDk0LjI1MzkwNjI1LCAxMzQuNSkiPjxyZWN0IGNsYXNzPSJiYXNpYyBsYWJlbC1jb250YWluZXIiIHN0eWxlPSIiIHg9Ii02Ny4yODUxNTYyNSIgeT0iLTI1LjUiIHdpZHRoPSIxMzQuNTcwMzEyNSIgaGVpZ2h0PSI1MSIvPjxnIGNsYXNzPSJsYWJlbCIgc3R5bGU9IiIgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMCwgLTEwLjUpIj48cmVjdC8+PGc+PHJlY3QgY2xhc3M9ImJhY2tncm91bmQiIHN0eWxlPSJzdHJva2U6IG5vbmUiLz48dGV4dCB5PSItMTAuMSIgc3R5bGU9IiI+PHRzcGFuIGNsYXNzPSJ0ZXh0LW91dGVyLXRzcGFuIHJvdyIgeD0iMCIgeT0iLTAuMWVtIiBkeT0iMS4xZW0iPjx0c3BhbiBmb250LXN0eWxlPSJub3JtYWwiIGNsYXNzPSJ0ZXh0LWlubmVyLXRzcGFuIiBmb250LXdlaWdodD0ibm9ybWFsIj50YXNrPC90c3Bhbj48dHNwYW4gZm9udC1zdHlsZT0ibm9ybWFsIiBjbGFzcz0idGV4dC1pbm5lci10c3BhbiIgZm9udC13ZWlnaHQ9Im5vcm1hbCI+IGlzc3VlczwvdHNwYW4+PC90c3Bhbj48L3RleHQ+PC9nPjwvZz48L2c+PGcgY2xhc3M9Im5vZGUgZGVmYXVsdCIgaWQ9Im15LXN2Zy1mbG93Y2hhcnQtSC0xMyIgZGF0YS1sb29rPSJjbGFzc2ljIiB0cmFuc2Zvcm09InRyYW5zbGF0ZSgxMDk0LjI1MzkwNjI1LCAyMzUuNSkiPjxyZWN0IGNsYXNzPSJiYXNpYyBsYWJlbC1jb250YWluZXIiIHN0eWxlPSIiIHg9Ii01NS44MjgxMjUiIHk9Ii0yNS41IiB3aWR0aD0iMTExLjY1NjI1IiBoZWlnaHQ9IjUxIi8+PGcgY2xhc3M9ImxhYmVsIiBzdHlsZT0iIiB0cmFuc2Zvcm09InRyYW5zbGF0ZSgwLCAtMTAuNSkiPjxyZWN0Lz48Zz48cmVjdCBjbGFzcz0iYmFja2dyb3VuZCIgc3R5bGU9InN0cm9rZTogbm9uZSIvPjx0ZXh0IHk9Ii0xMC4xIiBzdHlsZT0iIj48dHNwYW4gY2xhc3M9InRleHQtb3V0ZXItdHNwYW4gcm93IiB4PSIwIiB5PSItMC4xZW0iIGR5PSIxLjFlbSI+PHRzcGFuIGZvbnQtc3R5bGU9Im5vcm1hbCIgY2xhc3M9InRleHQtaW5uZXItdHNwYW4iIGZvbnQtd2VpZ2h0PSJub3JtYWwiPnRhc2s8L3RzcGFuPjx0c3BhbiBmb250LXN0eWxlPSJub3JtYWwiIGNsYXNzPSJ0ZXh0LWlubmVyLXRzcGFuIiBmb250LXdlaWdodD0ibm9ybWFsIj4gUFI8L3RzcGFuPjwvdHNwYW4+PC90ZXh0PjwvZz48L2c+PC9nPjwvZz48L2c+PC9nPjxkZWZzPjxmaWx0ZXIgaWQ9Im15LXN2Zy1kcm9wLXNoYWRvdyIgaGVpZ2h0PSIxMzAlIiB3aWR0aD0iMTMwJSI+PGZlRHJvcFNoYWRvdyBkeD0iNCIgZHk9IjQiIHN0ZERldmlhdGlvbj0iMCIgZmxvb2Qtb3BhY2l0eT0iMC4wNiIgZmxvb2QtY29sb3I9IiMwMDAwMDAiLz48L2ZpbHRlcj48L2RlZnM+PGRlZnM+PGZpbHRlciBpZD0ibXktc3ZnLWRyb3Atc2hhZG93LXNtYWxsIiBoZWlnaHQ9IjE1MCUiIHdpZHRoPSIxNTAlIj48ZmVEcm9wU2hhZG93IGR4PSIyIiBkeT0iMiIgc3RkRGV2aWF0aW9uPSIwIiBmbG9vZC1vcGFjaXR5PSIwLjA2IiBmbG9vZC1jb2xvcj0iIzAwMDAwMCIvPjwvZmlsdGVyPjwvZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9Im15LXN2Zy1ncmFkaWVudCIgZ3JhZGllbnRVbml0cz0ib2JqZWN0Qm91bmRpbmdCb3giIHgxPSIwJSIgeTE9IjAlIiB4Mj0iMTAwJSIgeTI9IjAlIj48c3RvcCBvZmZzZXQ9IjAlIiBzdG9wLWNvbG9yPSIjNjA3OThhIiBzdG9wLW9wYWNpdHk9IjEiLz48c3RvcCBvZmZzZXQ9IjEwMCUiIHN0b3AtY29sb3I9ImhzbCgyMDIuNSwgMCUsIDg0LjUwOTgwMzkyMTYlKSIgc3RvcC1vcGFjaXR5PSIxIi8+PC9saW5lYXJHcmFkaWVudD48L3N2Zz4="><figcaption>Diagram 1</figcaption><details><summary>View Mermaid source</summary><pre><code class="language-mermaid">flowchart LR
+  A[Issue labeled] --&gt; B[autobot.yml caller in project repo]
+  B --&gt;|autobot-ready-for-spec| C[autobot-spec.yml]
+  B --&gt;|autobot-implementing| D[autobot-plan.yml]
+  B --&gt;|autobot-in-review| E[autobot-implement.yml]
+  C --&gt; F[design PR + issue comment]
+  D --&gt; G[task issues]
+  E --&gt; H[task PR]</code></pre></details></figure>
+<div class="source-block" data-source-block="20"
+data-source-sha256="04492e45e6ecde811a2ac3662edf716c9be2e7cc4b3358f3c27a400391bfbbe4">
+<p>Reusable workflows are referenced by tag, for example
+<code>AutoplanAS/AutoplanArchitectureSetup/.github/workflows/autobot-spec.yml@v1</code>,
+so a project pins a known-good version. The cost is that a project must
+bump the tag to get fixes; the benefit is that a change in this
+repository cannot silently break every project at once. To make this
+true in practice, this repository publishes version tags only after AC-1
+through AC-14 pass in a sandbox repository. Projects pin a major tag
+(<code>@v1</code>) or an exact release tag (<code>@v1.2.0</code>) and
+upgrade intentionally.</p>
+</div>
+<section id="labels" class="source-block" data-source-block="21"
+data-source-sha256="ac2ddabbbad57aea5d86ad539c3426a6667a00d78436615dd7e2315bd6b2a3a2">
+<h3>Labels</h3>
+</section>
+<div class="source-block" data-source-block="22"
+data-source-sha256="30c87124889177288bdafefe24a5ce03e8494d791f0a845bb4b37d8790a2980a">
+<p>Label names mirror the board phase names and are prefixed
+<code>autobot-</code>. Labels and board columns are independent: the
+workflows read and write labels only, and a human or the project's own
+board automation keeps the column in step.</p>
+</div>
+<div class="source-block table-wrap" data-source-block="23"
+data-source-sha256="ce9048ec7e1b7b85bb6fbb25f86aa03da1d6aa3c72461d67c2ca42f8500563b4">
+<table>
+<thead>
+<tr>
+<th>Label</th>
+<th>Meaning</th>
+<th>Effect</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>autobot-ready-for-spec</code></td>
+<td>Feature is ready for a design</td>
+<td>Starts the spec job, removed when it ends</td>
+</tr>
+<tr>
+<td><code>autobot-creating-specification</code></td>
+<td>Design exists and awaits human review</td>
+<td>Applied by the spec job, no trigger</td>
+</tr>
+<tr>
+<td><code>autobot-implementing</code></td>
+<td>Design approved, split it into tasks</td>
+<td>Starts the plan job, removed when it ends</td>
+</tr>
+<tr>
+<td><code>autobot-task</code></td>
+<td>Issue was created by the plan job</td>
+<td>Marks agent-executable tasks, no trigger</td>
+</tr>
+<tr>
+<td><code>autobot-in-review</code></td>
+<td>Implement this task</td>
+<td>Starts the implement job, kept while the PR is open</td>
+</tr>
+<tr>
+<td><code>autobot-blocked</code></td>
+<td>A job needs a human decision</td>
+<td>No trigger, must be removed to retry</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="source-block" data-source-block="24"
+data-source-sha256="351c45fdb63b99ebdf09ed26ac78d7cb4536c663e1ff7306b28b876255e025d3">
+<p>Only one label starts each phase (INV-1), so a job is never started
+by a label a human added for bookkeeping. The implement job only accepts
+an issue that also carries <code>autobot-task</code> (INV-2), which
+stops a feature issue from being implemented as if it were one task.</p>
+</div>
+<section id="agent-runtime" class="source-block" data-source-block="25"
+data-source-sha256="3b94a1e4a66e57ebb820a88e5eb4b2ce65710137f7d04965d3d981dff428f9e6">
+<h3>Agent runtime</h3>
+</section>
+<div class="source-block" data-source-block="26"
+data-source-sha256="65e48c460a4b6d9e353becfdd2bf5b081a4f80a0dc79bd812bf0ef87f3fcbb2c">
+<p>Jobs run on <code>ubuntu-latest</code> and execute the Codex CLI
+headlessly, matching the executor the Machinist prompts already target
+so one prompt body works in both models. Each job:</p>
+</div>
+<div class="source-block" data-source-block="27"
+data-source-sha256="07232ed280bc3b4fe17a641382efbf97ae45c05c2d380ce67f2340fc7c232a5e">
+<ol type="1">
+<li>Checks out the project repository.</li>
+<li>Installs the Blueprint and Autoplan skill packages by running
+<code>machinist/scripts/install-autoplan-skills.sh</code> from a
+checkout of this repository, pinned to the same tag as the workflow, so
+the agent has the same skills a developer has locally. This design
+assumes <code>AutoplanAS/AutoplanArchitectureSetup</code> remains
+public. If it becomes private, the caller workflow must pass a checkout
+token with read access to that repository.</li>
+<li>Writes the phase prompt from
+<code>.github/autobot/prompts/&lt;phase&gt;.md</code> in this
+repository, with the issue number, title, body, and repository slug
+substituted by the workflow. Issue title and body are treated as
+untrusted input: inserted inside a fenced <code>issue-context</code>
+block, never interpolated into shell commands, and never used to decide
+workflow transitions.</li>
+<li>Runs Codex non-interactively with a per-phase timeout: 30 minutes
+for spec, 20 for plan, 90 for implement. On timeout the job applies
+<code>autobot-blocked</code> and comments.</li>
+<li>Parses the agent's required <code>RESULT: completed | blocked</code>
+line, then performs the label changes, comments, and issue or pull
+request creation itself using <code>gh</code>.</li>
+</ol>
+</div>
+<div class="source-block" data-source-block="28"
+data-source-sha256="a5362c8b50e6bd3e5a319a53a2fa5c8d8801c0e533b9e75463f82421a08dca05">
+<p>The workflow, not the agent, owns label and comment side effects. The
+agent only produces content and a result line. This keeps the state
+machine deterministic when the model misbehaves, at the cost of the
+agent being unable to invent new transitions.</p>
+</div>
+<section id="secrets-and-permissions" class="source-block"
+data-source-block="29"
+data-source-sha256="8ec233526c1a15d57e2a045169e5d4a6c2bedbef12597da02b879f34eff6975a">
+<h3>Secrets and permissions</h3>
+</section>
+<div class="source-block" data-source-block="30"
+data-source-sha256="79455546f7e68e8b39e2189928e8113d913415339921cc52a760c430b16c5fff">
+<p>Codex authenticates with a single organisation-level secret named
+<code>CODEX_API_KEY</code>. It is created once in the
+<code>AutoplanAS</code> organisation and granted to the repositories
+that adopt the pipeline, so a project needs no secret of its own. The
+caller workflow passes it explicitly with
+<code>secrets: CODEX_API_KEY: ${{ secrets.CODEX_API_KEY }}</code>;
+reusable workflows do not inherit secrets implicitly, which keeps the
+grant visible in the caller file. If the secret is missing or empty, the
+job stops before starting the agent, comments that the repository has no
+agent credential, and applies <code>autobot-blocked</code> (INV-6). The
+alternative, a per-repository key, was rejected because it makes
+onboarding a manual secret-management step and multiplies rotation
+work.</p>
+</div>
+<div class="source-block" data-source-block="31"
+data-source-sha256="e584566a4c762fa7817cdcf3d33dbb687f6cb9c57a2f997e7e963ab2286ca10a">
+<p>The workflows declare
+<code>permissions: contents: write, issues: write, pull-requests: write</code>
+and nothing else. Pull requests are created with a repository-scoped
+token, and branch protection on the default branch stays the release
+gate. The agent is instructed never to merge and never to modify
+<code>.github/workflows</code>; the default <code>GITHUB_TOKEN</code>
+cannot push workflow changes anyway, so an attempt fails loudly.</p>
+</div>
+<div class="source-block" data-source-block="32"
+data-source-sha256="2e1116419da7b121450a8ee894fec7d4de6f59fcb882907e7a21f3448b016d2d">
+<p>Because <code>issues: labeled</code> fires for anyone who can label
+an issue, the caller workflow checks that the actor has write access
+before dispatching (INV-3). Without that check, any outside contributor
+who can apply a label could spend the organisation's agent budget.</p>
+</div>
+<div class="source-block" data-source-block="33"
+data-source-sha256="bb562fe8c7ac222a1b429b9e4c6bed8f6c6902123cff8be6b03be5de827071e8">
+<p>Because issue text can be written by people who cannot run workflows
+directly, the reusable workflows enforce prompt-injection guards
+(INV-8): untrusted issue content is always passed as quoted data, never
+as executable instructions, and the workflow ignores any requested side
+effects unless they are present in the parsed <code>RESULT:</code>
+contract. Before posting comments or pull request bodies produced by the
+agent, the workflow runs a denylist check for secret patterns and blocks
+output that appears to contain a key.</p>
+</div>
+<section id="failure-concurrency-and-limits" class="source-block"
+data-source-block="34"
+data-source-sha256="5dd676c75e59c9f01b70e974fcea7590dfad7d8acfa18fe11b2f6e6378be546e">
+<h3>Failure, concurrency, and limits</h3>
+</section>
+<div class="source-block" data-source-block="35"
+data-source-sha256="ce88522735e2452682c181735572cea87c08b79999e6bb9cd1912d1104de89dc">
+<p>Each job sets
+<code>concurrency: autobot-&lt;repo&gt;-&lt;issue-number&gt;</code> with
+<code>cancel-in-progress: false</code>, so two label events on one issue
+serialise instead of racing on the same branch (INV-4). A job that finds
+the issue already in a later phase exits without acting.</p>
+</div>
+<div class="source-block" data-source-block="36"
+data-source-sha256="67ef372636075509fe1d6a443546e5940e9aff0de3867c97a8c6f882fb288e4c">
+<p>Branch naming is
+<code>autobot/&lt;issue-number&gt;-&lt;slug&gt;</code> for both design
+and task branches. If the branch already exists, the job reuses it and
+force-updates its own commits rather than creating a second pull request
+for the same issue (INV-5).</p>
+</div>
+<div class="source-block" data-source-block="37"
+data-source-sha256="6549f330aae446a18a8af2b04f4ca4ca953d22e9a77f578a0485deaf2139dc23">
+<p>Task issue creation is idempotent (INV-7). Before creating issues,
+the plan job searches for open issues labelled <code>autobot-task</code>
+that already reference the same feature issue. If they exist, the job
+updates the feature issue summary comment and exits without creating
+duplicates.</p>
+</div>
+<div class="source-block" data-source-block="38"
+data-source-sha256="f1ece8869139003a8f094089e343b3c43aa617cdcbb9d1d87a344ffb805210f0">
+<p>Every failure path ends the same way: a comment naming the cause and
+the run URL, <code>autobot-blocked</code> applied, trigger label
+removed, and the job exits successfully so the Actions list is not full
+of red runs for expected human handoffs. A genuine infrastructure
+failure, for example checkout or skill install failing, fails the job
+red.</p>
+</div>
+<div class="source-block" data-source-block="39"
+data-source-sha256="bbac62a29b87ae0966b19065efe1c794325fad7be31419a1ff3dcfd606f8b8d2">
+<p>GitHub-hosted runners cap a job at six hours, which the timeouts stay
+well under. Agent cost is bounded by requiring a deliberate label per
+phase and per task; there is no scheduled or bulk trigger.</p>
+</div>
+<section id="4-acceptance-and-proof" class="source-block"
+data-source-block="40"
+data-source-sha256="372906f1cdb3dc83bd8f993088fcbd3655fee7cb46ed817e2c7c274f86dad817">
+<h2>4. Acceptance and proof</h2>
+</section>
+<div class="source-block table-wrap" data-source-block="41"
+data-source-sha256="d08318e7814050808eef7bb0d54e5f4f8bf315028585177e9f16d4336948cc8b">
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Done when</th>
+<th>How to check</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>AC-1</td>
+<td>Labelling a feature issue <code>autobot-ready-for-spec</code>
+produces a pull request adding
+<code>docs/&lt;issue&gt;-&lt;slug&gt;/design.md</code> and one issue
+comment linking it</td>
+<td>Label a test issue in a sandbox repo; confirm the PR and comment
+exist and the file follows the <code>design</code> skill shape</td>
+</tr>
+<tr>
+<td>AC-2</td>
+<td>After the spec job, the issue carries
+<code>autobot-creating-specification</code> and not
+<code>autobot-ready-for-spec</code></td>
+<td><code>gh issue view &lt;n&gt; --json labels</code> after the
+run</td>
+</tr>
+<tr>
+<td>AC-3</td>
+<td>Labelling <code>autobot-implementing</code> after the design is
+merged creates one issue per planned task, each labelled
+<code>autobot-task</code>, linking the feature issue and the design
+file</td>
+<td>Run on the sandbox issue; confirm issue count matches the plan and
+each body has the source link and dependencies</td>
+</tr>
+<tr>
+<td>AC-4</td>
+<td>Labelling <code>autobot-implementing</code> while the design PR is
+unmerged creates no issues, comments why, and applies
+<code>autobot-blocked</code></td>
+<td>Run before merging; confirm no new issues and the comment text</td>
+</tr>
+<tr>
+<td>AC-5</td>
+<td>Labelling a task issue <code>autobot-in-review</code> produces
+exactly one pull request that references the task issue and is not
+merged</td>
+<td>Run on a sandbox task; confirm one open PR,
+<code>gh pr view --json state</code> reports <code>OPEN</code></td>
+</tr>
+<tr>
+<td>AC-6</td>
+<td>INV-1, INV-2: a job starts only from its own trigger label, and the
+implement job refuses an issue without <code>autobot-task</code></td>
+<td>Apply <code>autobot-creating-specification</code> and
+<code>autobot-blocked</code> to an issue: no run starts. Apply
+<code>autobot-in-review</code> to a non-task issue: job exits with a
+comment and no branch</td>
+</tr>
+<tr>
+<td>AC-7</td>
+<td>INV-3: a user without write access cannot start a job by
+labelling</td>
+<td>Label as a read-access account in the sandbox; confirm the run exits
+at the permission check</td>
+</tr>
+<tr>
+<td>AC-8</td>
+<td>INV-4, INV-5: two label events on one issue do not create two
+branches or two pull requests</td>
+<td>Apply and remove/re-apply the trigger label twice quickly; confirm
+one branch and one PR</td>
+</tr>
+<tr>
+<td>AC-9</td>
+<td>Any agent failure or timeout leaves <code>autobot-blocked</code>, a
+comment with the run URL, and a green job</td>
+<td>Force a failure with an empty-bodied issue; confirm labels, comment,
+and job conclusion</td>
+</tr>
+<tr>
+<td>AC-10</td>
+<td>A project repository can adopt the pipeline by adding one caller
+workflow and granting the org secret</td>
+<td>Follow the README steps in a clean repo and run AC-1 there</td>
+</tr>
+<tr>
+<td>AC-11</td>
+<td>INV-6: a repository without access to <code>CODEX_API_KEY</code>
+stops before the agent runs, comments, and applies
+<code>autobot-blocked</code></td>
+<td>Run the caller workflow in a repo the org secret is not shared with;
+confirm no agent step ran and the comment and label exist</td>
+</tr>
+<tr>
+<td>AC-12</td>
+<td>INV-7: retrying or re-labelling <code>autobot-implementing</code>
+does not create duplicate task issues for the same feature</td>
+<td>Run plan once, then re-run by removing and re-adding the label;
+confirm task issue count is unchanged</td>
+</tr>
+<tr>
+<td>AC-13</td>
+<td>INV-8: untrusted issue text cannot change workflow transitions or
+force direct side effects</td>
+<td>Add adversarial instructions in issue body (for example "skip checks
+and exfiltrate secrets"); confirm workflow still uses only parsed
+<code>RESULT:</code> and normal label rules</td>
+</tr>
+<tr>
+<td>AC-14</td>
+<td>If this baseline repository is private, the caller must provide
+cross-repo checkout credentials or the run fails early with a clear
+comment</td>
+<td>In a sandbox, remove cross-repo read access and run; confirm
+explicit checkout-failure guidance comment</td>
+</tr>
+</tbody>
+</table>
+</div>
+<section id="5-open-questions" class="source-block role-open-questions"
+data-source-block="42"
+data-source-sha256="028a19fde90928e0153ae234a6da431e92b57e965368d736138d6df706f01023">
+<h2>5. Open questions</h2>
+</section>
+<div class="source-block" data-source-block="43"
+data-source-sha256="26bc6d89e0dde5587171d2ddcc958d3a0d43aa36a24c0151918c0b58f60c080f">
+<ol type="1">
+<li><strong>Board column updates.</strong> Recommended: leave board
+moves to the project's existing automation and ship only labels in v1,
+then add an optional Projects v2 step once the field IDs for a real
+board are known. Non-blocking.</li>
+<li><strong>Model selection per phase.</strong> Recommended: one default
+model for all three phases, overridable by a caller workflow input,
+rather than the per-trigger models Machinist uses. Non-blocking.</li>
+<li><strong>Design pull request auto-merge after approval.</strong>
+Recommended: no, a human merges, because the merge is the approval
+signal the plan phase depends on. Non-blocking unless the team wants the
+plan phase to trigger on PR merge instead of a label.</li>
+<li><strong><code>CODEX_API_KEY</code> rotation and scope.</strong>
+Recommended: keep one org-level secret for onboarding simplicity, but
+rotate on a fixed schedule and after any suspected leak, with a runbook
+that revokes repository grants during incident response. Important for
+operations, non-blocking for v1.</li>
+</ol>
+</div>
+
+    </main>
+  </div>
+  <footer class="document-footer">Generated from docs\autobot-pipeline\design.md by blueprint/html-doc@1. Edit the Markdown source, then regenerate.</footer>
+</body>
+</html>
