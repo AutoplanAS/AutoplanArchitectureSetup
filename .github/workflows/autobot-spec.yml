@@ -19,16 +19,32 @@ on:
         description: Target repository default branch
         required: true
         type: string
+      project_owner:
+        description: Project owner login for stage sync
+        required: false
+        type: string
+      project_number:
+        description: Project number for stage sync
+        required: false
+        type: string
+      project_status_field:
+        description: Project status field name for stage sync
+        required: false
+        type: string
+        default: Status
     secrets:
       CODEX_API_KEY:
         required: false
       BASELINE_REPO_TOKEN:
+        required: false
+      AUTOBOT_PROJECT_TOKEN:
         required: false
 
 permissions:
   contents: write
   issues: write
   pull-requests: write
+  projects: write
 
 concurrency:
   group: autobot-${{ inputs.repository }}-${{ inputs.issue_number }}
@@ -92,7 +108,10 @@ jobs:
           DEFAULT_BRANCH: ${{ inputs.default_branch }}
           TRIGGER_LABEL: autobot-ready-for-spec
           WORKFLOW_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          PROJECT_OWNER: ${{ inputs.project_owner }}
+          PROJECT_NUMBER: ${{ inputs.project_number }}
+          PROJECT_STATUS_FIELD: ${{ inputs.project_status_field }}
+          AUTOBOT_PROJECT_TOKEN: ${{ secrets.AUTOBOT_PROJECT_TOKEN }}
         run: |
           set -euo pipefail
           bash .autobot-baseline/.github/autobot/scripts/run_spec_phase.sh
-

@@ -1,0 +1,88 @@
+name: autobot-project-sync
+
+on:
+  workflow_call:
+    inputs:
+      repository:
+        description: Target repository in owner/repo form
+        required: true
+        type: string
+      issue_number:
+        description: Issue number to sync
+        required: true
+        type: number
+      project_stage:
+        description: Stage name to set in the project status field
+        required: true
+        type: string
+      project_owner:
+        description: Project owner login (user or org)
+        required: false
+        type: string
+      project_number:
+        description: Project number
+        required: false
+        type: string
+      project_status_field:
+        description: Project status field name
+        required: false
+        type: string
+        default: Status
+    secrets:
+      AUTOBOT_PROJECT_TOKEN:
+        required: false
+
+permissions:
+  issues: write
+  projects: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Sync issue to project stage
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          PROJECT_TOKEN: ${{ secrets.AUTOBOT_PROJECT_TOKEN }}
+          REPOSITORY: ${{ inputs.repository }}
+          ISSUE_NUMBER: ${{ inputs.issue_number }}
+          PROJECT_STAGE: ${{ inputs.project_stage }}
+          PROJECT_OWNER: ${{ inputs.project_owner }}
+          PROJECT_NUMBER: ${{ inputs.project_number }}
+          PROJECT_STATUS_FIELD: ${{ inputs.project_status_field }}
+        run: |
+          set -euo pipefail
+
+          if [[ -z "${PROJECT_OWNER:-}" || -z "${PROJECT_NUMBER:-}" ]]; then
+            echo "project sync skipped: project_owner/project_number not configured"
+            exit 0
+          fi
+
+          export GH_TOKEN="$GITHUB_TOKEN"
+          if [[ -n "${PROJECT_TOKEN:-}" ]]; then
+            export GH_TOKEN="$PROJECT_TOKEN"
+          fi
+
+          issue_url="https://github.com/${REPOSITORY}/issues/${ISSUE_NUMBER}"
+          set +e
+          add_output="$(gh project item-add "$PROJECT_NUMBER" --owner "$PROJECT_OWNER" --url "$issue_url" --format json 2>&1)"
+          add_exit=$?
+          set -e
+          if [[ "$add_exit" -ne 0 ]] && ! printf '%s' "$add_output" | grep -Eqi 'already (exists|added)|item .* already'; then
+            warning="Autobot warning: failed to add issue to Project ${PROJECT_OWNER}#${PROJECT_NUMBER} while syncing to \`${PROJECT_STAGE}\`. Details: ${add_output}"
+            gh issue comment "$ISSUE_NUMBER" --repo "$REPOSITORY" --body "$warning" >/dev/null || true
+            exit 0
+          fi
+
+          set +e
+          edit_output="$(gh project item-edit "$PROJECT_NUMBER" --owner "$PROJECT_OWNER" --url "$issue_url" --field "$PROJECT_STATUS_FIELD" --value "$PROJECT_STAGE" --format json 2>&1)"
+          edit_exit=$?
+          set -e
+          if [[ "$edit_exit" -ne 0 ]]; then
+            warning="Autobot warning: failed to set Project stage \`${PROJECT_STAGE}\` for ${PROJECT_OWNER}#${PROJECT_NUMBER}. Confirm field \`${PROJECT_STATUS_FIELD}\`, stage option name, and AUTOBOT_PROJECT_TOKEN permissions. Details: ${edit_output}"
+            gh issue comment "$ISSUE_NUMBER" --repo "$REPOSITORY" --body "$warning" >/dev/null || true
+            exit 0
+          fi
+
+          echo "project stage synced: ${PROJECT_STAGE}"
+

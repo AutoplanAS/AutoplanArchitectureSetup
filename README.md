@@ -45,6 +45,11 @@ For full reference, see [DOCUMENTATION.md](DOCUMENTATION.md).
    - `.github/autobot/README.md`
    - `.github/workflows/autobot.yml`
    - `.github/workflows/autobot-setup.yml`
+   - set repository variables for project sync:
+     - `AUTOBOT_PROJECT_OWNER` (example: `AutoplanAS`)
+     - `AUTOBOT_PROJECT_NUMBER` (example: `8`)
+     - optional `AUTOBOT_PROJECT_STATUS_FIELD` (default: `Status`)
+   - grant `AUTOBOT_PROJECT_TOKEN` if project-scope write is required
 
 ## Which skillsets to use
 

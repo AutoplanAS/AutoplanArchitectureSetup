@@ -48,6 +48,7 @@ Runtime context:
 EOF
 
 gh issue comment "$ISSUE_NUMBER" --repo "$REPOSITORY" --body "Autobot planning run started for merged design \`${design_path}\`." >/dev/null
+sync_project_stage_with_warning "$REPOSITORY" "$ISSUE_NUMBER" "Implementing" || true
 
 run_codex_prompt ".autobot/input/plan-prompt.md" ".autobot/output/plan.log"
 result="$(result_from_log .autobot/output/plan.log)"
@@ -66,13 +67,20 @@ if [[ "$status" != "completed" ]]; then
   blocked_and_exit "$REPOSITORY" "$ISSUE_NUMBER" "$TRIGGER_LABEL" "$reason" "${WORKFLOW_RUN_URL:-}"
 fi
 
-python "$SCRIPT_DIR/create_plan_issues.py" --repo "$REPOSITORY" --feature-issue "$ISSUE_NUMBER" --plan-json .autobot/output/plan.json > .autobot/output/created-plan.json
+python "$SCRIPT_DIR/create_plan_issues.py" \
+  --repo "$REPOSITORY" \
+  --feature-issue "$ISSUE_NUMBER" \
+  --plan-json .autobot/output/plan.json \
+  --project-owner "${PROJECT_OWNER:-}" \
+  --project-number "${PROJECT_NUMBER:-}" \
+  --project-status-field "${PROJECT_STATUS_FIELD:-Status}" \
+  > .autobot/output/created-plan.json
 feature_comment="$(python -c "import json;print(json.load(open('.autobot/output/created-plan.json','r',encoding='utf-8')).get('feature_comment','Plan completed.'))")"
 printf '%s' "$feature_comment" > .autobot/output/feature-comment.txt
 guard_text_file .autobot/output/feature-comment.txt || blocked_and_exit "$REPOSITORY" "$ISSUE_NUMBER" "$TRIGGER_LABEL" "Feature comment from planner was blocked by secret guard." "${WORKFLOW_RUN_URL:-}"
 
 gh issue comment "$ISSUE_NUMBER" --repo "$REPOSITORY" --body-file .autobot/output/feature-comment.txt >/dev/null
 gh issue edit "$ISSUE_NUMBER" --repo "$REPOSITORY" --remove-label "$TRIGGER_LABEL" --remove-label autobot-blocked >/dev/null || true
+sync_project_stage_with_warning "$REPOSITORY" "$ISSUE_NUMBER" "Implementing" || true
 
 echo "plan phase completed for issue #${ISSUE_NUMBER}"
-

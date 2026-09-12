@@ -159,7 +159,12 @@ Minimal setup:
 1. Grant org-level `CODEX_API_KEY` secret to the target repository.
 2. Add `.github/workflows/autobot.yml` in the target repository (use the example file).
 3. Run `autobot-setup` to provision `autobot-*` labels.
-4. Drive phases by labels: `autobot-ready-for-spec`, `autobot-implementing`, `autobot-in-review`.
+4. Configure project sync variables in the target repository:
+   - `AUTOBOT_PROJECT_OWNER` (for Project #8 this is `AutoplanAS`)
+   - `AUTOBOT_PROJECT_NUMBER` (for Project #8 this is `8`)
+   - optional `AUTOBOT_PROJECT_STATUS_FIELD` (defaults to `Status`)
+5. Grant `AUTOBOT_PROJECT_TOKEN` when project-scope write is required by the org project permissions model.
+6. Drive phases by labels: `autobot-ready-for-spec`, `autobot-implementing`, `autobot-in-review`.
 
 ---
 
@@ -244,6 +249,15 @@ Autobot is intentionally label-driven and phase-gated:
 
 If a phase cannot proceed, workflows remove the trigger label and add `autobot-blocked` with a
 comment containing the reason and run link.
+
+Project stage sync mapping:
+
+1. `autobot-ready-for-spec` -> `Ready for spec`
+2. `autobot-creating-specification` -> `Creating specification`
+3. `autobot-implementing` and new `autobot-task` issues -> `Implementing`
+4. `autobot-in-review` -> `In review`
+5. `autobot-blocked` -> `Blocked`
+6. issue closed -> `Done`
 
 ---
 

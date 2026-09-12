@@ -44,6 +44,7 @@ Runtime context:
 EOF
 
 gh issue comment "$ISSUE_NUMBER" --repo "$REPOSITORY" --body "Autobot spec run started on branch \`${branch_name}\`." >/dev/null
+sync_project_stage_with_warning "$REPOSITORY" "$ISSUE_NUMBER" "Ready for spec" || true
 
 git fetch origin "$DEFAULT_BRANCH"
 git checkout -B "$branch_name" "origin/$DEFAULT_BRANCH"
@@ -102,6 +103,6 @@ guard_text_file .autobot/output/final-comment.txt || blocked_and_exit "$REPOSITO
 
 gh issue comment "$ISSUE_NUMBER" --repo "$REPOSITORY" --body-file .autobot/output/final-comment.txt >/dev/null
 gh issue edit "$ISSUE_NUMBER" --repo "$REPOSITORY" --remove-label "$TRIGGER_LABEL" --remove-label autobot-blocked --add-label autobot-creating-specification >/dev/null || true
+sync_project_stage_with_warning "$REPOSITORY" "$ISSUE_NUMBER" "Creating specification" || true
 
 echo "spec phase completed for issue #${ISSUE_NUMBER}"
-

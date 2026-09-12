@@ -91,6 +91,78 @@ ensure_autobot_labels() {
   gh label create autobot-blocked --repo "$repo" --color D93F0B --description "Needs human decision before continuing" --force >/dev/null
 }
 
+project_sync_is_configured() {
+  [[ -n "${PROJECT_OWNER:-}" && -n "${PROJECT_NUMBER:-}" ]]
+}
+
+sync_project_stage_for_issue() {
+  local repo="$1"
+  local issue_number="$2"
+  local stage="$3"
+
+  if ! project_sync_is_configured; then
+    return 0
+  fi
+
+  local issue_url="https://github.com/${repo}/issues/${issue_number}"
+  local status_field="${PROJECT_STATUS_FIELD:-Status}"
+  local token="${AUTOBOT_PROJECT_TOKEN:-${GH_TOKEN:-${GITHUB_TOKEN:-}}}"
+  local previous_gh_token="${GH_TOKEN:-}"
+
+  if [[ -n "$token" ]]; then
+    export GH_TOKEN="$token"
+  fi
+
+  local add_output
+  if ! add_output="$(gh project item-add "$PROJECT_NUMBER" --owner "$PROJECT_OWNER" --url "$issue_url" --format json 2>&1)"; then
+    if ! printf '%s' "$add_output" | grep -Eqi 'already (exists|added)|item .* already'; then
+      if [[ -n "$previous_gh_token" ]]; then
+        export GH_TOKEN="$previous_gh_token"
+      fi
+      echo "project sync add failed: $add_output" >&2
+      return 1
+    fi
+  fi
+
+  local edit_output
+  if ! edit_output="$(gh project item-edit "$PROJECT_NUMBER" --owner "$PROJECT_OWNER" --url "$issue_url" --field "$status_field" --value "$stage" --format json 2>&1)"; then
+    if [[ -n "$previous_gh_token" ]]; then
+      export GH_TOKEN="$previous_gh_token"
+    fi
+    echo "project sync edit failed: $edit_output" >&2
+    return 1
+  fi
+
+  if [[ -n "$previous_gh_token" ]]; then
+    export GH_TOKEN="$previous_gh_token"
+  fi
+  return 0
+}
+
+sync_project_stage_with_warning() {
+  local repo="$1"
+  local issue_number="$2"
+  local stage="$3"
+
+  if ! sync_project_stage_for_issue "$repo" "$issue_number" "$stage"; then
+    local warning
+    warning=$(
+      cat <<EOF
+Autobot warning: failed to sync Project stage to \`${stage}\`.
+
+Configure Project sync with:
+- PROJECT_OWNER
+- PROJECT_NUMBER
+- optional PROJECT_STATUS_FIELD (defaults to Status)
+- AUTOBOT_PROJECT_TOKEN with project write access
+EOF
+    )
+    gh issue comment "$issue_number" --repo "$repo" --body "$warning" >/dev/null || true
+    return 1
+  fi
+  return 0
+}
+
 guard_text_file() {
   python "$SCRIPT_DIR/guard_text.py" --file "$1"
 }
@@ -123,6 +195,7 @@ EOF
 
   gh issue comment "$issue_number" --repo "$repo" --body "$message" >/dev/null || true
   gh issue edit "$issue_number" --repo "$repo" --remove-label "$trigger_label" --add-label autobot-blocked >/dev/null || true
+  sync_project_stage_with_warning "$repo" "$issue_number" "Blocked" || true
   exit 0
 }
 
@@ -145,4 +218,3 @@ run_codex_prompt() {
   fi
   set -e
 }
-
