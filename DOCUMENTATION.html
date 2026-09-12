@@ -1,0 +1,961 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data:; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'">
+  <meta name="document-kind" content="design">
+  <meta name="source-path" content="DOCUMENTATION.md">
+  <meta name="source-sha256" content="537fec0830ed03d4cbcbdc1e163ba1657a8169a2d9e8bf25ccd2fa2bb120a06d">
+  <meta name="generator" content="blueprint/html-doc@1">
+  <title>Autoplan architecture setup documentation</title>
+  <style>:root {
+  color-scheme: light;
+  --paper: #f7f9fb;
+  --surface: #ffffff;
+  --surface-soft: #edf2f5;
+  --ink: #172630;
+  --muted: #526773;
+  --line: #ccd8df;
+  --line-strong: #8fa5b3;
+  --accent: #385e75;
+  --accent-soft: #dbe5ec;
+  --focus: #176b93;
+  --risk: #6b4f28;
+  --risk-soft: #f3ecdf;
+  --radius: 12px;
+  --shadow: 0 16px 42px rgb(31 54 68 / 10%);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 16px;
+  line-height: 1.65;
+  background: var(--paper);
+  color: var(--ink);
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { margin: 0; background: var(--paper); }
+a { color: var(--accent); text-underline-offset: 0.16em; }
+a:hover { text-decoration-thickness: 2px; }
+a:focus-visible, summary:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 3px;
+  border-radius: 3px;
+}
+
+.skip-link {
+  position: fixed;
+  z-index: 10;
+  left: 1rem;
+  top: 1rem;
+  padding: .65rem .9rem;
+  background: var(--ink);
+  color: white;
+  transform: translateY(-180%);
+}
+.skip-link:focus { transform: translateY(0); }
+
+.document-header {
+  border-bottom: 1px solid var(--line);
+  background: linear-gradient(145deg, #e5edf2 0%, #f7f9fb 70%);
+}
+.document-header__inner,
+.page-shell,
+.document-footer {
+  width: min(1180px, calc(100% - 2rem));
+  margin-inline: auto;
+}
+.document-header__inner { padding: 3.8rem 0 3rem; }
+.eyebrow {
+  margin: 0 0 .8rem;
+  color: var(--accent);
+  font-size: .78rem;
+  font-weight: 750;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+.document-title {
+  max-width: 900px;
+  margin: 0;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(2.25rem, 5vw, 4.6rem);
+  font-weight: 500;
+  line-height: 1.05;
+  letter-spacing: -.035em;
+}
+.metadata {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .55rem 1.25rem;
+  margin: 1.6rem 0 0;
+  color: var(--muted);
+  font-size: .88rem;
+}
+.metadata dt { font-weight: 700; color: var(--ink); }
+.metadata dd { margin: 0; overflow-wrap: anywhere; }
+.metadata__item { display: grid; grid-template-columns: auto 1fr; gap: .35rem; }
+
+.page-shell {
+  display: grid;
+  grid-template-columns: minmax(190px, 250px) minmax(0, 1fr);
+  gap: clamp(2rem, 5vw, 5rem);
+  align-items: start;
+  padding-block: 3rem 5rem;
+}
+.toc {
+  position: sticky;
+  top: 1rem;
+  max-height: calc(100vh - 2rem);
+  overflow: auto;
+  padding: 1.1rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: rgb(255 255 255 / 78%);
+}
+.toc-title { margin: 0 0 .75rem; font: 750 .78rem/1.2 Inter, sans-serif; letter-spacing: .09em; text-transform: uppercase; }
+.toc ol { list-style: none; padding: 0; margin: 0; }
+.toc li + li { margin-top: .34rem; }
+.toc li[data-level="3"] { padding-left: .8rem; font-size: .88rem; }
+.toc a { display: block; color: var(--muted); text-decoration: none; line-height: 1.35; }
+.toc a:hover { color: var(--ink); }
+
+.document-content {
+  min-width: 0;
+  padding: clamp(1.4rem, 4vw, 3.8rem);
+  border: 1px solid var(--line);
+  border-radius: calc(var(--radius) + 4px);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+.source-block { min-width: 0; }
+.source-block > :first-child { margin-top: 0; }
+.source-block > :last-child { margin-bottom: 0; }
+.source-block + .source-block { margin-top: 1rem; }
+.source-block:has(> h1), .source-block:has(> h2) { margin-top: 3.7rem; }
+.source-block:first-child { margin-top: 0; }
+h1, h2, h3, h4 { color: var(--ink); line-height: 1.2; scroll-margin-top: 1.5rem; }
+.document-content h1 { font: 500 clamp(2rem, 5vw, 3.2rem)/1.08 Georgia, serif; letter-spacing: -.025em; }
+.document-content h2 { padding-top: .4rem; font: 500 clamp(1.7rem, 3vw, 2.3rem)/1.15 Georgia, serif; letter-spacing: -.018em; }
+.document-content h3 { font-size: 1.12rem; }
+.document-content h4 { font-size: 1rem; }
+p, ul, ol, blockquote, pre, table, figure { margin-block: 1rem; }
+blockquote {
+  margin-inline: 0;
+  padding: .8rem 1rem;
+  border-left: 4px solid var(--line-strong);
+  background: var(--surface-soft);
+  color: #314854;
+}
+blockquote > :first-child { margin-top: 0; }
+blockquote > :last-child { margin-bottom: 0; }
+.role-requirements, .role-acceptance-criteria, .role-invariants,
+.role-decisions, .role-risks, .role-open-questions {
+  margin-top: 1.25rem;
+  padding: 1rem 1.2rem;
+  border-left: 4px solid var(--line-strong);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  background: var(--surface-soft);
+}
+.role-risks, .role-open-questions { border-left-color: var(--risk); background: var(--risk-soft); }
+code, pre { font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace; }
+code { padding: .12em .32em; border-radius: 4px; background: var(--surface-soft); font-size: .9em; }
+code { overflow-wrap: anywhere; word-break: break-word; }
+pre {
+  max-width: 100%;
+  overflow: auto;
+  padding: 1rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #132630;
+  color: #edf4f7;
+  line-height: 1.48;
+}
+pre code { padding: 0; background: transparent; color: inherit; }
+.table-wrap { max-width: 100%; overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: .93rem; }
+th, td { padding: .68rem .75rem; border: 1px solid var(--line); text-align: left; vertical-align: top; }
+th, td { overflow-wrap: anywhere; word-break: break-word; }
+th { background: var(--surface-soft); font-weight: 720; }
+tbody tr:nth-child(even) { background: #f9fbfc; }
+.diagram {
+  padding: 1rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: #fbfcfd;
+}
+.diagram img { display: block; width: 100%; height: auto; max-height: 650px; object-fit: contain; }
+.diagram figcaption { margin-top: .75rem; color: var(--muted); font-size: .86rem; }
+.diagram details { margin-top: .8rem; }
+.diagram summary { cursor: pointer; color: var(--accent); font-weight: 650; }
+.diagram details pre { max-height: 18rem; }
+.document-footer { padding: 0 0 3rem; color: var(--muted); font-size: .82rem; }
+
+@media (max-width: 760px) {
+  .document-header__inner { padding: 2.7rem 0 2.2rem; }
+  .page-shell { grid-template-columns: 1fr; gap: 1.2rem; padding-top: 1.25rem; }
+  .toc { position: static; max-height: none; }
+  .document-content { padding: 1.25rem; border-radius: var(--radius); }
+  .source-block:has(> h1), .source-block:has(> h2) { margin-top: 2.7rem; }
+}
+
+@media print {
+  :root { background: white; font-size: 10.5pt; }
+  @page { size: auto; margin: 16mm; }
+  .skip-link, .toc { display: none; }
+  .document-header { background: white; }
+  .document-header__inner, .page-shell, .document-footer { width: 100%; }
+  .document-header__inner { padding: 0 0 12mm; }
+  .document-title { font-size: 28pt; }
+  .page-shell { display: block; padding: 0; }
+  .document-content { padding: 0; border: 0; box-shadow: none; }
+  h1, h2, h3, h4 { break-after: avoid-page; }
+  table, figure, pre, blockquote { break-inside: avoid; }
+  thead { display: table-header-group; }
+  pre { white-space: pre-wrap; overflow-wrap: anywhere; }
+  .document-footer { padding: 10mm 0 0; }
+}
+</style>
+</head>
+<body>
+  <a class="skip-link" href="#document-content">Skip to document</a>
+  <header class="document-header">
+    <div class="document-header__inner">
+      <p class="eyebrow">Technical design</p>
+      <p class="document-title">Autoplan architecture setup documentation</p>
+      <dl class="metadata">
+        
+        <div class="metadata__item"><dt>Source</dt><dd>DOCUMENTATION.md</dd></div>
+        <div class="metadata__item"><dt>SHA-256</dt><dd><code>537fec0830ed03d4cbcbdc1e163ba1657a8169a2d9e8bf25ccd2fa2bb120a06d</code></dd></div>
+      </dl>
+    </div>
+  </header>
+  <div class="page-shell">
+    <nav class="toc" aria-label="Document contents"><p class="toc-title">Contents</p><ol><li data-level="2"><a href="#1-purpose">1. Purpose</a></li><li data-level="2"><a href="#2-skillset-model">2. Skillset model</a></li><li data-level="3"><a href="#2-1-autoplan-has-two-domain-skillsets">2.1 Autoplan has two domain skillsets</a></li><li data-level="2"><a href="#3-repository-layout">3. Repository layout</a></li><li data-level="2"><a href="#4-getting-started-in-a-new-repository">4. Getting started in a new repository</a></li><li data-level="3"><a href="#4-1-copy-baseline-folders">4.1 Copy baseline folders</a></li><li data-level="3"><a href="#4-2-install-generic-blueprint-skills">4.2 Install generic Blueprint skills</a></li><li data-level="3"><a href="#4-3-install-autoplan-backend-skills">4.3 Install Autoplan backend skills</a></li><li data-level="3"><a href="#4-4-install-autoplan-webapp-skills">4.4 Install Autoplan webapp skills</a></li><li data-level="3"><a href="#4-5-verify-installation">4.5 Verify installation</a></li><li data-level="3"><a href="#4-6-optional-configure-machinist-factory-automation">4.6 Optional: configure Machinist factory automation</a></li><li data-level="3"><a href="#4-7-optional-configure-autobot-phased-workflow-automation">4.7 Optional: configure Autobot phased workflow automation</a></li><li data-level="2"><a href="#5-choosing-the-right-setup-by-project-type">5. Choosing the right setup by project type</a></li><li data-level="3"><a href="#5-1-typical-sequence-for-backend-heavy-projects">5.1 Typical sequence for backend-heavy projects</a></li><li data-level="3"><a href="#5-2-typical-sequence-for-web-full-stack-projects">5.2 Typical sequence for web/full-stack projects</a></li><li data-level="2"><a href="#6-operations-and-lifecycle">6. Operations and lifecycle</a></li><li data-level="3"><a href="#6-1-updating-skills">6.1 Updating skills</a></li><li data-level="3"><a href="#6-2-symlink-vs-copy">6.2 Symlink vs copy</a></li><li data-level="3"><a href="#6-3-uninstalling">6.3 Uninstalling</a></li><li data-level="3"><a href="#6-4-factory-operations-with-machinist-optional">6.4 Factory operations with Machinist (optional)</a></li><li data-level="3"><a href="#6-5-autobot-operations-optional">6.5 Autobot operations (optional)</a></li><li data-level="2"><a href="#7-governance-notes">7. Governance notes</a></li><li data-level="2"><a href="#8-verified-against-repository-state">8. Verified against repository state</a></li><li data-level="2"><a href="#9-assumptions">9. Assumptions</a></li><li data-level="2"><a href="#10-decisions-log">10. Decisions log</a></li></ol></nav>
+    <main id="document-content" class="document-content" data-source-block-count="98">
+<section id="autoplan-architecture-setup-documentation"
+class="source-block" data-source-block="1"
+data-source-sha256="65f8ed2e74d7b400fbbec0f406f33733a79f86967fa5b2de9879c15c8fd76a2e">
+<h1>Autoplan architecture setup documentation</h1>
+</section>
+<div class="source-block" data-source-block="2"
+data-source-sha256="001072b59a2ac8068c5bd4a1c749828180ee2837a6ec6f8f3ae1b8c662c591c9">
+<p>This document is the full reference for using this repository as the
+baseline for new projects.</p>
+</div>
+<div class="source-block" data-source-block="3"
+data-source-sha256="2e289ba2d3ed3b04b6000600ed5963602f0736e2e4820f4c348048319346003b">
+<hr />
+</div>
+<section id="1-purpose" class="source-block" data-source-block="4"
+data-source-sha256="855e62c650ef6130a15f8cb9cead5b138276beced27710a81ac8b39198dce2c0">
+<h2>1. Purpose</h2>
+</section>
+<div class="source-block" data-source-block="5"
+data-source-sha256="943a015e7c5421a75c929fcc674fe2c44509721195fcf8fb476b3cc5b1905ad4">
+<p>This repository standardizes how Autoplan projects bootstrap AI agent
+skills.</p>
+</div>
+<div class="source-block" data-source-block="6"
+data-source-sha256="4ba8ddb24c1a337ebf3f70b13f506edf6e395dd4b9b7e9a20f9d2310027c2f22">
+<p>The target outcome for a new project is:</p>
+</div>
+<div class="source-block" data-source-block="7"
+data-source-sha256="a1847c5be8010ce377a45a352b5ba155a68b72ed4a8945a875dd7df85d1e25c5">
+<ol type="1">
+<li>The team has a <strong>generic engineering workflow
+baseline</strong> (Blueprint).</li>
+<li>The team has <strong>Autoplan backend standards</strong>
+installed.</li>
+<li>Web/full-stack teams also have <strong>Autoplan webapp
+standards</strong> installed.</li>
+<li>Teams that need scaled automation can enable <strong>Machinist
+issue-to-PR orchestration</strong>.</li>
+<li>Teams that need phased automation with human gates can enable the
+<strong>Autobot GitHub Actions pipeline</strong>.</li>
+</ol>
+</div>
+<div class="source-block" data-source-block="8"
+data-source-sha256="2e289ba2d3ed3b04b6000600ed5963602f0736e2e4820f4c348048319346003b">
+<hr />
+</div>
+<section id="2-skillset-model" class="source-block"
+data-source-block="9"
+data-source-sha256="929ab141522e5762dec38f63d255e17ab99bf2f7793adf149a348a6d4da99736">
+<h2>2. Skillset model</h2>
+</section>
+<div class="source-block" data-source-block="10"
+data-source-sha256="e443669366c871788cf2ae0a83e3cdeab59b1fc79e105a4d135edade816a1507">
+<p>Autoplan uses layered capabilities that solve different problems.</p>
+</div>
+<div class="source-block table-wrap" data-source-block="11"
+data-source-sha256="61eed131d707a54438f2be485232355f01f36c851a9ba91eea8fc4c1507586bd">
+<table>
+<thead>
+<tr>
+<th>Layer</th>
+<th>Main responsibility</th>
+<th>Typical trigger examples</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Blueprint (generic)</td>
+<td>Decide, plan, deliver, test, review with consistent engineering
+workflow</td>
+<td>"design this", "plan this feature", "review this PR", "test this
+change"</td>
+</tr>
+<tr>
+<td>Autoplan backend skills</td>
+<td>Integration/backend implementation standards</td>
+<td>"new integration", "OAuth2 client credentials", "Azure Table
+Storage", "Bicep", "azure-pipelines.yml",
+".github/workflows/deploy.yml", "SQL MERGE alignment"</td>
+</tr>
+<tr>
+<td>Autoplan webapp skills</td>
+<td>Lightweight webapp architecture and delivery standards</td>
+<td>"React frontend", "Node API handler", "JWT + RBAC", "Vercel + App
+Service deploy"</td>
+</tr>
+<tr>
+<td>Machinist factory (optional)</td>
+<td>Queueing and orchestration for issue-to-PR execution using the same
+skill stacks</td>
+<td>"process requested issues", "run delivery queue", "label-driven
+implementation"</td>
+</tr>
+</tbody>
+</table>
+</div>
+<section id="2-1-autoplan-has-two-domain-skillsets" class="source-block"
+data-source-block="12"
+data-source-sha256="af44da841799c58bc5b69bca131f97988608be0d626e128bea736dfe9dfb6f11">
+<h3>2.1 Autoplan has two domain skillsets</h3>
+</section>
+<div class="source-block" data-source-block="13"
+data-source-sha256="48aba68df431d5dc455544c962d7ada524a0bda6e40dc7035c58c1a5cd3c292e">
+<p>Within Autoplan-specific skills, there are two main domain
+bundles:</p>
+</div>
+<div class="source-block" data-source-block="14"
+data-source-sha256="4adbd0fd2a14f33ff40360291aacbe810b48c198130c07474c822db04b90beb4">
+<ol type="1">
+<li><strong>Backend skillset</strong>:
+<code>autoplan-backend-skills</code></li>
+<li><strong>Web development skillset</strong>:
+<code>autoplan-webapp-skills</code></li>
+</ol>
+</div>
+<div class="source-block" data-source-block="15"
+data-source-sha256="e0ed6fe77343ac6e00f29880b101565a7c7655115d8d42bf2b5ec17dd18f1fe3">
+<p>Blueprint is intentionally separate and generic for any project
+type.</p>
+</div>
+<div class="source-block" data-source-block="16"
+data-source-sha256="2e289ba2d3ed3b04b6000600ed5963602f0736e2e4820f4c348048319346003b">
+<hr />
+</div>
+<section id="3-repository-layout" class="source-block"
+data-source-block="17"
+data-source-sha256="1a71489cb6bf662fe74618431aed6d17f27f0f87d57e0356f5bb2b4426ef4217">
+<h2>3. Repository layout</h2>
+</section>
+<div class="source-block table-wrap" data-source-block="18"
+data-source-sha256="b754c7054ccecf88acf471e32417293603b8b4eab6113c19a35dd36cb8d002d4">
+<table>
+<thead>
+<tr>
+<th>Path</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>autoplan-backend-skills/</code></td>
+<td>Installable backend standards package</td>
+</tr>
+<tr>
+<td><code>autoplan-webapp-skills/</code></td>
+<td>Installable webapp standards package</td>
+</tr>
+<tr>
+<td><code>owain-blueprint-system-development-skills/</code></td>
+<td>Local snapshot/reference of Blueprint source</td>
+</tr>
+<tr>
+<td><code>machinist/</code></td>
+<td>Optional automation factory package (commands, prompts, wrappers,
+config templates)</td>
+</tr>
+<tr>
+<td><code>.github/autobot/</code></td>
+<td>Optional reusable GitHub Actions package for label-driven phased
+execution</td>
+</tr>
+<tr>
+<td><code>README.md</code></td>
+<td>Quick-start operator guide</td>
+</tr>
+<tr>
+<td><code>DOCUMENTATION.md</code></td>
+<td>Full architecture and operations reference</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="source-block" data-source-block="19"
+data-source-sha256="2e289ba2d3ed3b04b6000600ed5963602f0736e2e4820f4c348048319346003b">
+<hr />
+</div>
+<section id="4-getting-started-in-a-new-repository" class="source-block"
+data-source-block="20"
+data-source-sha256="fe65d258bde7ef7c32058253aef63ed692a286ea3685c5407c9b13d8b1b7c3d9">
+<h2>4. Getting started in a new repository</h2>
+</section>
+<div class="source-block" data-source-block="21"
+data-source-sha256="8697a29182a7060dbd8142ce0fa58c00451ba4992bfc076d86b34b5b9e9b9716">
+<p>Use this when creating a new project that should follow the same
+approach.</p>
+</div>
+<section id="4-1-copy-baseline-folders" class="source-block"
+data-source-block="22"
+data-source-sha256="880bc7ff17515ede5e1d0424eb14b736ccde02e35d889cfc6a53b54c642f2991">
+<h3>4.1 Copy baseline folders</h3>
+</section>
+<div class="source-block" data-source-block="23"
+data-source-sha256="afced923f4595ba4140ee0609bd3a8bb668145d8a2ad8efccf68b956822d8bb3">
+<p>Copy these folders from this repository into the new repository
+root:</p>
+</div>
+<div class="source-block" data-source-block="24"
+data-source-sha256="00cb880f0f871e477f0d223f9027cba5e09466675838bc82c7f6e9205da16fe8">
+<ol type="1">
+<li><code>autoplan-backend-skills</code></li>
+<li><code>autoplan-webapp-skills</code></li>
+<li><code>owain-blueprint-system-development-skills</code> (optional
+local reference snapshot)</li>
+<li><code>machinist</code> (optional automation factory package)</li>
+</ol>
+</div>
+<section id="4-2-install-generic-blueprint-skills" class="source-block"
+data-source-block="25"
+data-source-sha256="cf7fd8e7ebe9dbff7cd78420f39eb1ca233fbf1391eea18353d3f09750c4a8b7">
+<h3>4.2 Install generic Blueprint skills</h3>
+</section>
+<div class="source-block" data-source-block="26"
+data-source-sha256="19d387740ea5a2c5e8485e7998a736b25a789ea3440d11c4d75eb22b995f1abc">
+<p>Preferred method:</p>
+</div>
+<div class="source-block" data-source-block="27"
+data-source-sha256="a53020ca28c63933c37e4e09ff8893eb1f728c9ebd7a9f5a092ebdddfe4df029">
+<pre class="powershell"><code>npx skills add owainlewis/blueprint</code></pre>
+</div>
+<div class="source-block" data-source-block="28"
+data-source-sha256="fcdc56b336d84315f47b7b5e0c658c6202e7c9aa36933860e1ea89f01179be03">
+<p>Why preferred:</p>
+</div>
+<div class="source-block" data-source-block="29"
+data-source-sha256="fb00de29148a97028fb137de0c552070071b6c3884327bd2d7cb08e8924ffadf">
+<ul>
+<li>Pulls the upstream maintained generic skillset.</li>
+<li>Keeps generic workflow skills independent from Autoplan package
+releases.</li>
+</ul>
+</div>
+<section id="4-3-install-autoplan-backend-skills" class="source-block"
+data-source-block="30"
+data-source-sha256="646f173308c057d6f30f5078c1e8f8e26db7bcdff89b91058227f128cc7893da">
+<h3>4.3 Install Autoplan backend skills</h3>
+</section>
+<div class="source-block" data-source-block="31"
+data-source-sha256="ca8843255d24b676ab05eddbeab42eef1bc5572a4f360ee9bc14a83ebe88d34d">
+<p>From the project root:</p>
+</div>
+<div class="source-block" data-source-block="32"
+data-source-sha256="72ff81d1ce5b957107dabb2470cb6e7bb2c09cce4999bfe5629871e338313ff6">
+<pre class="powershell"><code>.\autoplan-backend-skills\scripts\Install-Skills.ps1 -Target Copilot</code></pre>
+</div>
+<div class="source-block" data-source-block="33"
+data-source-sha256="faee2cf80dac24ee987661a9a7f80f779ae67cf9eebf706154e0afad90bbaf16">
+<p>Important behavior:</p>
+</div>
+<div class="source-block" data-source-block="34"
+data-source-sha256="dc0f1beb78cca755c03313bcda1a221435386797615fbfdd552e51ec63cf121a">
+<ul>
+<li><code>-Mode Auto</code> is default.</li>
+<li>Auto mode attempts <strong>symlink</strong> first, then falls back
+to <strong>copy</strong> if symlink is unavailable.</li>
+<li>Supports multi-agent installation (<code>Copilot</code>,
+<code>Claude</code>, <code>Codex</code>, <code>Gemini</code>) via
+<code>-Target</code>.</li>
+</ul>
+</div>
+<div class="source-block" data-source-block="35"
+data-source-sha256="f44a3e553ab23da281cbf21cf519cdebfc6a407396e883bdcd7c9a7abd24a69a">
+<p>Examples:</p>
+</div>
+<div class="source-block" data-source-block="36"
+data-source-sha256="29f64c2e70c285718467eabac21fdedbc80be74e780fa2a7513f9f0c91f2d352">
+<pre class="powershell"><code>.\autoplan-backend-skills\scripts\Install-Skills.ps1 -Target Copilot,Claude
+.\autoplan-backend-skills\scripts\Install-Skills.ps1 -Mode Copy -Force</code></pre>
+</div>
+<section id="4-4-install-autoplan-webapp-skills" class="source-block"
+data-source-block="37"
+data-source-sha256="3cb64b2c24c07578899b2905c7c78bcbc4a8453eceb1412ceeb766d4463a16b8">
+<h3>4.4 Install Autoplan webapp skills</h3>
+</section>
+<div class="source-block" data-source-block="38"
+data-source-sha256="ca8843255d24b676ab05eddbeab42eef1bc5572a4f360ee9bc14a83ebe88d34d">
+<p>From the project root:</p>
+</div>
+<div class="source-block" data-source-block="39"
+data-source-sha256="9da8d7e47eea9e6b957d4df55dc3bec94fa6fd5c5d4e32620496a2868ae76c89">
+<pre class="powershell"><code>.\autoplan-webapp-skills\scripts\Install-Skills.ps1</code></pre>
+</div>
+<div class="source-block" data-source-block="40"
+data-source-sha256="3fbc08f13d88f1b7736aab6785fdd08d3bdb8359b9e78625c45688d4e4882d81">
+<p>Optional:</p>
+</div>
+<div class="source-block" data-source-block="41"
+data-source-sha256="94f7d9836bb69ce1511caadb5d9edf65fddb29e2391c106a30346b59c5246a1b">
+<pre class="powershell"><code>.\autoplan-webapp-skills\scripts\Install-Skills.ps1 -Target Claude
+.\autoplan-webapp-skills\scripts\Install-Skills.ps1 -Mode Symlink</code></pre>
+</div>
+<section id="4-5-verify-installation" class="source-block"
+data-source-block="42"
+data-source-sha256="41c291ab2477eb5d45447703865b45ea1f2f9cfba1e53d21290a3bdce230fb65">
+<h3>4.5 Verify installation</h3>
+</section>
+<div class="source-block" data-source-block="43"
+data-source-sha256="dda2a3cc71872c81c55f86464ec7b9474a61cd2787e467813a262ae41715de9d">
+<p>Start a new Copilot session and check:</p>
+</div>
+<div class="source-block" data-source-block="44"
+data-source-sha256="4b01dafbf07acd578a02690e8acecbd20a89cb988903396cc073c31b70d8ad4f">
+<pre class="text"><code>/skills list</code></pre>
+</div>
+<div class="source-block" data-source-block="45"
+data-source-sha256="a9b08bdea766b1d3acc95f020bf2a39638c7dbf92095fbb23d5dc5024813932f">
+<p>Expected:</p>
+</div>
+<div class="source-block" data-source-block="46"
+data-source-sha256="5d23e1d13a1e7f0a3735198d5f64b09b71d29f3341172f603af0e17b9850a2ab">
+<ul>
+<li>Generic Blueprint skills are visible.</li>
+<li>Autoplan backend skills are visible.</li>
+<li>Autoplan webapp skills are visible.</li>
+</ul>
+</div>
+<section id="4-6-optional-configure-machinist-factory-automation"
+class="source-block" data-source-block="47"
+data-source-sha256="b1ce656333ae27d78e92a6703609315f99199a4b43a07cf4324d79fb482d4d5c">
+<h3>4.6 Optional: configure Machinist factory automation</h3>
+</section>
+<div class="source-block" data-source-block="48"
+data-source-sha256="1716fdeacf2b2f4317fdc95f6d0a4bdac1d00f441efaa4ff9975e382b2b1fc95">
+<p>If the project needs issue-to-PR automation, use:</p>
+</div>
+<div class="source-block" data-source-block="49"
+data-source-sha256="373bc26a8cf56087e36ace88cc87d2accc9cba9a5ac695f38dce4b745b85f8c2">
+<ul>
+<li><code>machinist/README.md</code></li>
+<li><code>machinist/config.toml.example</code></li>
+<li><code>machinist/worker.toml.example</code></li>
+<li><code>machinist/workflows/issue-to-pr/README.md</code></li>
+</ul>
+</div>
+<div class="source-block" data-source-block="50"
+data-source-sha256="ffa578920cc67e2cb9ec9c66d1b63afd5bce1036aad4e81af93d2501ce4b3c20">
+<p>Minimal setup:</p>
+</div>
+<div class="source-block" data-source-block="51"
+data-source-sha256="91ea939d833d5de980e27c1cb7e7bebd4d203e283428bd71552840656d4bddb8">
+<ol type="1">
+<li>Install both Autoplan skill packages on the worker machine.</li>
+<li>Use repo-local <code>machinist/*.toml</code> templates, or copy them
+to <code>~/.machinist/</code> and also copy
+<code>machinist/prompts/</code> there (or switch prompt paths to
+absolute paths).</li>
+<li>Run direct mode first (<code>machinist run</code>) before enabling
+managed triggers.</li>
+</ol>
+</div>
+<section id="4-7-optional-configure-autobot-phased-workflow-automation"
+class="source-block" data-source-block="52"
+data-source-sha256="8cccb44fda203909573c567efe57f13208c85c3fba0552196b0de228330630c1">
+<h3>4.7 Optional: configure Autobot phased workflow automation</h3>
+</section>
+<div class="source-block" data-source-block="53"
+data-source-sha256="3c02cd508839a9b1ce4f6071e93f1433c80f3614dbedc451f976b13e03a72e28">
+<p>Use:</p>
+</div>
+<div class="source-block" data-source-block="54"
+data-source-sha256="962c5089856191621461f63480f367965248a3b4d9c8589b1cf267d6f883f8cd">
+<ul>
+<li><code>.github/autobot/README.md</code></li>
+<li><code>.github/autobot/examples/autobot.yml</code></li>
+<li><code>.github/workflows/autobot-setup.yml</code></li>
+</ul>
+</div>
+<div class="source-block" data-source-block="55"
+data-source-sha256="ffa578920cc67e2cb9ec9c66d1b63afd5bce1036aad4e81af93d2501ce4b3c20">
+<p>Minimal setup:</p>
+</div>
+<div class="source-block" data-source-block="56"
+data-source-sha256="9fd19ddf8c1472a7414341c0e1e3702f201adb0043150cd500fc4826f7095a1b">
+<ol type="1">
+<li>Grant org-level <code>CODEX_API_KEY</code> secret to the target
+repository.</li>
+<li>Add <code>.github/workflows/autobot.yml</code> in the target
+repository (use the example file).</li>
+<li>Run <code>autobot-setup</code> to provision <code>autobot-*</code>
+labels.</li>
+<li>Drive phases by labels: <code>autobot-ready-for-spec</code>,
+<code>autobot-implementing</code>, <code>autobot-in-review</code>.</li>
+</ol>
+</div>
+<div class="source-block" data-source-block="57"
+data-source-sha256="2e289ba2d3ed3b04b6000600ed5963602f0736e2e4820f4c348048319346003b">
+<hr />
+</div>
+<section id="5-choosing-the-right-setup-by-project-type"
+class="source-block" data-source-block="58"
+data-source-sha256="f48777b802aa93b400076364e608d00143c337e30b9bcf6628b2c96763a26fd2">
+<h2>5. Choosing the right setup by project type</h2>
+</section>
+<div class="source-block table-wrap" data-source-block="59"
+data-source-sha256="01efcb408ac9ad63ade06090fc0829595b63fc363c2e52bbad035d9f05ca6e2d">
+<table>
+<thead>
+<tr>
+<th>Project type</th>
+<th>Install</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Non-Autoplan or generic internal project</td>
+<td>Blueprint only</td>
+</tr>
+<tr>
+<td>Autoplan integration/backend service</td>
+<td>Blueprint + backend</td>
+</tr>
+<tr>
+<td>Autoplan web portal with API/backend</td>
+<td>Blueprint + backend + webapp</td>
+</tr>
+</tbody>
+</table>
+</div>
+<section id="5-1-typical-sequence-for-backend-heavy-projects"
+class="source-block" data-source-block="60"
+data-source-sha256="e2f2ceb2be856949a68cd15e59eb7afef0f1c94153d7d0049e78b1f4c460b86e">
+<h3>5.1 Typical sequence for backend-heavy projects</h3>
+</section>
+<div class="source-block" data-source-block="61"
+data-source-sha256="6b6d455597d5c5694f35ffaf8faff291fe0b49b4562b303398f44d43c160b208">
+<ol type="1">
+<li>Use Blueprint to define and plan the change (<code>design</code>,
+<code>plan</code>).</li>
+<li>Use <code>autoplan-integration-scaffold</code> for project
+shape.</li>
+<li>Use <code>autoplan-integration-auth</code>,
+<code>autoplan-external-api-client</code>,
+<code>autoplan-data-persistence</code>,
+<code>autoplan-sql-model-alignment</code>.</li>
+<li>Use <code>autoplan-azure-deploy</code> and either
+<code>autoplan-devops-pipeline</code> (Azure DevOps) or
+<code>autoplan-github-pipeline</code> (GitHub Actions).</li>
+<li>Use <code>autoplan-integration-testing</code>.</li>
+<li>Use <code>autoplan-integration-docs</code> for README +
+DOCUMENTATION quality.</li>
+</ol>
+</div>
+<section id="5-2-typical-sequence-for-web-full-stack-projects"
+class="source-block" data-source-block="62"
+data-source-sha256="49a47d9274cc2f6d30c78df11da3b1f586527712e8e1912822cdac4c2f2d3d55">
+<h3>5.2 Typical sequence for web/full-stack projects</h3>
+</section>
+<div class="source-block" data-source-block="63"
+data-source-sha256="a5df7510682a5bd5eca4f5002b9b5e6cedf0b14720ffe207d16dcb60fb8080b8">
+<ol type="1">
+<li>Use Blueprint to define architecture and plan.</li>
+<li>Use <code>autoplan-webapp-architecture</code> first.</li>
+<li>Use <code>autoplan-webapp-frontend-react</code> and
+<code>autoplan-webapp-api-node</code>.</li>
+<li>Use <code>autoplan-webapp-auth-data</code>.</li>
+<li>Use <code>autoplan-webapp-testing-quality</code>.</li>
+<li>Use <code>autoplan-webapp-deployment-hybrid</code>.</li>
+</ol>
+</div>
+<div class="source-block" data-source-block="64"
+data-source-sha256="2e289ba2d3ed3b04b6000600ed5963602f0736e2e4820f4c348048319346003b">
+<hr />
+</div>
+<section id="6-operations-and-lifecycle" class="source-block"
+data-source-block="65"
+data-source-sha256="23dd458d2347588c80db53bb50cbed3a8b89206d2429eb9d6d8a1c2c5579ed02">
+<h2>6. Operations and lifecycle</h2>
+</section>
+<section id="6-1-updating-skills" class="source-block"
+data-source-block="66"
+data-source-sha256="36c97c926051ed2a603dca9578bcb270dedd905078b2a9f0a8b1761f54127749">
+<h3>6.1 Updating skills</h3>
+</section>
+<div class="source-block" data-source-block="67"
+data-source-sha256="9cfc4d353517d51288f923d7f5418f43f6d55c3d1dadac7916960429c06005db">
+<p>When this baseline repo is updated:</p>
+</div>
+<div class="source-block" data-source-block="68"
+data-source-sha256="9e69baf118321e792470b907f48b7483683a04f231ebd5584e3b782e6db1ce27">
+<ol type="1">
+<li>Pull latest changes in each consumer repo.</li>
+<li>Re-run install scripts:
+<ul>
+<li><code>.\autoplan-backend-skills\scripts\Install-Skills.ps1</code></li>
+<li><code>.\autoplan-webapp-skills\scripts\Install-Skills.ps1</code></li>
+</ul></li>
+<li>Start a new agent session.</li>
+</ol>
+</div>
+<section id="6-2-symlink-vs-copy" class="source-block"
+data-source-block="69"
+data-source-sha256="c4f99aa63a093e5b640b5d7c331e28cee3120eee9d072b5bc32d67c0844c00b9">
+<h3>6.2 Symlink vs copy</h3>
+</section>
+<div class="source-block table-wrap" data-source-block="70"
+data-source-sha256="93fc46415e4b7f66655db3c180bf2bffc849a3ef65418bf8c8855bd5ac6d5add">
+<table>
+<thead>
+<tr>
+<th>Mode</th>
+<th>Effect</th>
+<th>Tradeoff</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Symlink</td>
+<td>Skills update automatically when source repo changes</td>
+<td>Requires symlink permission</td>
+</tr>
+<tr>
+<td>Copy</td>
+<td>Works everywhere</td>
+<td>Must re-run install scripts after updates</td>
+</tr>
+</tbody>
+</table>
+</div>
+<section id="6-3-uninstalling" class="source-block"
+data-source-block="71"
+data-source-sha256="6bc826687115a4c057567c7412986da930a7f5b511edfe716a8538da8a6c01ea">
+<h3>6.3 Uninstalling</h3>
+</section>
+<div class="source-block" data-source-block="72"
+data-source-sha256="fcc4e50aaae701c4c55c8096fa6dd05b7c157a2a7be93f521145389e9fe0e767">
+<p>Backend package:</p>
+</div>
+<div class="source-block" data-source-block="73"
+data-source-sha256="1b1aa79084efb0b117543da91dc9f032d87f7842e81b2525e27f5e40eccc82db">
+<pre class="powershell"><code>.\autoplan-backend-skills\scripts\Uninstall-Skills.ps1 -Target Copilot</code></pre>
+</div>
+<div class="source-block" data-source-block="74"
+data-source-sha256="2dc968366b1ec8b12d6fe3d29841b6fa3f807ac195719e7db3bfbdba401d6861">
+<p>Webapp package:</p>
+</div>
+<div class="source-block" data-source-block="75"
+data-source-sha256="921bee90b272244b934e901eb840fd734e76a5316b91d8a97e9397d960d5f086">
+<pre class="powershell"><code>.\autoplan-webapp-skills\scripts\Uninstall-Skills.ps1</code></pre>
+</div>
+<section id="6-4-factory-operations-with-machinist-optional"
+class="source-block" data-source-block="76"
+data-source-sha256="7ec47d5e0fde1359a113a4179bdc9d9a9efe0b98802f17c61382c8a9df143ff2">
+<h3>6.4 Factory operations with Machinist (optional)</h3>
+</section>
+<div class="source-block" data-source-block="77"
+data-source-sha256="2257721acb8e919a5928d3cc913584c224ce39498f2fa57d31e1956c843abcec">
+<p>Use the wrapper scripts for direct single-request execution:</p>
+</div>
+<div class="source-block" data-source-block="78"
+data-source-sha256="87a1bcbbc08d3cc7825cbbb0856c41bf37a26679f4a1bc540c7cd2cd59e2d2c8">
+<ul>
+<li>PowerShell:
+<code>.\machinist\workflows\issue-to-pr\run-local.ps1 -Prompt "&lt;request&gt;"</code></li>
+<li>Bash:
+<code>./machinist/workflows/issue-to-pr/run-local.sh --prompt "&lt;request&gt;"</code></li>
+</ul>
+</div>
+<div class="source-block" data-source-block="79"
+data-source-sha256="b21925f692bbe74e6ff72f85be6500c67c457839e0e8790306f75337ded77584">
+<p>Use managed mode only after direct mode is validated for your repo
+and CI rules.</p>
+</div>
+<section id="6-5-autobot-operations-optional" class="source-block"
+data-source-block="80"
+data-source-sha256="59ee9234673b2eeab5fb51058af62945990650ed124ed47fa4e4b9dfb0053755">
+<h3>6.5 Autobot operations (optional)</h3>
+</section>
+<div class="source-block" data-source-block="81"
+data-source-sha256="fe99eaac369bf87768f3ed73c28ce3507be724155fc60d945a5fb82454bbb028">
+<p>Autobot is intentionally label-driven and phase-gated:</p>
+</div>
+<div class="source-block" data-source-block="82"
+data-source-sha256="2ee8a46c4134c5be9f803558c2b146f646de547059a7c5a3def9fc5d0a3081e5">
+<ol type="1">
+<li><code>autobot-ready-for-spec</code> starts design generation.</li>
+<li>Human merges design PR.</li>
+<li><code>autobot-implementing</code> creates task issues.</li>
+<li><code>autobot-in-review</code> on a task issue starts implementation
+into one PR.</li>
+</ol>
+</div>
+<div class="source-block" data-source-block="83"
+data-source-sha256="8b876a370b85bdc360d93933a0646e89b867781255f4f5236cb6ea5f741bca6a">
+<p>If a phase cannot proceed, workflows remove the trigger label and add
+<code>autobot-blocked</code> with a comment containing the reason and
+run link.</p>
+</div>
+<div class="source-block" data-source-block="84"
+data-source-sha256="2e289ba2d3ed3b04b6000600ed5963602f0736e2e4820f4c348048319346003b">
+<hr />
+</div>
+<section id="7-governance-notes" class="source-block"
+data-source-block="85"
+data-source-sha256="6a4c458f11dd2fa3fe5de8dd584e04b1eefd1261ac79388eeea3ccb9972e0037">
+<h2>7. Governance notes</h2>
+</section>
+<div class="source-block" data-source-block="86"
+data-source-sha256="9e64b23fee23068dafd15e02692aa4aa4aa9a2972562786b1c37d903e0de65d8">
+<ol type="1">
+<li>Keep generic workflow concerns in Blueprint.</li>
+<li>Keep Autoplan-specific delivery standards in Autoplan
+skillsets.</li>
+<li>Avoid duplicating generic guidance from Blueprint into Autoplan
+skills unless Autoplan needs an explicit convention override.</li>
+<li>Treat <code>SKILL.md</code> as concise entry instructions; keep deep
+details in <code>references/</code>.</li>
+</ol>
+</div>
+<div class="source-block" data-source-block="87"
+data-source-sha256="2e289ba2d3ed3b04b6000600ed5963602f0736e2e4820f4c348048319346003b">
+<hr />
+</div>
+<section id="8-verified-against-repository-state" class="source-block"
+data-source-block="88"
+data-source-sha256="a90355218a5d5b8072f9c4f45af08ea6e943f9223694a71339450c3d16a98485">
+<h2>8. Verified against repository state</h2>
+</section>
+<div class="source-block" data-source-block="89"
+data-source-sha256="0b953e6b537b6bab17fc0ad8c9e5b3c701287e4619da9a28026c951923d83da1">
+<p>The following was verified directly in this repository:</p>
+</div>
+<div class="source-block" data-source-block="90"
+data-source-sha256="8dfeee1a666ffb7c2780e6ca45ac4eef271c82a832fd5354ddbd23208d808911">
+<ol type="1">
+<li><code>autoplan-backend-skills</code> exists with install/uninstall
+scripts and backend Autoplan skill folders.</li>
+<li><code>autoplan-webapp-skills</code> exists with install/uninstall
+scripts and six webapp skill folders.</li>
+<li><code>owain-blueprint-system-development-skills</code> exists and
+contains the generic Blueprint skill catalog under
+<code>skills/</code>.</li>
+<li><code>machinist</code> exists with command prompts, config
+templates, skill bootstrap scripts, and issue-to-PR workflow
+wrappers.</li>
+</ol>
+</div>
+<div class="source-block" data-source-block="91"
+data-source-sha256="a109fd2cf202e3938a20334896191a1167b2b74b48f706d70247a34425ed37fc">
+<p>Package references:</p>
+</div>
+<div class="source-block" data-source-block="92"
+data-source-sha256="3943f44aa553e5d98dc7983bc8a179ed217ca1a0775f5f30250ac31b667dab54">
+<ul>
+<li><code>autoplan-backend-skills/README.md</code></li>
+<li><code>autoplan-webapp-skills/README.md</code></li>
+<li><code>owain-blueprint-system-development-skills/README.md</code></li>
+<li><code>machinist/README.md</code></li>
+</ul>
+</div>
+<div class="source-block" data-source-block="93"
+data-source-sha256="2e289ba2d3ed3b04b6000600ed5963602f0736e2e4820f4c348048319346003b">
+<hr />
+</div>
+<section id="9-assumptions" class="source-block" data-source-block="94"
+data-source-sha256="6e7572e153c8c6afb0b8cca7a75a437ecdf8d979918636c191ecd65527d6f843">
+<h2>9. Assumptions</h2>
+</section>
+<div class="source-block" data-source-block="95"
+data-source-sha256="0c453bc9f04bf0cf59bb7f9da81f58d204d341270eb4037cba2b804a2dd60d7c">
+<ol type="1">
+<li>Copilot environment supports <code>/skills list</code> for skill
+visibility checks.</li>
+<li>Teams have PowerShell available to run installation scripts.</li>
+<li>New projects can include these folders as part of their baseline
+repository structure.</li>
+<li>Teams enabling Machinist can host worker/config files in either
+repo-local or user-level Machinist paths.</li>
+</ol>
+</div>
+<div class="source-block" data-source-block="96"
+data-source-sha256="2e289ba2d3ed3b04b6000600ed5963602f0736e2e4820f4c348048319346003b">
+<hr />
+</div>
+<section id="10-decisions-log" class="source-block"
+data-source-block="97"
+data-source-sha256="faa47c13058d70dd0d15fdd2f7293968e33041a7925f1b677d2e92558b08cb30">
+<h2>10. Decisions log</h2>
+</section>
+<div class="source-block table-wrap" data-source-block="98"
+data-source-sha256="a8159a7e4c31d75a8ac216fdc93527f295142d15dbf5726d95922a7f4ecc56ca">
+<table>
+<thead>
+<tr>
+<th>Date</th>
+<th>Decision</th>
+<th>Reason</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>2026-09-11</td>
+<td>Use this repository as baseline documentation source for project
+bootstrapping</td>
+<td>Gives one canonical onboarding flow across projects</td>
+</tr>
+<tr>
+<td>2026-09-11</td>
+<td>Keep Blueprint treated as generic, independent layer</td>
+<td>Prevents Autoplan project-specific coupling into generic engineering
+workflow guidance</td>
+</tr>
+<tr>
+<td>2026-09-11</td>
+<td>Document Autoplan backend and webapp as the two primary Autoplan
+domain skillsets</td>
+<td>Matches how teams split backend integration work and web delivery
+work</td>
+</tr>
+<tr>
+<td>2026-09-11</td>
+<td>Keep backend and webapp install commands explicit in root docs</td>
+<td>Reduces setup variance and onboarding drift</td>
+</tr>
+<tr>
+<td>2026-09-11</td>
+<td>Add Machinist as optional orchestration layer packaged in-repo</td>
+<td>Enables automation/factory operation without coupling orchestration
+logic into skill content</td>
+</tr>
+</tbody>
+</table>
+</div>
+
+    </main>
+  </div>
+  <footer class="document-footer">Generated from DOCUMENTATION.md by blueprint/html-doc@1. Edit the Markdown source, then regenerate.</footer>
+</body>
+</html>
