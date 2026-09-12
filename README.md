@@ -9,6 +9,7 @@ It defines a layered model:
 | Blueprint (generic) | Engineering workflow skills (`architecture`, `design`, `plan`, `task-to-pr`, etc.) | Any software project |
 | Autoplan backend skills | Autoplan integration standards (.NET Functions, auth, persistence, IaC, pipelines for Azure DevOps and GitHub, testing, docs) | Backend/integration work |
 | Autoplan webapp skills | VehiclePortal-style split web architecture (React + Node API + Azure SQL + hybrid deploy) | Web/full-stack app work |
+| Autobot GitHub Actions pipeline (optional) | Label-triggered reusable workflow pipeline with human gates between spec, planning, and implementation | Teams wanting middle-ground automation without self-hosted workers |
 | Machinist factory (optional) | Queueing/orchestration layer for issue-to-PR automation using the same skill stacks | Automation at scale |
 
 For full reference, see [DOCUMENTATION.md](DOCUMENTATION.md).
@@ -40,6 +41,10 @@ For full reference, see [DOCUMENTATION.md](DOCUMENTATION.md).
    - `machinist/config.toml.example`
    - `machinist/worker.toml.example`
    - `machinist/workflows/issue-to-pr/README.md`
+7. (Optional) Configure the Autobot label-triggered GitHub Actions pipeline:
+   - `.github/autobot/README.md`
+   - `.github/workflows/autobot.yml`
+   - `.github/workflows/autobot-setup.yml`
 
 ## Which skillsets to use
 
@@ -54,6 +59,9 @@ For full reference, see [DOCUMENTATION.md](DOCUMENTATION.md).
 If the project needs automated issue-to-PR execution, use the Machinist package in
 [`machinist/`](machinist/README.md). It routes requests into backend/webapp/generic workflows
 without changing the underlying skill standards.
+
+If the project needs a lighter model with human gates between phases, use the Autobot reusable
+workflow package in [`.github/autobot/`](.github/autobot/README.md).
 
 ## Maintenance
 

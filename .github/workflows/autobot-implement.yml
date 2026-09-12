@@ -1,0 +1,98 @@
+name: autobot-implement
+
+on:
+  workflow_call:
+    inputs:
+      repository:
+        description: Target repository in owner/repo form
+        required: true
+        type: string
+      issue_number:
+        description: Task issue number
+        required: true
+        type: number
+      actor:
+        description: User that triggered the label event
+        required: true
+        type: string
+      default_branch:
+        description: Target repository default branch
+        required: true
+        type: string
+    secrets:
+      CODEX_API_KEY:
+        required: false
+      BASELINE_REPO_TOKEN:
+        required: false
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+concurrency:
+  group: autobot-${{ inputs.repository }}-${{ inputs.issue_number }}
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout target repository
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ inputs.repository }}
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install Codex CLI
+        run: npm install --global @openai/codex
+
+      - name: Bootstrap baseline tooling
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          BASELINE_REPO_TOKEN: ${{ secrets.BASELINE_REPO_TOKEN }}
+          GITHUB_WORKFLOW_REF: ${{ github.workflow_ref }}
+          REPOSITORY: ${{ inputs.repository }}
+          ISSUE_NUMBER: ${{ inputs.issue_number }}
+        run: |
+          set -euo pipefail
+          export GH_TOKEN="$GITHUB_TOKEN"
+          baseline_repo="${GITHUB_WORKFLOW_REF%%/.github/*}"
+          baseline_ref="${GITHUB_WORKFLOW_REF##*@}"
+          baseline_ref="${baseline_ref#refs/heads/}"
+          baseline_ref="${baseline_ref#refs/tags/}"
+          if [[ -n "${BASELINE_REPO_TOKEN:-}" ]]; then
+            export GH_TOKEN="$BASELINE_REPO_TOKEN"
+          fi
+          if ! gh repo clone "$baseline_repo" .autobot-baseline -- --depth 1 --branch "$baseline_ref"; then
+            export GH_TOKEN="$GITHUB_TOKEN"
+            gh issue comment "$ISSUE_NUMBER" --repo "$REPOSITORY" --body "Autobot could not read baseline tooling repository ($baseline_repo@$baseline_ref). If the baseline repository is private, pass BASELINE_REPO_TOKEN with read access. Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            gh issue edit "$ISSUE_NUMBER" --repo "$REPOSITORY" --remove-label autobot-in-review --add-label autobot-blocked || true
+            exit 0
+          fi
+
+      - name: Install skill packages
+        run: |
+          set -euo pipefail
+          bash .autobot-baseline/machinist/scripts/install-autoplan-skills.sh --targets copilot
+
+      - name: Run implementation phase
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ github.token }}
+          CODEX_API_KEY: ${{ secrets.CODEX_API_KEY }}
+          REPOSITORY: ${{ inputs.repository }}
+          ISSUE_NUMBER: ${{ inputs.issue_number }}
+          ACTOR: ${{ inputs.actor }}
+          DEFAULT_BRANCH: ${{ inputs.default_branch }}
+          TRIGGER_LABEL: autobot-in-review
+          WORKFLOW_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          bash .autobot-baseline/.github/autobot/scripts/run_implement_phase.sh
+

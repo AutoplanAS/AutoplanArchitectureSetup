@@ -14,6 +14,7 @@ The target outcome for a new project is:
 2. The team has **Autoplan backend standards** installed.
 3. Web/full-stack teams also have **Autoplan webapp standards** installed.
 4. Teams that need scaled automation can enable **Machinist issue-to-PR orchestration**.
+5. Teams that need phased automation with human gates can enable the **Autobot GitHub Actions pipeline**.
 
 ---
 
@@ -47,6 +48,7 @@ Blueprint is intentionally separate and generic for any project type.
 | `autoplan-webapp-skills/` | Installable webapp standards package |
 | `owain-blueprint-system-development-skills/` | Local snapshot/reference of Blueprint source |
 | `machinist/` | Optional automation factory package (commands, prompts, wrappers, config templates) |
+| `.github/autobot/` | Optional reusable GitHub Actions package for label-driven phased execution |
 | `README.md` | Quick-start operator guide |
 | `DOCUMENTATION.md` | Full architecture and operations reference |
 
@@ -144,6 +146,21 @@ Minimal setup:
    `machinist/prompts/` there (or switch prompt paths to absolute paths).
 3. Run direct mode first (`machinist run`) before enabling managed triggers.
 
+### 4.7 Optional: configure Autobot phased workflow automation
+
+Use:
+
+- `.github/autobot/README.md`
+- `.github/autobot/examples/autobot.yml`
+- `.github/workflows/autobot-setup.yml`
+
+Minimal setup:
+
+1. Grant org-level `CODEX_API_KEY` secret to the target repository.
+2. Add `.github/workflows/autobot.yml` in the target repository (use the example file).
+3. Run `autobot-setup` to provision `autobot-*` labels.
+4. Drive phases by labels: `autobot-ready-for-spec`, `autobot-implementing`, `autobot-in-review`.
+
 ---
 
 ## 5. Choosing the right setup by project type
@@ -215,6 +232,18 @@ Use the wrapper scripts for direct single-request execution:
 - Bash: `./machinist/workflows/issue-to-pr/run-local.sh --prompt "<request>"`
 
 Use managed mode only after direct mode is validated for your repo and CI rules.
+
+### 6.5 Autobot operations (optional)
+
+Autobot is intentionally label-driven and phase-gated:
+
+1. `autobot-ready-for-spec` starts design generation.
+2. Human merges design PR.
+3. `autobot-implementing` creates task issues.
+4. `autobot-in-review` on a task issue starts implementation into one PR.
+
+If a phase cannot proceed, workflows remove the trigger label and add `autobot-blocked` with a
+comment containing the reason and run link.
 
 ---
 
