@@ -164,7 +164,7 @@ Minimal setup:
    - `AUTOBOT_PROJECT_NUMBER` (for Project #8 this is `8`)
    - optional `AUTOBOT_PROJECT_STATUS_FIELD` (defaults to `Status`)
 5. Grant `AUTOBOT_PROJECT_TOKEN` when project-scope write is required by the org project permissions model.
-6. Drive phases by labels: `autobot-ready-for-spec`, `autobot-implementing`, `autobot-in-review`.
+6. Drive phases by labels: `autobot-ready-for-spec`, `autobot-review-specification`, `autobot-ready-to-implement`, `autobot-in-review`.
 
 ---
 
@@ -244,8 +244,9 @@ Autobot is intentionally label-driven and phase-gated:
 
 1. `autobot-ready-for-spec` starts design generation.
 2. Human merges design PR.
-3. `autobot-implementing` creates task issues.
-4. `autobot-in-review` on a task issue starts implementation into one PR.
+3. `autobot-review-specification` is the human review and rework gate.
+4. `autobot-ready-to-implement` creates task issues.
+5. `autobot-in-review` on a task issue starts implementation into one PR.
 
 If a phase cannot proceed, workflows remove the trigger label and add `autobot-blocked` with a
 comment containing the reason and run link.
@@ -254,10 +255,11 @@ Project stage sync mapping:
 
 1. `autobot-ready-for-spec` -> `Ready for spec`
 2. `autobot-creating-specification` -> `Creating specification`
-3. `autobot-implementing` and new `autobot-task` issues -> `Implementing`
-4. `autobot-in-review` -> `In review`
-5. `autobot-blocked` -> `Blocked`
-6. issue closed -> `Done`
+3. `autobot-review-specification` -> `Review specification`
+4. `autobot-ready-to-implement` and new `autobot-task` issues -> `Ready to implement`
+5. `autobot-in-review` -> `In review`
+6. `autobot-blocked` -> `Blocked`
+7. issue closed -> `Done`
 
 ---
 

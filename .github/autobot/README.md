@@ -20,9 +20,10 @@ the agent work.
 | Label | Trigger | Outcome |
 |---|---|---|
 | `autobot-ready-for-spec` | Spec phase starts | On success: design PR + `autobot-creating-specification` |
-| `autobot-implementing` | Plan phase starts | On success: task issues labelled `autobot-task` |
+| `autobot-ready-to-implement` | Plan phase starts | On success: task issues labelled `autobot-task` |
 | `autobot-in-review` | Implement phase starts | On success: one task PR |
 | `autobot-creating-specification` | No | Design waiting for human review |
+| `autobot-review-specification` | No | Human review/rework gate before planning |
 | `autobot-task` | No | Marks issue as implementation task |
 | `autobot-blocked` | No | Phase needs human decision |
 
@@ -49,6 +50,7 @@ Project sync uses repository variables:
 3. Grant secrets in target repository:
    - `CODEX_API_KEY`
    - `BASELINE_REPO_TOKEN` only if needed.
+   - `AUTOBOT_PROJECT_TOKEN` when project scope permissions are required.
 
 ## Invariants enforced by workflows
 
@@ -65,7 +67,8 @@ Project sync mapping handled by router and phase scripts:
 
 - `autobot-ready-for-spec` -> `Ready for spec`
 - `autobot-creating-specification` -> `Creating specification`
-- `autobot-implementing` / `autobot-task` -> `Implementing`
+- `autobot-review-specification` -> `Review specification`
+- `autobot-ready-to-implement` / `autobot-task` -> `Ready to implement`
 - `autobot-in-review` -> `In review`
 - `autobot-blocked` -> `Blocked`
 - issue closed -> `Done`

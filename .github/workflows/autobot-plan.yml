@@ -88,7 +88,7 @@ jobs:
           if ! gh repo clone "$baseline_repo" .autobot-baseline -- --depth 1 --branch "$baseline_ref"; then
             export GH_TOKEN="$GITHUB_TOKEN"
             gh issue comment "$ISSUE_NUMBER" --repo "$REPOSITORY" --body "Autobot could not read baseline tooling repository ($baseline_repo@$baseline_ref). If the baseline repository is private, pass BASELINE_REPO_TOKEN with read access. Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-            gh issue edit "$ISSUE_NUMBER" --repo "$REPOSITORY" --remove-label autobot-implementing --add-label autobot-blocked || true
+            gh issue edit "$ISSUE_NUMBER" --repo "$REPOSITORY" --remove-label autobot-ready-to-implement --add-label autobot-blocked || true
             exit 0
           fi
 
@@ -106,7 +106,7 @@ jobs:
           ISSUE_NUMBER: ${{ inputs.issue_number }}
           ACTOR: ${{ inputs.actor }}
           DEFAULT_BRANCH: ${{ inputs.default_branch }}
-          TRIGGER_LABEL: autobot-implementing
+          TRIGGER_LABEL: autobot-ready-to-implement
           WORKFLOW_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           PROJECT_OWNER: ${{ inputs.project_owner }}
           PROJECT_NUMBER: ${{ inputs.project_number }}
@@ -115,4 +115,3 @@ jobs:
         run: |
           set -euo pipefail
           bash .autobot-baseline/.github/autobot/scripts/run_plan_phase.sh
-

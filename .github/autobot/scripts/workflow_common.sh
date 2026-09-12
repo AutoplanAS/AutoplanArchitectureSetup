@@ -85,7 +85,8 @@ ensure_autobot_labels() {
   local repo="$1"
   gh label create autobot-ready-for-spec --repo "$repo" --color 1D76DB --description "Feature is ready for design generation" --force >/dev/null
   gh label create autobot-creating-specification --repo "$repo" --color 5319E7 --description "Design exists and awaits human review" --force >/dev/null
-  gh label create autobot-implementing --repo "$repo" --color 0E8A16 --description "Design approved and ready for task planning" --force >/dev/null
+  gh label create autobot-review-specification --repo "$repo" --color C5DEF5 --description "Final design review before implementation planning" --force >/dev/null
+  gh label create autobot-ready-to-implement --repo "$repo" --color 0E8A16 --description "Specification approved and ready for task planning" --force >/dev/null
   gh label create autobot-task --repo "$repo" --color FBCA04 --description "Task issue generated for implementation" --force >/dev/null
   gh label create autobot-in-review --repo "$repo" --color B60205 --description "Task is assigned to an implementation run" --force >/dev/null
   gh label create autobot-blocked --repo "$repo" --color D93F0B --description "Needs human decision before continuing" --force >/dev/null

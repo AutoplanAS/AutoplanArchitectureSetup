@@ -140,7 +140,7 @@ def main() -> int:
                 number=args.project_number,
                 status_field=args.project_status_field,
                 issue_url=str(item.get("url", "")),
-                stage="Implementing",
+                stage="Ready to implement",
             )
             if warning:
                 warnings.append(warning)
@@ -193,7 +193,7 @@ def main() -> int:
                 number=args.project_number,
                 status_field=args.project_status_field,
                 issue_url=issue_url,
-                stage="Implementing",
+                stage="Ready to implement",
             )
             if warning:
                 warnings.append(warning)

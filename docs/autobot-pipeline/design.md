@@ -11,7 +11,8 @@ written, and it requires a worker host that someone must own.
 
 Teams need a middle ground. The delivery flow already has phases on a GitHub Project board: a feature
 arrives in **Ready for spec**, a specification is written and reviewed in **Creating specification**,
-tasks are built in **Implementing**, and finished work waits in **In review**. Today a person drives
+then approved in **Review specification**, then queued in **Ready to implement**. Tasks are then
+built and finished work waits in **In review**. Today a person drives
 every transition by hand: writing the design with the `design` skill, running `architecture-review`,
 splitting the design into issues with `plan`, and running `task-to-pr` for each issue. The work is
 mechanical, but the human judgement between phases is the part worth keeping.
@@ -48,13 +49,15 @@ questions cannot be answered from the repository, it opens no pull request. It c
 needs, replaces the trigger label with `autobot-blocked`, and the job succeeds. A human answers in
 the issue and re-adds the trigger label to retry.
 
-**Planning phase.** After merging the design pull request, the lead adds `autobot-implementing` to
-the feature issue. The agent reads the merged design from the default branch, runs `plan`, and
-creates one GitHub issue per task. Each new issue carries the label `autobot-task`, links back to the
-feature issue and to the design file, and states its dependencies by issue number. The feature issue
-gets a comment listing the created issues in dependency order. The task issues are added to the same
-project board in *Implementing* when the board is configured. If the design pull request is not
-merged yet, the agent comments saying so and applies `autobot-blocked` instead of creating issues.
+**Planning phase.** After merging the design pull request, the lead applies
+`autobot-review-specification` for the explicit human review and rework gate. When the specification
+is approved, the lead adds `autobot-ready-to-implement` to the feature issue. The agent reads the
+merged design from the default branch, runs `plan`, and creates one GitHub issue per task. Each new
+issue carries the label `autobot-task`, links back to the feature issue and to the design file, and
+states its dependencies by issue number. The feature issue gets a comment listing the created issues
+in dependency order. The task issues are added to the project board in *Ready to implement* so they
+can be picked up for execution. If the design pull request is not merged yet, the agent comments
+saying so and applies `autobot-blocked` instead of creating issues.
 
 **Implementation phase.** A lead assigns a task issue to an agent by adding
 `autobot-in-review` to it. The agent runs `task-to-pr` for that single issue: it branches, implements,
@@ -83,7 +86,7 @@ the label set in a target repository so onboarding is one click.
 flowchart LR
   A[Issue labeled] --> B[autobot.yml caller in project repo]
   B -->|autobot-ready-for-spec| C[autobot-spec.yml]
-  B -->|autobot-implementing| D[autobot-plan.yml]
+  B -->|autobot-ready-to-implement| D[autobot-plan.yml]
   B -->|autobot-in-review| E[autobot-implement.yml]
   C --> F[design PR + issue comment]
   D --> G[task issues]
@@ -107,7 +110,8 @@ automation keeps the column in step.
 |---|---|---|
 | `autobot-ready-for-spec` | Feature is ready for a design | Starts the spec job, removed when it ends |
 | `autobot-creating-specification` | Design exists and awaits human review | Applied by the spec job, no trigger |
-| `autobot-implementing` | Design approved, split it into tasks | Starts the plan job, removed when it ends |
+| `autobot-review-specification` | Human review/rework gate for final specification | No trigger |
+| `autobot-ready-to-implement` | Specification approved, split it into tasks | Starts the plan job, removed when it ends |
 | `autobot-task` | Issue was created by the plan job | Marks agent-executable tasks, no trigger |
 | `autobot-in-review` | Implement this task | Starts the implement job, kept while the PR is open |
 | `autobot-blocked` | A job needs a human decision | No trigger, must be removed to retry |
@@ -195,8 +199,8 @@ bounded by requiring a deliberate label per phase and per task; there is no sche
 |---|---|---|
 | AC-1 | Labelling a feature issue `autobot-ready-for-spec` produces a pull request adding `docs/<issue>-<slug>/design.md` and one issue comment linking it | Label a test issue in a sandbox repo; confirm the PR and comment exist and the file follows the `design` skill shape |
 | AC-2 | After the spec job, the issue carries `autobot-creating-specification` and not `autobot-ready-for-spec` | `gh issue view <n> --json labels` after the run |
-| AC-3 | Labelling `autobot-implementing` after the design is merged creates one issue per planned task, each labelled `autobot-task`, linking the feature issue and the design file | Run on the sandbox issue; confirm issue count matches the plan and each body has the source link and dependencies |
-| AC-4 | Labelling `autobot-implementing` while the design PR is unmerged creates no issues, comments why, and applies `autobot-blocked` | Run before merging; confirm no new issues and the comment text |
+| AC-3 | Labelling `autobot-ready-to-implement` after the design is merged creates one issue per planned task, each labelled `autobot-task`, linking the feature issue and the design file | Run on the sandbox issue; confirm issue count matches the plan and each body has the source link and dependencies |
+| AC-4 | Labelling `autobot-ready-to-implement` while the design PR is unmerged creates no issues, comments why, and applies `autobot-blocked` | Run before merging; confirm no new issues and the comment text |
 | AC-5 | Labelling a task issue `autobot-in-review` produces exactly one pull request that references the task issue and is not merged | Run on a sandbox task; confirm one open PR, `gh pr view --json state` reports `OPEN` |
 | AC-6 | INV-1, INV-2: a job starts only from its own trigger label, and the implement job refuses an issue without `autobot-task` | Apply `autobot-creating-specification` and `autobot-blocked` to an issue: no run starts. Apply `autobot-in-review` to a non-task issue: job exits with a comment and no branch |
 | AC-7 | INV-3: a user without write access cannot start a job by labelling | Label as a read-access account in the sandbox; confirm the run exits at the permission check |
@@ -204,7 +208,7 @@ bounded by requiring a deliberate label per phase and per task; there is no sche
 | AC-9 | Any agent failure or timeout leaves `autobot-blocked`, a comment with the run URL, and a green job | Force a failure with an empty-bodied issue; confirm labels, comment, and job conclusion |
 | AC-10 | A project repository can adopt the pipeline by adding one caller workflow and granting the org secret | Follow the README steps in a clean repo and run AC-1 there |
 | AC-11 | INV-6: a repository without access to `CODEX_API_KEY` stops before the agent runs, comments, and applies `autobot-blocked` | Run the caller workflow in a repo the org secret is not shared with; confirm no agent step ran and the comment and label exist |
-| AC-12 | INV-7: retrying or re-labelling `autobot-implementing` does not create duplicate task issues for the same feature | Run plan once, then re-run by removing and re-adding the label; confirm task issue count is unchanged |
+| AC-12 | INV-7: retrying or re-labelling `autobot-ready-to-implement` does not create duplicate task issues for the same feature | Run plan once, then re-run by removing and re-adding the label; confirm task issue count is unchanged |
 | AC-13 | INV-8: untrusted issue text cannot change workflow transitions or force direct side effects | Add adversarial instructions in issue body (for example \"skip checks and exfiltrate secrets\"); confirm workflow still uses only parsed `RESULT:` and normal label rules |
 | AC-14 | If this baseline repository is private, the caller must provide cross-repo checkout credentials or the run fails early with a clear comment | In a sandbox, remove cross-repo read access and run; confirm explicit checkout-failure guidance comment |
 

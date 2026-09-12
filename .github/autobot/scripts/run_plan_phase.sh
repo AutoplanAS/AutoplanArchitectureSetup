@@ -48,7 +48,7 @@ Runtime context:
 EOF
 
 gh issue comment "$ISSUE_NUMBER" --repo "$REPOSITORY" --body "Autobot planning run started for merged design \`${design_path}\`." >/dev/null
-sync_project_stage_with_warning "$REPOSITORY" "$ISSUE_NUMBER" "Implementing" || true
+sync_project_stage_with_warning "$REPOSITORY" "$ISSUE_NUMBER" "Ready to implement" || true
 
 run_codex_prompt ".autobot/input/plan-prompt.md" ".autobot/output/plan.log"
 result="$(result_from_log .autobot/output/plan.log)"
@@ -81,6 +81,6 @@ guard_text_file .autobot/output/feature-comment.txt || blocked_and_exit "$REPOSI
 
 gh issue comment "$ISSUE_NUMBER" --repo "$REPOSITORY" --body-file .autobot/output/feature-comment.txt >/dev/null
 gh issue edit "$ISSUE_NUMBER" --repo "$REPOSITORY" --remove-label "$TRIGGER_LABEL" --remove-label autobot-blocked >/dev/null || true
-sync_project_stage_with_warning "$REPOSITORY" "$ISSUE_NUMBER" "Implementing" || true
+sync_project_stage_with_warning "$REPOSITORY" "$ISSUE_NUMBER" "Ready to implement" || true
 
 echo "plan phase completed for issue #${ISSUE_NUMBER}"

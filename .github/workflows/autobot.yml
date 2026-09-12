@@ -37,13 +37,26 @@ jobs:
     secrets:
       AUTOBOT_PROJECT_TOKEN: ${{ secrets.AUTOBOT_PROJECT_TOKEN }}
 
-  sync-implementing:
-    if: github.event_name == 'issues' && github.event.action == 'labeled' && github.event.issue.state == 'open' && github.event.label.name == 'autobot-implementing'
+  sync-review-specification:
+    if: github.event_name == 'issues' && github.event.action == 'labeled' && github.event.issue.state == 'open' && github.event.label.name == 'autobot-review-specification'
     uses: ./.github/workflows/autobot-project-sync.yml
     with:
       repository: ${{ github.repository }}
       issue_number: ${{ github.event.issue.number }}
-      project_stage: Implementing
+      project_stage: Review specification
+      project_owner: ${{ vars.AUTOBOT_PROJECT_OWNER }}
+      project_number: ${{ vars.AUTOBOT_PROJECT_NUMBER }}
+      project_status_field: ${{ vars.AUTOBOT_PROJECT_STATUS_FIELD != '' && vars.AUTOBOT_PROJECT_STATUS_FIELD || 'Status' }}
+    secrets:
+      AUTOBOT_PROJECT_TOKEN: ${{ secrets.AUTOBOT_PROJECT_TOKEN }}
+
+  sync-ready-to-implement:
+    if: github.event_name == 'issues' && github.event.action == 'labeled' && github.event.issue.state == 'open' && github.event.label.name == 'autobot-ready-to-implement'
+    uses: ./.github/workflows/autobot-project-sync.yml
+    with:
+      repository: ${{ github.repository }}
+      issue_number: ${{ github.event.issue.number }}
+      project_stage: Ready to implement
       project_owner: ${{ vars.AUTOBOT_PROJECT_OWNER }}
       project_number: ${{ vars.AUTOBOT_PROJECT_NUMBER }}
       project_status_field: ${{ vars.AUTOBOT_PROJECT_STATUS_FIELD != '' && vars.AUTOBOT_PROJECT_STATUS_FIELD || 'Status' }}
@@ -82,7 +95,7 @@ jobs:
     with:
       repository: ${{ github.repository }}
       issue_number: ${{ github.event.issue.number }}
-      project_stage: Implementing
+      project_stage: Ready to implement
       project_owner: ${{ vars.AUTOBOT_PROJECT_OWNER }}
       project_number: ${{ vars.AUTOBOT_PROJECT_NUMBER }}
       project_status_field: ${{ vars.AUTOBOT_PROJECT_STATUS_FIELD != '' && vars.AUTOBOT_PROJECT_STATUS_FIELD || 'Status' }}
@@ -119,7 +132,7 @@ jobs:
       AUTOBOT_PROJECT_TOKEN: ${{ secrets.AUTOBOT_PROJECT_TOKEN }}
 
   plan:
-    if: github.event_name == 'issues' && github.event.action == 'labeled' && github.event.issue.state == 'open' && github.event.label.name == 'autobot-implementing'
+    if: github.event_name == 'issues' && github.event.action == 'labeled' && github.event.issue.state == 'open' && github.event.label.name == 'autobot-ready-to-implement'
     uses: ./.github/workflows/autobot-plan.yml
     with:
       repository: ${{ github.repository }}
