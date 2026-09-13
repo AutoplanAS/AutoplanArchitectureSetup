@@ -50,6 +50,11 @@ sync_project_stage_with_warning "$REPOSITORY" "$ISSUE_NUMBER" "Ready for spec" |
 
 git fetch origin "$DEFAULT_BRANCH"
 git checkout -B "$branch_name" "origin/$DEFAULT_BRANCH"
+if [[ "$provider" == "github-copilot" ]]; then
+  if ! git push --force-with-lease origin "$branch_name" >/dev/null 2>&1; then
+    blocked_and_exit "$REPOSITORY" "$ISSUE_NUMBER" "$TRIGGER_LABEL" "Failed to publish branch ${branch_name} for Copilot handoff." "${WORKFLOW_RUN_URL:-}"
+  fi
+fi
 
 run_phase_provider "spec" ".autobot/input/spec-prompt.md" ".autobot/output/spec.log" ".autobot/output/spec.json" "$REPOSITORY" "$ISSUE_NUMBER" "${WORKFLOW_RUN_URL:-}"
 result="$(result_from_log .autobot/output/spec.log)"

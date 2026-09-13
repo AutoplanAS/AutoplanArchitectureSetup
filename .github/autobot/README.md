@@ -47,7 +47,7 @@ Provider routing uses repository variables:
 - `AUTOBOT_SPEC_PROVIDER` (`codex` or `github-copilot`, default `codex`)
 - `AUTOBOT_PLAN_PROVIDER` (`codex` or `github-copilot`, default `codex`)
 - `AUTOBOT_IMPLEMENT_PROVIDER` (`codex` or `github-copilot`, default `codex`)
-- `AUTOBOT_COPILOT_ASSIGNEE` (required when any phase uses `github-copilot`)
+- `AUTOBOT_COPILOT_ASSIGNEE` (required when any phase uses `github-copilot`; must be a real assignable GitHub login in the target repository)
 - `AUTOBOT_COPILOT_TIMEOUT_MINUTES` (optional, default `90`, max `360`)
 
 ## Adopting in another repository
@@ -74,6 +74,11 @@ Provider routing uses repository variables:
 - INV-8: Issue text is treated as untrusted input and side effects are workflow-owned.
 - INV-9: Copilot mode completion is accepted only for PRs that match expected author and run token.
 - INV-10: No automatic fallback from `github-copilot` to `codex` is allowed.
+
+Copilot handoff details:
+
+- For `spec` and `implement` phases, the workflow creates and publishes the deterministic branch (`autobot/<issue>-<slug>`) before waiting for a correlated Copilot PR.
+- Copilot-mode completion still requires the PR to reference the issue, include the run token, and contain the required phase artifact file.
 
 Project sync mapping handled by router and phase scripts:
 

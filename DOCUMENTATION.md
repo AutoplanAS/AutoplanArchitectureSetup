@@ -263,6 +263,8 @@ Provider routing behavior:
 3. `github-copilot` mode assigns the issue to `AUTOBOT_COPILOT_ASSIGNEE`, writes a run token, and
    waits for a correlated PR by expected author and token.
 4. There is no automatic fallback to Codex when Copilot mode fails or times out.
+5. In `spec` and `implement`, Autobot publishes the deterministic branch (`autobot/<issue>-<slug>`)
+   before waiting, so the assignee can work on that branch directly.
 
 Project stage sync mapping:
 
