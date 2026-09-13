@@ -78,7 +78,8 @@ Provider routing uses repository variables:
 Copilot handoff details:
 
 - For `spec` and `implement` phases, the workflow creates and publishes the deterministic branch (`autobot/<issue>-<slug>`) before waiting for a correlated Copilot PR.
-- Copilot-mode completion still requires the PR to reference the issue, include the run token, and contain the required phase artifact file.
+- The published branch includes an initial phase artifact commit (`.autobot/output/spec.json` or `.autobot/output/implement.json`) so a PR can be opened immediately.
+- Copilot-mode completion still requires the PR to reference the issue, include the run token, and update the phase artifact to `status=completed`.
 
 Project sync mapping handled by router and phase scripts:
 

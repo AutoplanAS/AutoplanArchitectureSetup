@@ -265,6 +265,9 @@ Provider routing behavior:
 4. There is no automatic fallback to Codex when Copilot mode fails or times out.
 5. In `spec` and `implement`, Autobot publishes the deterministic branch (`autobot/<issue>-<slug>`)
    before waiting, so the assignee can work on that branch directly.
+6. For `spec` and `implement`, that branch includes an initial phase artifact commit under
+   `.autobot/output/` so the PR can be opened immediately; completion requires updating the artifact
+   to `status=completed`.
 
 Project stage sync mapping:
 

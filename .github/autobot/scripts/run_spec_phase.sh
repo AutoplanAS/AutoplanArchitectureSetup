@@ -51,6 +51,22 @@ sync_project_stage_with_warning "$REPOSITORY" "$ISSUE_NUMBER" "Ready for spec" |
 git fetch origin "$DEFAULT_BRANCH"
 git checkout -B "$branch_name" "origin/$DEFAULT_BRANCH"
 if [[ "$provider" == "github-copilot" ]]; then
+  mkdir -p .autobot/output
+  cat > .autobot/output/spec.json <<EOF
+{
+  "status": "in_progress",
+  "blocked_reason": "Copilot handoff initialized; update this artifact to status=completed in the correlated PR.",
+  "issue_comment": "",
+  "pr_title": "",
+  "pr_body": ""
+}
+EOF
+  git add .autobot/output/spec.json
+  git config user.name "github-actions[bot]"
+  git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+  if ! git commit -m "Initialize Copilot spec handoff for issue #${ISSUE_NUMBER}" >/dev/null 2>&1; then
+    blocked_and_exit "$REPOSITORY" "$ISSUE_NUMBER" "$TRIGGER_LABEL" "Failed to create Copilot handoff artifact commit for ${branch_name}." "${WORKFLOW_RUN_URL:-}"
+  fi
   if ! git push --force-with-lease origin "$branch_name" >/dev/null 2>&1; then
     blocked_and_exit "$REPOSITORY" "$ISSUE_NUMBER" "$TRIGGER_LABEL" "Failed to publish branch ${branch_name} for Copilot handoff." "${WORKFLOW_RUN_URL:-}"
   fi
