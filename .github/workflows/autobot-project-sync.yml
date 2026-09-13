@@ -34,7 +34,7 @@ on:
 
 permissions:
   issues: write
-  projects: write
+  repository-projects: write
 
 jobs:
   sync:
@@ -85,4 +85,3 @@ jobs:
           fi
 
           echo "project stage synced: ${PROJECT_STAGE}"
-
