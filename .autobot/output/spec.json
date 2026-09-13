@@ -1,5 +1,5 @@
 {
-  "status": "in_progress",
+  "status": "completed",
   "blocked_reason": "Copilot handoff initialized; update this artifact to status=completed in the correlated PR.",
   "issue_comment": "",
   "pr_title": "",
