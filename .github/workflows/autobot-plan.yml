@@ -32,6 +32,20 @@ on:
         required: false
         type: string
         default: Status
+      plan_provider:
+        description: Provider for plan phase (codex or github-copilot)
+        required: false
+        type: string
+        default: codex
+      copilot_assignee:
+        description: GitHub login to assign in Copilot mode
+        required: false
+        type: string
+      copilot_timeout_minutes:
+        description: Copilot polling timeout in minutes
+        required: false
+        type: string
+        default: "90"
     secrets:
       CODEX_API_KEY:
         required: false
@@ -112,6 +126,10 @@ jobs:
           PROJECT_NUMBER: ${{ inputs.project_number }}
           PROJECT_STATUS_FIELD: ${{ inputs.project_status_field }}
           AUTOBOT_PROJECT_TOKEN: ${{ secrets.AUTOBOT_PROJECT_TOKEN }}
+          AUTOBOT_PLAN_PROVIDER: ${{ inputs.plan_provider }}
+          AUTOBOT_COPILOT_ASSIGNEE: ${{ inputs.copilot_assignee }}
+          AUTOBOT_COPILOT_TIMEOUT_MINUTES: ${{ inputs.copilot_timeout_minutes }}
+          GITHUB_RUN_ID: ${{ github.run_id }}
         run: |
           set -euo pipefail
           bash .autobot-baseline/.github/autobot/scripts/run_plan_phase.sh

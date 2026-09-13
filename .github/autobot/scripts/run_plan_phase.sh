@@ -4,7 +4,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/workflow_common.sh"
 
-require_cmd gh git python codex
+require_cmd gh git python
 
 if [[ -z "${REPOSITORY:-}" || -z "${ISSUE_NUMBER:-}" || -z "${ACTOR:-}" || -z "${DEFAULT_BRANCH:-}" || -z "${TRIGGER_LABEL:-}" ]]; then
   echo "missing required environment values" >&2
@@ -12,6 +12,7 @@ if [[ -z "${REPOSITORY:-}" || -z "${ISSUE_NUMBER:-}" || -z "${ACTOR:-}" || -z "$
 fi
 
 ensure_autobot_labels "$REPOSITORY"
+ensure_provider_valid_or_block "plan" "$REPOSITORY" "$ISSUE_NUMBER" "$TRIGGER_LABEL" "${WORKFLOW_RUN_URL:-}"
 
 if [[ "$(actor_has_write_access "$REPOSITORY" "$ACTOR")" != "true" ]]; then
   gh issue comment "$ISSUE_NUMBER" --repo "$REPOSITORY" --body "Autobot ignored the label because @$ACTOR does not have write access to this repository." >/dev/null
@@ -19,7 +20,8 @@ if [[ "$(actor_has_write_access "$REPOSITORY" "$ACTOR")" != "true" ]]; then
   exit 0
 fi
 
-if [[ -z "${CODEX_API_KEY:-}" ]]; then
+provider="$(provider_for_phase plan)"
+if [[ "$provider" == "codex" && -z "${CODEX_API_KEY:-}" ]]; then
   blocked_and_exit "$REPOSITORY" "$ISSUE_NUMBER" "$TRIGGER_LABEL" "Missing CODEX_API_KEY. Grant the org-level secret to this repository before retrying." "${WORKFLOW_RUN_URL:-}"
 fi
 
@@ -50,7 +52,7 @@ EOF
 gh issue comment "$ISSUE_NUMBER" --repo "$REPOSITORY" --body "Autobot planning run started for merged design \`${design_path}\`." >/dev/null
 sync_project_stage_with_warning "$REPOSITORY" "$ISSUE_NUMBER" "Ready to implement" || true
 
-run_codex_prompt ".autobot/input/plan-prompt.md" ".autobot/output/plan.log"
+run_phase_provider "plan" ".autobot/input/plan-prompt.md" ".autobot/output/plan.log" ".autobot/output/plan.json" "$REPOSITORY" "$ISSUE_NUMBER" "${WORKFLOW_RUN_URL:-}"
 result="$(result_from_log .autobot/output/plan.log)"
 summary="$(summary_from_log .autobot/output/plan.log)"
 if [[ "$result" != "completed" ]]; then

@@ -126,6 +126,9 @@ jobs:
       project_owner: ${{ vars.AUTOBOT_PROJECT_OWNER }}
       project_number: ${{ vars.AUTOBOT_PROJECT_NUMBER }}
       project_status_field: ${{ vars.AUTOBOT_PROJECT_STATUS_FIELD != '' && vars.AUTOBOT_PROJECT_STATUS_FIELD || 'Status' }}
+      spec_provider: ${{ vars.AUTOBOT_SPEC_PROVIDER != '' && vars.AUTOBOT_SPEC_PROVIDER || 'codex' }}
+      copilot_assignee: ${{ vars.AUTOBOT_COPILOT_ASSIGNEE }}
+      copilot_timeout_minutes: ${{ vars.AUTOBOT_COPILOT_TIMEOUT_MINUTES != '' && vars.AUTOBOT_COPILOT_TIMEOUT_MINUTES || '90' }}
     secrets:
       CODEX_API_KEY: ${{ secrets.CODEX_API_KEY }}
       BASELINE_REPO_TOKEN: ${{ secrets.BASELINE_REPO_TOKEN }}
@@ -142,6 +145,9 @@ jobs:
       project_owner: ${{ vars.AUTOBOT_PROJECT_OWNER }}
       project_number: ${{ vars.AUTOBOT_PROJECT_NUMBER }}
       project_status_field: ${{ vars.AUTOBOT_PROJECT_STATUS_FIELD != '' && vars.AUTOBOT_PROJECT_STATUS_FIELD || 'Status' }}
+      plan_provider: ${{ vars.AUTOBOT_PLAN_PROVIDER != '' && vars.AUTOBOT_PLAN_PROVIDER || 'codex' }}
+      copilot_assignee: ${{ vars.AUTOBOT_COPILOT_ASSIGNEE }}
+      copilot_timeout_minutes: ${{ vars.AUTOBOT_COPILOT_TIMEOUT_MINUTES != '' && vars.AUTOBOT_COPILOT_TIMEOUT_MINUTES || '90' }}
     secrets:
       CODEX_API_KEY: ${{ secrets.CODEX_API_KEY }}
       BASELINE_REPO_TOKEN: ${{ secrets.BASELINE_REPO_TOKEN }}
@@ -158,6 +164,9 @@ jobs:
       project_owner: ${{ vars.AUTOBOT_PROJECT_OWNER }}
       project_number: ${{ vars.AUTOBOT_PROJECT_NUMBER }}
       project_status_field: ${{ vars.AUTOBOT_PROJECT_STATUS_FIELD != '' && vars.AUTOBOT_PROJECT_STATUS_FIELD || 'Status' }}
+      implement_provider: ${{ vars.AUTOBOT_IMPLEMENT_PROVIDER != '' && vars.AUTOBOT_IMPLEMENT_PROVIDER || 'codex' }}
+      copilot_assignee: ${{ vars.AUTOBOT_COPILOT_ASSIGNEE }}
+      copilot_timeout_minutes: ${{ vars.AUTOBOT_COPILOT_TIMEOUT_MINUTES != '' && vars.AUTOBOT_COPILOT_TIMEOUT_MINUTES || '90' }}
     secrets:
       CODEX_API_KEY: ${{ secrets.CODEX_API_KEY }}
       BASELINE_REPO_TOKEN: ${{ secrets.BASELINE_REPO_TOKEN }}

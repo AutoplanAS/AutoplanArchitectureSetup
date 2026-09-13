@@ -29,7 +29,7 @@ the agent work.
 
 ## Required secrets
 
-- `CODEX_API_KEY` (required by all phase workflows)
+- `CODEX_API_KEY` (required only for phases configured with provider `codex`)
 - `BASELINE_REPO_TOKEN` (optional; required only if this baseline repository is private)
 - `AUTOBOT_PROJECT_TOKEN` (optional; required when project sync needs project-scope token)
 
@@ -41,6 +41,14 @@ Project sync uses repository variables:
 - `AUTOBOT_PROJECT_NUMBER` (for example `8`)
 - `AUTOBOT_PROJECT_STATUS_FIELD` (optional, defaults to `Status`)
 
+Provider routing uses repository variables:
+
+- `AUTOBOT_SPEC_PROVIDER` (`codex` or `github-copilot`, default `codex`)
+- `AUTOBOT_PLAN_PROVIDER` (`codex` or `github-copilot`, default `codex`)
+- `AUTOBOT_IMPLEMENT_PROVIDER` (`codex` or `github-copilot`, default `codex`)
+- `AUTOBOT_COPILOT_ASSIGNEE` (required when any phase uses `github-copilot`)
+- `AUTOBOT_COPILOT_TIMEOUT_MINUTES` (optional, default `90`, max `360`)
+
 ## Adopting in another repository
 
 1. Add labels using this repository's setup workflow:
@@ -48,9 +56,10 @@ Project sync uses repository variables:
 2. Add caller workflow:
    - Copy `.github/autobot/examples/autobot.yml` into target repo as `.github/workflows/autobot.yml`.
 3. Grant secrets in target repository:
-   - `CODEX_API_KEY`
+   - `CODEX_API_KEY` (only needed for phases that use provider `codex`)
    - `BASELINE_REPO_TOKEN` only if needed.
    - `AUTOBOT_PROJECT_TOKEN` when project scope permissions are required.
+4. Configure provider routing variables for your preferred execution model.
 
 ## Invariants enforced by workflows
 
@@ -62,6 +71,8 @@ Project sync uses repository variables:
 - INV-6: Missing `CODEX_API_KEY` blocks before agent run.
 - INV-7: Plan phase issue creation is idempotent.
 - INV-8: Issue text is treated as untrusted input and side effects are workflow-owned.
+- INV-9: Copilot mode completion is accepted only for PRs that match expected author and run token.
+- INV-10: No automatic fallback from `github-copilot` to `codex` is allowed.
 
 Project sync mapping handled by router and phase scripts:
 
