@@ -45,6 +45,16 @@ For full reference, see [DOCUMENTATION.md](DOCUMENTATION.md).
    - `.github/autobot/README.md`
    - `.github/workflows/autobot.yml`
    - `.github/workflows/autobot-setup.yml`
+   - set provider routing variables:
+     - `AUTOBOT_SPEC_PROVIDER`, `AUTOBOT_PLAN_PROVIDER`, `AUTOBOT_IMPLEMENT_PROVIDER`
+     - optional values: `codex` or `github-copilot` (default is `codex`)
+     - `AUTOBOT_COPILOT_ASSIGNEE` is required if any phase uses `github-copilot`
+     - optional `AUTOBOT_COPILOT_TIMEOUT_MINUTES` (default `90`)
+   - set repository variables for project sync:
+     - `AUTOBOT_PROJECT_OWNER` (example: `AutoplanAS`)
+     - `AUTOBOT_PROJECT_NUMBER` (example: `8`)
+     - optional `AUTOBOT_PROJECT_STATUS_FIELD` (default: `Status`)
+   - grant `AUTOBOT_PROJECT_TOKEN` if project-scope write is required
 
 ## Which skillsets to use
 

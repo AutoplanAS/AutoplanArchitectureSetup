@@ -2,47 +2,172 @@ name: autobot-router
 
 on:
   issues:
-    types: [labeled]
+    types: [opened, labeled, closed]
 
 permissions:
   contents: write
   issues: write
   pull-requests: write
+  projects: write
 
 jobs:
+  sync-ready-for-spec:
+    if: github.event_name == 'issues' && github.event.action == 'labeled' && github.event.issue.state == 'open' && github.event.label.name == 'autobot-ready-for-spec'
+    uses: ./.github/workflows/autobot-project-sync.yml
+    with:
+      repository: ${{ github.repository }}
+      issue_number: ${{ github.event.issue.number }}
+      project_stage: Ready for spec
+      project_owner: ${{ vars.AUTOBOT_PROJECT_OWNER }}
+      project_number: ${{ vars.AUTOBOT_PROJECT_NUMBER }}
+      project_status_field: ${{ vars.AUTOBOT_PROJECT_STATUS_FIELD != '' && vars.AUTOBOT_PROJECT_STATUS_FIELD || 'Status' }}
+    secrets:
+      AUTOBOT_PROJECT_TOKEN: ${{ secrets.AUTOBOT_PROJECT_TOKEN }}
+
+  sync-creating-specification:
+    if: github.event_name == 'issues' && github.event.action == 'labeled' && github.event.issue.state == 'open' && github.event.label.name == 'autobot-creating-specification'
+    uses: ./.github/workflows/autobot-project-sync.yml
+    with:
+      repository: ${{ github.repository }}
+      issue_number: ${{ github.event.issue.number }}
+      project_stage: Creating specification
+      project_owner: ${{ vars.AUTOBOT_PROJECT_OWNER }}
+      project_number: ${{ vars.AUTOBOT_PROJECT_NUMBER }}
+      project_status_field: ${{ vars.AUTOBOT_PROJECT_STATUS_FIELD != '' && vars.AUTOBOT_PROJECT_STATUS_FIELD || 'Status' }}
+    secrets:
+      AUTOBOT_PROJECT_TOKEN: ${{ secrets.AUTOBOT_PROJECT_TOKEN }}
+
+  sync-review-specification:
+    if: github.event_name == 'issues' && github.event.action == 'labeled' && github.event.issue.state == 'open' && github.event.label.name == 'autobot-review-specification'
+    uses: ./.github/workflows/autobot-project-sync.yml
+    with:
+      repository: ${{ github.repository }}
+      issue_number: ${{ github.event.issue.number }}
+      project_stage: Review specification
+      project_owner: ${{ vars.AUTOBOT_PROJECT_OWNER }}
+      project_number: ${{ vars.AUTOBOT_PROJECT_NUMBER }}
+      project_status_field: ${{ vars.AUTOBOT_PROJECT_STATUS_FIELD != '' && vars.AUTOBOT_PROJECT_STATUS_FIELD || 'Status' }}
+    secrets:
+      AUTOBOT_PROJECT_TOKEN: ${{ secrets.AUTOBOT_PROJECT_TOKEN }}
+
+  sync-ready-to-implement:
+    if: github.event_name == 'issues' && github.event.action == 'labeled' && github.event.issue.state == 'open' && github.event.label.name == 'autobot-ready-to-implement'
+    uses: ./.github/workflows/autobot-project-sync.yml
+    with:
+      repository: ${{ github.repository }}
+      issue_number: ${{ github.event.issue.number }}
+      project_stage: Ready to implement
+      project_owner: ${{ vars.AUTOBOT_PROJECT_OWNER }}
+      project_number: ${{ vars.AUTOBOT_PROJECT_NUMBER }}
+      project_status_field: ${{ vars.AUTOBOT_PROJECT_STATUS_FIELD != '' && vars.AUTOBOT_PROJECT_STATUS_FIELD || 'Status' }}
+    secrets:
+      AUTOBOT_PROJECT_TOKEN: ${{ secrets.AUTOBOT_PROJECT_TOKEN }}
+
+  sync-in-review:
+    if: github.event_name == 'issues' && github.event.action == 'labeled' && github.event.issue.state == 'open' && github.event.label.name == 'autobot-in-review'
+    uses: ./.github/workflows/autobot-project-sync.yml
+    with:
+      repository: ${{ github.repository }}
+      issue_number: ${{ github.event.issue.number }}
+      project_stage: In review
+      project_owner: ${{ vars.AUTOBOT_PROJECT_OWNER }}
+      project_number: ${{ vars.AUTOBOT_PROJECT_NUMBER }}
+      project_status_field: ${{ vars.AUTOBOT_PROJECT_STATUS_FIELD != '' && vars.AUTOBOT_PROJECT_STATUS_FIELD || 'Status' }}
+    secrets:
+      AUTOBOT_PROJECT_TOKEN: ${{ secrets.AUTOBOT_PROJECT_TOKEN }}
+
+  sync-blocked:
+    if: github.event_name == 'issues' && github.event.action == 'labeled' && github.event.issue.state == 'open' && github.event.label.name == 'autobot-blocked'
+    uses: ./.github/workflows/autobot-project-sync.yml
+    with:
+      repository: ${{ github.repository }}
+      issue_number: ${{ github.event.issue.number }}
+      project_stage: Blocked
+      project_owner: ${{ vars.AUTOBOT_PROJECT_OWNER }}
+      project_number: ${{ vars.AUTOBOT_PROJECT_NUMBER }}
+      project_status_field: ${{ vars.AUTOBOT_PROJECT_STATUS_FIELD != '' && vars.AUTOBOT_PROJECT_STATUS_FIELD || 'Status' }}
+    secrets:
+      AUTOBOT_PROJECT_TOKEN: ${{ secrets.AUTOBOT_PROJECT_TOKEN }}
+
+  sync-task-opened:
+    if: github.event_name == 'issues' && github.event.action == 'opened' && contains(join(github.event.issue.labels.*.name, ','), 'autobot-task')
+    uses: ./.github/workflows/autobot-project-sync.yml
+    with:
+      repository: ${{ github.repository }}
+      issue_number: ${{ github.event.issue.number }}
+      project_stage: Ready to implement
+      project_owner: ${{ vars.AUTOBOT_PROJECT_OWNER }}
+      project_number: ${{ vars.AUTOBOT_PROJECT_NUMBER }}
+      project_status_field: ${{ vars.AUTOBOT_PROJECT_STATUS_FIELD != '' && vars.AUTOBOT_PROJECT_STATUS_FIELD || 'Status' }}
+    secrets:
+      AUTOBOT_PROJECT_TOKEN: ${{ secrets.AUTOBOT_PROJECT_TOKEN }}
+
+  sync-done:
+    if: github.event_name == 'issues' && github.event.action == 'closed'
+    uses: ./.github/workflows/autobot-project-sync.yml
+    with:
+      repository: ${{ github.repository }}
+      issue_number: ${{ github.event.issue.number }}
+      project_stage: Done
+      project_owner: ${{ vars.AUTOBOT_PROJECT_OWNER }}
+      project_number: ${{ vars.AUTOBOT_PROJECT_NUMBER }}
+      project_status_field: ${{ vars.AUTOBOT_PROJECT_STATUS_FIELD != '' && vars.AUTOBOT_PROJECT_STATUS_FIELD || 'Status' }}
+    secrets:
+      AUTOBOT_PROJECT_TOKEN: ${{ secrets.AUTOBOT_PROJECT_TOKEN }}
+
   spec:
-    if: github.event.issue.state == 'open' && github.event.label.name == 'autobot-ready-for-spec'
+    if: github.event_name == 'issues' && github.event.action == 'labeled' && github.event.issue.state == 'open' && github.event.label.name == 'autobot-ready-for-spec'
     uses: ./.github/workflows/autobot-spec.yml
     with:
       repository: ${{ github.repository }}
       issue_number: ${{ github.event.issue.number }}
       actor: ${{ github.actor }}
       default_branch: ${{ github.event.repository.default_branch }}
+      project_owner: ${{ vars.AUTOBOT_PROJECT_OWNER }}
+      project_number: ${{ vars.AUTOBOT_PROJECT_NUMBER }}
+      project_status_field: ${{ vars.AUTOBOT_PROJECT_STATUS_FIELD != '' && vars.AUTOBOT_PROJECT_STATUS_FIELD || 'Status' }}
+      spec_provider: ${{ vars.AUTOBOT_SPEC_PROVIDER != '' && vars.AUTOBOT_SPEC_PROVIDER || 'codex' }}
+      copilot_assignee: ${{ vars.AUTOBOT_COPILOT_ASSIGNEE }}
+      copilot_timeout_minutes: ${{ vars.AUTOBOT_COPILOT_TIMEOUT_MINUTES != '' && vars.AUTOBOT_COPILOT_TIMEOUT_MINUTES || '90' }}
     secrets:
       CODEX_API_KEY: ${{ secrets.CODEX_API_KEY }}
       BASELINE_REPO_TOKEN: ${{ secrets.BASELINE_REPO_TOKEN }}
+      AUTOBOT_PROJECT_TOKEN: ${{ secrets.AUTOBOT_PROJECT_TOKEN }}
 
   plan:
-    if: github.event.issue.state == 'open' && github.event.label.name == 'autobot-implementing'
+    if: github.event_name == 'issues' && github.event.action == 'labeled' && github.event.issue.state == 'open' && github.event.label.name == 'autobot-ready-to-implement'
     uses: ./.github/workflows/autobot-plan.yml
     with:
       repository: ${{ github.repository }}
       issue_number: ${{ github.event.issue.number }}
       actor: ${{ github.actor }}
       default_branch: ${{ github.event.repository.default_branch }}
+      project_owner: ${{ vars.AUTOBOT_PROJECT_OWNER }}
+      project_number: ${{ vars.AUTOBOT_PROJECT_NUMBER }}
+      project_status_field: ${{ vars.AUTOBOT_PROJECT_STATUS_FIELD != '' && vars.AUTOBOT_PROJECT_STATUS_FIELD || 'Status' }}
+      plan_provider: ${{ vars.AUTOBOT_PLAN_PROVIDER != '' && vars.AUTOBOT_PLAN_PROVIDER || 'codex' }}
+      copilot_assignee: ${{ vars.AUTOBOT_COPILOT_ASSIGNEE }}
+      copilot_timeout_minutes: ${{ vars.AUTOBOT_COPILOT_TIMEOUT_MINUTES != '' && vars.AUTOBOT_COPILOT_TIMEOUT_MINUTES || '90' }}
     secrets:
       CODEX_API_KEY: ${{ secrets.CODEX_API_KEY }}
       BASELINE_REPO_TOKEN: ${{ secrets.BASELINE_REPO_TOKEN }}
+      AUTOBOT_PROJECT_TOKEN: ${{ secrets.AUTOBOT_PROJECT_TOKEN }}
 
   implement:
-    if: github.event.issue.state == 'open' && github.event.label.name == 'autobot-in-review'
+    if: github.event_name == 'issues' && github.event.action == 'labeled' && github.event.issue.state == 'open' && github.event.label.name == 'autobot-in-review'
     uses: ./.github/workflows/autobot-implement.yml
     with:
       repository: ${{ github.repository }}
       issue_number: ${{ github.event.issue.number }}
       actor: ${{ github.actor }}
       default_branch: ${{ github.event.repository.default_branch }}
+      project_owner: ${{ vars.AUTOBOT_PROJECT_OWNER }}
+      project_number: ${{ vars.AUTOBOT_PROJECT_NUMBER }}
+      project_status_field: ${{ vars.AUTOBOT_PROJECT_STATUS_FIELD != '' && vars.AUTOBOT_PROJECT_STATUS_FIELD || 'Status' }}
+      implement_provider: ${{ vars.AUTOBOT_IMPLEMENT_PROVIDER != '' && vars.AUTOBOT_IMPLEMENT_PROVIDER || 'codex' }}
+      copilot_assignee: ${{ vars.AUTOBOT_COPILOT_ASSIGNEE }}
+      copilot_timeout_minutes: ${{ vars.AUTOBOT_COPILOT_TIMEOUT_MINUTES != '' && vars.AUTOBOT_COPILOT_TIMEOUT_MINUTES || '90' }}
     secrets:
       CODEX_API_KEY: ${{ secrets.CODEX_API_KEY }}
       BASELINE_REPO_TOKEN: ${{ secrets.BASELINE_REPO_TOKEN }}
-
+      AUTOBOT_PROJECT_TOKEN: ${{ secrets.AUTOBOT_PROJECT_TOKEN }}

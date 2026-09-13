@@ -19,16 +19,46 @@ on:
         description: Target repository default branch
         required: true
         type: string
+      project_owner:
+        description: Project owner login for stage sync
+        required: false
+        type: string
+      project_number:
+        description: Project number for stage sync
+        required: false
+        type: string
+      project_status_field:
+        description: Project status field name for stage sync
+        required: false
+        type: string
+        default: Status
+      spec_provider:
+        description: Provider for spec phase (codex or github-copilot)
+        required: false
+        type: string
+        default: codex
+      copilot_assignee:
+        description: GitHub login to assign in Copilot mode
+        required: false
+        type: string
+      copilot_timeout_minutes:
+        description: Copilot polling timeout in minutes
+        required: false
+        type: string
+        default: "90"
     secrets:
       CODEX_API_KEY:
         required: false
       BASELINE_REPO_TOKEN:
+        required: false
+      AUTOBOT_PROJECT_TOKEN:
         required: false
 
 permissions:
   contents: write
   issues: write
   pull-requests: write
+  projects: write
 
 concurrency:
   group: autobot-${{ inputs.repository }}-${{ inputs.issue_number }}
@@ -92,7 +122,14 @@ jobs:
           DEFAULT_BRANCH: ${{ inputs.default_branch }}
           TRIGGER_LABEL: autobot-ready-for-spec
           WORKFLOW_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          PROJECT_OWNER: ${{ inputs.project_owner }}
+          PROJECT_NUMBER: ${{ inputs.project_number }}
+          PROJECT_STATUS_FIELD: ${{ inputs.project_status_field }}
+          AUTOBOT_PROJECT_TOKEN: ${{ secrets.AUTOBOT_PROJECT_TOKEN }}
+          AUTOBOT_SPEC_PROVIDER: ${{ inputs.spec_provider }}
+          AUTOBOT_COPILOT_ASSIGNEE: ${{ inputs.copilot_assignee }}
+          AUTOBOT_COPILOT_TIMEOUT_MINUTES: ${{ inputs.copilot_timeout_minutes }}
+          GITHUB_RUN_ID: ${{ github.run_id }}
         run: |
           set -euo pipefail
           bash .autobot-baseline/.github/autobot/scripts/run_spec_phase.sh
-

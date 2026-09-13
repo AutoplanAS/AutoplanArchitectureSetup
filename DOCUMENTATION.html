@@ -6,7 +6,7 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data:; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'">
   <meta name="document-kind" content="design">
   <meta name="source-path" content="DOCUMENTATION.md">
-  <meta name="source-sha256" content="537fec0830ed03d4cbcbdc1e163ba1657a8169a2d9e8bf25ccd2fa2bb120a06d">
+  <meta name="source-sha256" content="ed454706851a91726d9bc33be3918b18b11fb7846392aeeb5edce9f8632e3b65">
   <meta name="generator" content="blueprint/html-doc@1">
   <title>Autoplan architecture setup documentation</title>
   <style>:root {
@@ -225,13 +225,13 @@ tbody tr:nth-child(even) { background: #f9fbfc; }
       <dl class="metadata">
         
         <div class="metadata__item"><dt>Source</dt><dd>DOCUMENTATION.md</dd></div>
-        <div class="metadata__item"><dt>SHA-256</dt><dd><code>537fec0830ed03d4cbcbdc1e163ba1657a8169a2d9e8bf25ccd2fa2bb120a06d</code></dd></div>
+        <div class="metadata__item"><dt>SHA-256</dt><dd><code>ed454706851a91726d9bc33be3918b18b11fb7846392aeeb5edce9f8632e3b65</code></dd></div>
       </dl>
     </div>
   </header>
   <div class="page-shell">
     <nav class="toc" aria-label="Document contents"><p class="toc-title">Contents</p><ol><li data-level="2"><a href="#1-purpose">1. Purpose</a></li><li data-level="2"><a href="#2-skillset-model">2. Skillset model</a></li><li data-level="3"><a href="#2-1-autoplan-has-two-domain-skillsets">2.1 Autoplan has two domain skillsets</a></li><li data-level="2"><a href="#3-repository-layout">3. Repository layout</a></li><li data-level="2"><a href="#4-getting-started-in-a-new-repository">4. Getting started in a new repository</a></li><li data-level="3"><a href="#4-1-copy-baseline-folders">4.1 Copy baseline folders</a></li><li data-level="3"><a href="#4-2-install-generic-blueprint-skills">4.2 Install generic Blueprint skills</a></li><li data-level="3"><a href="#4-3-install-autoplan-backend-skills">4.3 Install Autoplan backend skills</a></li><li data-level="3"><a href="#4-4-install-autoplan-webapp-skills">4.4 Install Autoplan webapp skills</a></li><li data-level="3"><a href="#4-5-verify-installation">4.5 Verify installation</a></li><li data-level="3"><a href="#4-6-optional-configure-machinist-factory-automation">4.6 Optional: configure Machinist factory automation</a></li><li data-level="3"><a href="#4-7-optional-configure-autobot-phased-workflow-automation">4.7 Optional: configure Autobot phased workflow automation</a></li><li data-level="2"><a href="#5-choosing-the-right-setup-by-project-type">5. Choosing the right setup by project type</a></li><li data-level="3"><a href="#5-1-typical-sequence-for-backend-heavy-projects">5.1 Typical sequence for backend-heavy projects</a></li><li data-level="3"><a href="#5-2-typical-sequence-for-web-full-stack-projects">5.2 Typical sequence for web/full-stack projects</a></li><li data-level="2"><a href="#6-operations-and-lifecycle">6. Operations and lifecycle</a></li><li data-level="3"><a href="#6-1-updating-skills">6.1 Updating skills</a></li><li data-level="3"><a href="#6-2-symlink-vs-copy">6.2 Symlink vs copy</a></li><li data-level="3"><a href="#6-3-uninstalling">6.3 Uninstalling</a></li><li data-level="3"><a href="#6-4-factory-operations-with-machinist-optional">6.4 Factory operations with Machinist (optional)</a></li><li data-level="3"><a href="#6-5-autobot-operations-optional">6.5 Autobot operations (optional)</a></li><li data-level="2"><a href="#7-governance-notes">7. Governance notes</a></li><li data-level="2"><a href="#8-verified-against-repository-state">8. Verified against repository state</a></li><li data-level="2"><a href="#9-assumptions">9. Assumptions</a></li><li data-level="2"><a href="#10-decisions-log">10. Decisions log</a></li></ol></nav>
-    <main id="document-content" class="document-content" data-source-block-count="98">
+    <main id="document-content" class="document-content" data-source-block-count="100">
 <section id="autoplan-architecture-setup-documentation"
 class="source-block" data-source-block="1"
 data-source-sha256="65f8ed2e74d7b400fbbec0f406f33733a79f86967fa5b2de9879c15c8fd76a2e">
@@ -603,7 +603,7 @@ data-source-sha256="ffa578920cc67e2cb9ec9c66d1b63afd5bce1036aad4e81af93d2501ce4b
 <p>Minimal setup:</p>
 </div>
 <div class="source-block" data-source-block="56"
-data-source-sha256="9fd19ddf8c1472a7414341c0e1e3702f201adb0043150cd500fc4826f7095a1b">
+data-source-sha256="4db5b02930c69b8c2a8ada3f106018b38fd2a2373ee4a7279b31b5be2924a1c1">
 <ol type="1">
 <li>Grant org-level <code>CODEX_API_KEY</code> secret to the target
 repository.</li>
@@ -611,8 +611,21 @@ repository.</li>
 repository (use the example file).</li>
 <li>Run <code>autobot-setup</code> to provision <code>autobot-*</code>
 labels.</li>
+<li>Configure project sync variables in the target repository:
+<ul>
+<li><code>AUTOBOT_PROJECT_OWNER</code> (for Project #8 this is
+<code>AutoplanAS</code>)</li>
+<li><code>AUTOBOT_PROJECT_NUMBER</code> (for Project #8 this is
+<code>8</code>)</li>
+<li>optional <code>AUTOBOT_PROJECT_STATUS_FIELD</code> (defaults to
+<code>Status</code>)</li>
+</ul></li>
+<li>Grant <code>AUTOBOT_PROJECT_TOKEN</code> when project-scope write is
+required by the org project permissions model.</li>
 <li>Drive phases by labels: <code>autobot-ready-for-spec</code>,
-<code>autobot-implementing</code>, <code>autobot-in-review</code>.</li>
+<code>autobot-review-specification</code>,
+<code>autobot-ready-to-implement</code>,
+<code>autobot-in-review</code>.</li>
 </ol>
 </div>
 <div class="source-block" data-source-block="57"
@@ -803,11 +816,13 @@ data-source-sha256="fe99eaac369bf87768f3ed73c28ce3507be724155fc60d945a5fb82454bb
 <p>Autobot is intentionally label-driven and phase-gated:</p>
 </div>
 <div class="source-block" data-source-block="82"
-data-source-sha256="2ee8a46c4134c5be9f803558c2b146f646de547059a7c5a3def9fc5d0a3081e5">
+data-source-sha256="368c89cc33876604279b16ac4a61677d784bf7caa9bfed312ae848582e4a5bcd">
 <ol type="1">
 <li><code>autobot-ready-for-spec</code> starts design generation.</li>
 <li>Human merges design PR.</li>
-<li><code>autobot-implementing</code> creates task issues.</li>
+<li><code>autobot-review-specification</code> is the human review and
+rework gate.</li>
+<li><code>autobot-ready-to-implement</code> creates task issues.</li>
 <li><code>autobot-in-review</code> on a task issue starts implementation
 into one PR.</li>
 </ol>
@@ -819,15 +834,36 @@ data-source-sha256="8b876a370b85bdc360d93933a0646e89b867781255f4f5236cb6ea5f741b
 run link.</p>
 </div>
 <div class="source-block" data-source-block="84"
+data-source-sha256="95a95bb1c27ae7f6b9dc4fe76b529b4c1a002902e2523541d5bc81381b4e6275">
+<p>Project stage sync mapping:</p>
+</div>
+<div class="source-block" data-source-block="85"
+data-source-sha256="bc998499a6da96742ae630f9c28a11b1bbd7b19dd9cad4962f29a229f21ed962">
+<ol type="1">
+<li><code>autobot-ready-for-spec</code> -&gt;
+<code>Ready for spec</code></li>
+<li><code>autobot-creating-specification</code> -&gt;
+<code>Creating specification</code></li>
+<li><code>autobot-review-specification</code> -&gt;
+<code>Review specification</code></li>
+<li><code>autobot-ready-to-implement</code> and new
+<code>autobot-task</code> issues -&gt;
+<code>Ready to implement</code></li>
+<li><code>autobot-in-review</code> -&gt; <code>In review</code></li>
+<li><code>autobot-blocked</code> -&gt; <code>Blocked</code></li>
+<li>issue closed -&gt; <code>Done</code></li>
+</ol>
+</div>
+<div class="source-block" data-source-block="86"
 data-source-sha256="2e289ba2d3ed3b04b6000600ed5963602f0736e2e4820f4c348048319346003b">
 <hr />
 </div>
 <section id="7-governance-notes" class="source-block"
-data-source-block="85"
+data-source-block="87"
 data-source-sha256="6a4c458f11dd2fa3fe5de8dd584e04b1eefd1261ac79388eeea3ccb9972e0037">
 <h2>7. Governance notes</h2>
 </section>
-<div class="source-block" data-source-block="86"
+<div class="source-block" data-source-block="88"
 data-source-sha256="9e64b23fee23068dafd15e02692aa4aa4aa9a2972562786b1c37d903e0de65d8">
 <ol type="1">
 <li>Keep generic workflow concerns in Blueprint.</li>
@@ -839,20 +875,20 @@ skills unless Autoplan needs an explicit convention override.</li>
 details in <code>references/</code>.</li>
 </ol>
 </div>
-<div class="source-block" data-source-block="87"
+<div class="source-block" data-source-block="89"
 data-source-sha256="2e289ba2d3ed3b04b6000600ed5963602f0736e2e4820f4c348048319346003b">
 <hr />
 </div>
 <section id="8-verified-against-repository-state" class="source-block"
-data-source-block="88"
+data-source-block="90"
 data-source-sha256="a90355218a5d5b8072f9c4f45af08ea6e943f9223694a71339450c3d16a98485">
 <h2>8. Verified against repository state</h2>
 </section>
-<div class="source-block" data-source-block="89"
+<div class="source-block" data-source-block="91"
 data-source-sha256="0b953e6b537b6bab17fc0ad8c9e5b3c701287e4619da9a28026c951923d83da1">
 <p>The following was verified directly in this repository:</p>
 </div>
-<div class="source-block" data-source-block="90"
+<div class="source-block" data-source-block="92"
 data-source-sha256="8dfeee1a666ffb7c2780e6ca45ac4eef271c82a832fd5354ddbd23208d808911">
 <ol type="1">
 <li><code>autoplan-backend-skills</code> exists with install/uninstall
@@ -867,11 +903,11 @@ templates, skill bootstrap scripts, and issue-to-PR workflow
 wrappers.</li>
 </ol>
 </div>
-<div class="source-block" data-source-block="91"
+<div class="source-block" data-source-block="93"
 data-source-sha256="a109fd2cf202e3938a20334896191a1167b2b74b48f706d70247a34425ed37fc">
 <p>Package references:</p>
 </div>
-<div class="source-block" data-source-block="92"
+<div class="source-block" data-source-block="94"
 data-source-sha256="3943f44aa553e5d98dc7983bc8a179ed217ca1a0775f5f30250ac31b667dab54">
 <ul>
 <li><code>autoplan-backend-skills/README.md</code></li>
@@ -880,15 +916,15 @@ data-source-sha256="3943f44aa553e5d98dc7983bc8a179ed217ca1a0775f5f30250ac31b667d
 <li><code>machinist/README.md</code></li>
 </ul>
 </div>
-<div class="source-block" data-source-block="93"
+<div class="source-block" data-source-block="95"
 data-source-sha256="2e289ba2d3ed3b04b6000600ed5963602f0736e2e4820f4c348048319346003b">
 <hr />
 </div>
-<section id="9-assumptions" class="source-block" data-source-block="94"
+<section id="9-assumptions" class="source-block" data-source-block="96"
 data-source-sha256="6e7572e153c8c6afb0b8cca7a75a437ecdf8d979918636c191ecd65527d6f843">
 <h2>9. Assumptions</h2>
 </section>
-<div class="source-block" data-source-block="95"
+<div class="source-block" data-source-block="97"
 data-source-sha256="0c453bc9f04bf0cf59bb7f9da81f58d204d341270eb4037cba2b804a2dd60d7c">
 <ol type="1">
 <li>Copilot environment supports <code>/skills list</code> for skill
@@ -900,16 +936,16 @@ repository structure.</li>
 repo-local or user-level Machinist paths.</li>
 </ol>
 </div>
-<div class="source-block" data-source-block="96"
+<div class="source-block" data-source-block="98"
 data-source-sha256="2e289ba2d3ed3b04b6000600ed5963602f0736e2e4820f4c348048319346003b">
 <hr />
 </div>
 <section id="10-decisions-log" class="source-block"
-data-source-block="97"
+data-source-block="99"
 data-source-sha256="faa47c13058d70dd0d15fdd2f7293968e33041a7925f1b677d2e92558b08cb30">
 <h2>10. Decisions log</h2>
 </section>
-<div class="source-block table-wrap" data-source-block="98"
+<div class="source-block table-wrap" data-source-block="100"
 data-source-sha256="a8159a7e4c31d75a8ac216fdc93527f295142d15dbf5726d95922a7f4ecc56ca">
 <table>
 <thead>

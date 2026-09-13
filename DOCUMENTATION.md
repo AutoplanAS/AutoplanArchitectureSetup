@@ -156,10 +156,20 @@ Use:
 
 Minimal setup:
 
-1. Grant org-level `CODEX_API_KEY` secret to the target repository.
+1. Grant `CODEX_API_KEY` secret only if one or more phases use provider `codex`.
 2. Add `.github/workflows/autobot.yml` in the target repository (use the example file).
 3. Run `autobot-setup` to provision `autobot-*` labels.
-4. Drive phases by labels: `autobot-ready-for-spec`, `autobot-implementing`, `autobot-in-review`.
+4. Configure provider routing variables:
+   - `AUTOBOT_SPEC_PROVIDER`, `AUTOBOT_PLAN_PROVIDER`, `AUTOBOT_IMPLEMENT_PROVIDER`
+   - allowed values: `codex` or `github-copilot` (defaults to `codex`)
+   - `AUTOBOT_COPILOT_ASSIGNEE` required when any phase uses `github-copilot`
+   - optional `AUTOBOT_COPILOT_TIMEOUT_MINUTES` (default `90`, max `360`)
+5. Configure project sync variables in the target repository:
+   - `AUTOBOT_PROJECT_OWNER` (for Project #8 this is `AutoplanAS`)
+   - `AUTOBOT_PROJECT_NUMBER` (for Project #8 this is `8`)
+   - optional `AUTOBOT_PROJECT_STATUS_FIELD` (defaults to `Status`)
+6. Grant `AUTOBOT_PROJECT_TOKEN` when project-scope write is required by the org project permissions model.
+7. Drive phases by labels: `autobot-ready-for-spec`, `autobot-review-specification`, `autobot-ready-to-implement`, `autobot-in-review`.
 
 ---
 
@@ -239,11 +249,30 @@ Autobot is intentionally label-driven and phase-gated:
 
 1. `autobot-ready-for-spec` starts design generation.
 2. Human merges design PR.
-3. `autobot-implementing` creates task issues.
-4. `autobot-in-review` on a task issue starts implementation into one PR.
+3. `autobot-review-specification` is the human review and rework gate.
+4. `autobot-ready-to-implement` creates task issues.
+5. `autobot-in-review` on a task issue starts implementation into one PR.
 
 If a phase cannot proceed, workflows remove the trigger label and add `autobot-blocked` with a
 comment containing the reason and run link.
+
+Provider routing behavior:
+
+1. Each phase resolves its provider independently (`codex` or `github-copilot`).
+2. Unset provider variables default to `codex`.
+3. `github-copilot` mode assigns the issue to `AUTOBOT_COPILOT_ASSIGNEE`, writes a run token, and
+   waits for a correlated PR by expected author and token.
+4. There is no automatic fallback to Codex when Copilot mode fails or times out.
+
+Project stage sync mapping:
+
+1. `autobot-ready-for-spec` -> `Ready for spec`
+2. `autobot-creating-specification` -> `Creating specification`
+3. `autobot-review-specification` -> `Review specification`
+4. `autobot-ready-to-implement` and new `autobot-task` issues -> `Ready to implement`
+5. `autobot-in-review` -> `In review`
+6. `autobot-blocked` -> `Blocked`
+7. issue closed -> `Done`
 
 ---
 
