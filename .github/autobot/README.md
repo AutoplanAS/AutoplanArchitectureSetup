@@ -33,7 +33,8 @@ the agent work.
 - `BASELINE_REPO_TOKEN` (optional; required only if this baseline repository is private)
 - `AUTOBOT_PROJECT_TOKEN` (optional; required when project sync needs project-scope token)
 
-`CODEX_API_KEY` is expected to be an org-level secret granted to each adopting repository.
+When Codex is used, `CODEX_API_KEY` should be managed as an org-level secret and granted to each
+adopting repository.
 
 Project sync uses repository variables:
 
@@ -68,7 +69,7 @@ Provider routing uses repository variables:
 - INV-3: Trigger actor must have write access.
 - INV-4: Per-issue concurrency group prevents race duplicates.
 - INV-5: Deterministic per-issue branch reuse for PR updates.
-- INV-6: Missing `CODEX_API_KEY` blocks before agent run.
+- INV-6: Missing `CODEX_API_KEY` blocks before agent run for phases configured with provider `codex`.
 - INV-7: Plan phase issue creation is idempotent.
 - INV-8: Issue text is treated as untrusted input and side effects are workflow-owned.
 - INV-9: Copilot mode completion is accepted only for PRs that match expected author and run token.

@@ -1,0 +1,645 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data:; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'">
+  <meta name="document-kind" content="design">
+  <meta name="source-path" content="docs\autobot-provider-routing\design.md">
+  <meta name="source-sha256" content="454fcb4f4f326ae6341c5d2b0a86e6de927f92c8112236da08888dc745a5c50c">
+  <meta name="generator" content="blueprint/html-doc@1">
+  <title>Autobot multi-provider execution (Codex and GitHub Copilot)</title>
+  <style>:root {
+  color-scheme: light;
+  --paper: #f7f9fb;
+  --surface: #ffffff;
+  --surface-soft: #edf2f5;
+  --ink: #172630;
+  --muted: #526773;
+  --line: #ccd8df;
+  --line-strong: #8fa5b3;
+  --accent: #385e75;
+  --accent-soft: #dbe5ec;
+  --focus: #176b93;
+  --risk: #6b4f28;
+  --risk-soft: #f3ecdf;
+  --radius: 12px;
+  --shadow: 0 16px 42px rgb(31 54 68 / 10%);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 16px;
+  line-height: 1.65;
+  background: var(--paper);
+  color: var(--ink);
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { margin: 0; background: var(--paper); }
+a { color: var(--accent); text-underline-offset: 0.16em; }
+a:hover { text-decoration-thickness: 2px; }
+a:focus-visible, summary:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 3px;
+  border-radius: 3px;
+}
+
+.skip-link {
+  position: fixed;
+  z-index: 10;
+  left: 1rem;
+  top: 1rem;
+  padding: .65rem .9rem;
+  background: var(--ink);
+  color: white;
+  transform: translateY(-180%);
+}
+.skip-link:focus { transform: translateY(0); }
+
+.document-header {
+  border-bottom: 1px solid var(--line);
+  background: linear-gradient(145deg, #e5edf2 0%, #f7f9fb 70%);
+}
+.document-header__inner,
+.page-shell,
+.document-footer {
+  width: min(1180px, calc(100% - 2rem));
+  margin-inline: auto;
+}
+.document-header__inner { padding: 3.8rem 0 3rem; }
+.eyebrow {
+  margin: 0 0 .8rem;
+  color: var(--accent);
+  font-size: .78rem;
+  font-weight: 750;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+.document-title {
+  max-width: 900px;
+  margin: 0;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(2.25rem, 5vw, 4.6rem);
+  font-weight: 500;
+  line-height: 1.05;
+  letter-spacing: -.035em;
+}
+.metadata {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .55rem 1.25rem;
+  margin: 1.6rem 0 0;
+  color: var(--muted);
+  font-size: .88rem;
+}
+.metadata dt { font-weight: 700; color: var(--ink); }
+.metadata dd { margin: 0; overflow-wrap: anywhere; }
+.metadata__item { display: grid; grid-template-columns: auto 1fr; gap: .35rem; }
+
+.page-shell {
+  display: grid;
+  grid-template-columns: minmax(190px, 250px) minmax(0, 1fr);
+  gap: clamp(2rem, 5vw, 5rem);
+  align-items: start;
+  padding-block: 3rem 5rem;
+}
+.toc {
+  position: sticky;
+  top: 1rem;
+  max-height: calc(100vh - 2rem);
+  overflow: auto;
+  padding: 1.1rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: rgb(255 255 255 / 78%);
+}
+.toc-title { margin: 0 0 .75rem; font: 750 .78rem/1.2 Inter, sans-serif; letter-spacing: .09em; text-transform: uppercase; }
+.toc ol { list-style: none; padding: 0; margin: 0; }
+.toc li + li { margin-top: .34rem; }
+.toc li[data-level="3"] { padding-left: .8rem; font-size: .88rem; }
+.toc a { display: block; color: var(--muted); text-decoration: none; line-height: 1.35; }
+.toc a:hover { color: var(--ink); }
+
+.document-content {
+  min-width: 0;
+  padding: clamp(1.4rem, 4vw, 3.8rem);
+  border: 1px solid var(--line);
+  border-radius: calc(var(--radius) + 4px);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+.source-block { min-width: 0; }
+.source-block > :first-child { margin-top: 0; }
+.source-block > :last-child { margin-bottom: 0; }
+.source-block + .source-block { margin-top: 1rem; }
+.source-block:has(> h1), .source-block:has(> h2) { margin-top: 3.7rem; }
+.source-block:first-child { margin-top: 0; }
+h1, h2, h3, h4 { color: var(--ink); line-height: 1.2; scroll-margin-top: 1.5rem; }
+.document-content h1 { font: 500 clamp(2rem, 5vw, 3.2rem)/1.08 Georgia, serif; letter-spacing: -.025em; }
+.document-content h2 { padding-top: .4rem; font: 500 clamp(1.7rem, 3vw, 2.3rem)/1.15 Georgia, serif; letter-spacing: -.018em; }
+.document-content h3 { font-size: 1.12rem; }
+.document-content h4 { font-size: 1rem; }
+p, ul, ol, blockquote, pre, table, figure { margin-block: 1rem; }
+blockquote {
+  margin-inline: 0;
+  padding: .8rem 1rem;
+  border-left: 4px solid var(--line-strong);
+  background: var(--surface-soft);
+  color: #314854;
+}
+blockquote > :first-child { margin-top: 0; }
+blockquote > :last-child { margin-bottom: 0; }
+.role-requirements, .role-acceptance-criteria, .role-invariants,
+.role-decisions, .role-risks, .role-open-questions {
+  margin-top: 1.25rem;
+  padding: 1rem 1.2rem;
+  border-left: 4px solid var(--line-strong);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  background: var(--surface-soft);
+}
+.role-risks, .role-open-questions { border-left-color: var(--risk); background: var(--risk-soft); }
+code, pre { font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace; }
+code { padding: .12em .32em; border-radius: 4px; background: var(--surface-soft); font-size: .9em; }
+code { overflow-wrap: anywhere; word-break: break-word; }
+pre {
+  max-width: 100%;
+  overflow: auto;
+  padding: 1rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #132630;
+  color: #edf4f7;
+  line-height: 1.48;
+}
+pre code { padding: 0; background: transparent; color: inherit; }
+.table-wrap { max-width: 100%; overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: .93rem; }
+th, td { padding: .68rem .75rem; border: 1px solid var(--line); text-align: left; vertical-align: top; }
+th, td { overflow-wrap: anywhere; word-break: break-word; }
+th { background: var(--surface-soft); font-weight: 720; }
+tbody tr:nth-child(even) { background: #f9fbfc; }
+.diagram {
+  padding: 1rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: #fbfcfd;
+}
+.diagram img { display: block; width: 100%; height: auto; max-height: 650px; object-fit: contain; }
+.diagram figcaption { margin-top: .75rem; color: var(--muted); font-size: .86rem; }
+.diagram details { margin-top: .8rem; }
+.diagram summary { cursor: pointer; color: var(--accent); font-weight: 650; }
+.diagram details pre { max-height: 18rem; }
+.document-footer { padding: 0 0 3rem; color: var(--muted); font-size: .82rem; }
+
+@media (max-width: 760px) {
+  .document-header__inner { padding: 2.7rem 0 2.2rem; }
+  .page-shell { grid-template-columns: 1fr; gap: 1.2rem; padding-top: 1.25rem; }
+  .toc { position: static; max-height: none; }
+  .document-content { padding: 1.25rem; border-radius: var(--radius); }
+  .source-block:has(> h1), .source-block:has(> h2) { margin-top: 2.7rem; }
+}
+
+@media print {
+  :root { background: white; font-size: 10.5pt; }
+  @page { size: auto; margin: 16mm; }
+  .skip-link, .toc { display: none; }
+  .document-header { background: white; }
+  .document-header__inner, .page-shell, .document-footer { width: 100%; }
+  .document-header__inner { padding: 0 0 12mm; }
+  .document-title { font-size: 28pt; }
+  .page-shell { display: block; padding: 0; }
+  .document-content { padding: 0; border: 0; box-shadow: none; }
+  h1, h2, h3, h4 { break-after: avoid-page; }
+  table, figure, pre, blockquote { break-inside: avoid; }
+  thead { display: table-header-group; }
+  pre { white-space: pre-wrap; overflow-wrap: anywhere; }
+  .document-footer { padding: 10mm 0 0; }
+}
+</style>
+</head>
+<body>
+  <a class="skip-link" href="#document-content">Skip to document</a>
+  <header class="document-header">
+    <div class="document-header__inner">
+      <p class="eyebrow">Technical design</p>
+      <p class="document-title">Autobot multi-provider execution (Codex and GitHub Copilot)</p>
+      <dl class="metadata">
+        <div class="metadata__item"><dt>Status</dt><dd>Proposed for review</dd></div>
+        <div class="metadata__item"><dt>Source</dt><dd>docs\autobot-provider-routing\design.md</dd></div>
+        <div class="metadata__item"><dt>SHA-256</dt><dd><code>454fcb4f4f326ae6341c5d2b0a86e6de927f92c8112236da08888dc745a5c50c</code></dd></div>
+      </dl>
+    </div>
+  </header>
+  <div class="page-shell">
+    <nav class="toc" aria-label="Document contents"><p class="toc-title">Contents</p><ol><li data-level="2"><a href="#1-requirements-what-and-why">1. Requirements: what and why</a></li><li data-level="2"><a href="#2-user-experience">2. User experience</a></li><li data-level="2"><a href="#3-technical-design-and-choices">3. Technical design and choices</a></li><li data-level="3"><a href="#provider-contract">Provider contract</a></li><li data-level="3"><a href="#configuration-and-defaults">Configuration and defaults</a></li><li data-level="3"><a href="#github-copilot-adapter">GitHub Copilot adapter</a></li><li data-level="3"><a href="#invariants">Invariants</a></li><li data-level="3"><a href="#failure-security-and-operations">Failure, security, and operations</a></li><li data-level="2"><a href="#4-acceptance-and-proof">4. Acceptance and proof</a></li><li data-level="2"><a href="#5-open-questions">5. Open questions</a></li></ol></nav>
+    <main id="document-content" class="document-content" data-source-block-count="49">
+<section id="autobot-multi-provider-execution-codex-and-github-copilot"
+class="source-block" data-source-block="1"
+data-source-sha256="f77b4c4c9ce052260a6fae197900f7c456bc45416cbc182291e7b0856856dc55">
+<h1>Autobot multi-provider execution (Codex and GitHub Copilot)</h1>
+</section>
+<div class="source-block" data-source-block="2"
+data-source-sha256="f3cfda141bb0d969e973d91600064c759ac4c936fa82e9f2c3f6bb2a60fbb270">
+<blockquote>
+<p><strong>Status:</strong> Proposed for review</p>
+</blockquote>
+</div>
+<section id="1-requirements-what-and-why" class="source-block"
+data-source-block="3"
+data-source-sha256="97c886c1e41bd4a5bb4fe29a0dbfa859d88226e2df3d51627c0eea774bb6a981">
+<h2>1. Requirements: what and why</h2>
+</section>
+<div class="source-block" data-source-block="4"
+data-source-sha256="ce94c49e68b27e0b560fc2140699a8fc00f036e2d82d6323628ffafa775393a1">
+<p>Autobot workflows are currently tied to Codex CLI and
+<code>CODEX_API_KEY</code>. That works for Codex-first repositories, but
+it blocks teams that want execution inside the GitHub-native Copilot
+flow. Those teams still want the same phase model, labels, project-stage
+sync, and deterministic workflow-owned state transitions.</p>
+</div>
+<div class="source-block" data-source-block="5"
+data-source-sha256="2503e0744000fce9aa130e3cdb5b0c4b8aea637b07722f887a1dedd4705d2dc2">
+<p>The required outcome is a provider model where each phase can be
+configured to run with either Codex or GitHub Copilot, without changing
+the user-facing Autobot labels or phase semantics.</p>
+</div>
+<div class="source-block" data-source-block="6"
+data-source-sha256="58f9179079705497f9372ef56dcca8c37dce06f315246428430437cabc5f9d20">
+<p>Required capabilities:</p>
+</div>
+<div class="source-block" data-source-block="7"
+data-source-sha256="45e12c7789e66a9974a7bf81efa3f8c6d4656de9463e477747236fb82218c6dd">
+<ul>
+<li>Per-phase provider selection for spec, planning, and
+implementation.</li>
+<li>A stable phase-output contract so workflow side effects remain
+deterministic.</li>
+<li>GitHub Copilot support using issue assignment and PR-based
+completion.</li>
+<li>Clear timeout/blocked behavior with no automatic provider
+fallback.</li>
+<li>Backward compatibility: existing Codex repositories keep current
+behavior by default.</li>
+</ul>
+</div>
+<div class="source-block" data-source-block="8"
+data-source-sha256="b6e1a17f7fd1219d9597f5a57343e336542eb28d4631c66a5612b1580bfb2fc7">
+<p>Constraints:</p>
+</div>
+<div class="source-block" data-source-block="9"
+data-source-sha256="1bb43d45937778edcc599fa5987a4ce5958b6b00225cbfbc3e8ae5bc9743922a">
+<ul>
+<li>Existing labels and phase names stay the source of truth.</li>
+<li>Project #8 stage sync remains aligned to labels and phase
+outcomes.</li>
+<li>Secrets and permissions must stay least-privilege.</li>
+</ul>
+</div>
+<div class="source-block" data-source-block="10"
+data-source-sha256="1dc137df84b6cfda067cd437d01723b6dd342a91a0fb96402cf1d43600695235">
+<p>Out of scope:</p>
+</div>
+<div class="source-block" data-source-block="11"
+data-source-sha256="0958330e5f5edd91ffc3c4eaedc63170a7e98acf3c235570feab35d3394a9bcc">
+<ul>
+<li>Supporting providers beyond Codex and GitHub Copilot in this
+change.</li>
+<li>Replacing the Autobot phase model or adding merge automation.</li>
+<li>Refactoring prompt content quality beyond provider integration
+needs.</li>
+</ul>
+</div>
+<section id="2-user-experience" class="source-block"
+data-source-block="12"
+data-source-sha256="46fbd79d74f3e09c7eeb160eb90581b4f56dc2e628ec4f9f1910935bd1d5630e">
+<h2>2. User experience</h2>
+</section>
+<div class="source-block" data-source-block="13"
+data-source-sha256="7a959e6ad4e10105169aa708cd7e44e3a7360aa8b88c867b6b0a6ffacbeeb29a">
+<p>A repository admin configures provider variables once:</p>
+</div>
+<div class="source-block" data-source-block="14"
+data-source-sha256="9fd50a17f940e71acb6424d3b3d2028fdb439eec9c60a794ce53cfcbf1413cd4">
+<ul>
+<li><code>AUTOBOT_SPEC_PROVIDER</code></li>
+<li><code>AUTOBOT_PLAN_PROVIDER</code></li>
+<li><code>AUTOBOT_IMPLEMENT_PROVIDER</code></li>
+</ul>
+</div>
+<div class="source-block" data-source-block="15"
+data-source-sha256="82e03c07f3f26d37a27cacf06d77f33c9ad2cedabea5c552549d169637b8226f">
+<p>Allowed values are <code>codex</code> and
+<code>github-copilot</code>. If unset, value defaults to
+<code>codex</code>.</p>
+</div>
+<div class="source-block" data-source-block="16"
+data-source-sha256="294d354b1cee05c261cf2363ef466f4789f6af366ada3bbb7c145974c099b9d0">
+<p>When a trigger label is applied, the user experience remains
+phase-based:</p>
+</div>
+<div class="source-block" data-source-block="17"
+data-source-sha256="a1f7f9ac63013d382cbe9734291fade0b779c5f316298ef5a67b7ebc84bf9c03">
+<ol type="1">
+<li>A run starts and comments that Autobot accepted the phase.</li>
+<li>If the provider is Codex, behavior matches today.</li>
+<li>If the provider is GitHub Copilot, Autobot assigns the issue to a
+configured Copilot assignee, posts a run token comment, and waits for a
+matching Copilot PR until timeout.</li>
+<li>On completion, Autobot applies the same label transitions and
+project-stage updates as today.</li>
+</ol>
+</div>
+<div class="source-block" data-source-block="18"
+data-source-sha256="c3efd69d6e3e9bf7ad7dcd8fa844336e1e1c84375e4f03c27f1362d274e6a9bb">
+<p>Failure and recovery:</p>
+</div>
+<div class="source-block" data-source-block="19"
+data-source-sha256="436f1c2af5356602e3a149c9a7330428e67db21b40712b573d3026fd7ef1b3bc">
+<ul>
+<li>If provider configuration is invalid, Autobot comments the exact
+invalid value and applies <code>autobot-blocked</code>.</li>
+<li>If Copilot is not assignable, does not create a matching PR, or
+produces an invalid output contract before timeout, Autobot comments the
+reason and applies <code>autobot-blocked</code>.</li>
+<li>There is no automatic fallback to Codex. Recovery is explicit: fix
+config/content and retrigger.</li>
+</ul>
+</div>
+<section id="3-technical-design-and-choices" class="source-block"
+data-source-block="20"
+data-source-sha256="a85017480a06b18076467a0c66aa44309a60208f66d349106c8eb1db148c4eb6">
+<h2>3. Technical design and choices</h2>
+</section>
+<section id="provider-contract" class="source-block"
+data-source-block="21"
+data-source-sha256="a8f069e6abc3b84de74a00c3d01da466c3c54e7223c1c020f6a23df1977d870b">
+<h3>Provider contract</h3>
+</section>
+<div class="source-block" data-source-block="22"
+data-source-sha256="6f9f917ae7bc5b75f6cb40de207ebfca1a94d54c43d9f40b414d408983660a51">
+<p><strong>Decision:</strong> add provider adapters behind one shared
+phase contract.<br />
+Each phase script calls <code>run_phase_provider &lt;phase&gt;</code>
+and receives a normalized result payload:</p>
+</div>
+<div class="source-block" data-source-block="23"
+data-source-sha256="1874d37dff459ef1a13e5edd5282f2f2b11de9937dac61ebbe4d78a47bf75e21">
+<ul>
+<li><code>status</code> (<code>completed</code> or
+<code>blocked</code>)</li>
+<li><code>summary</code></li>
+<li>phase-specific structured output used by workflow-owned side
+effects</li>
+</ul>
+</div>
+<div class="source-block" data-source-block="24"
+data-source-sha256="7086dff2915e4c63bc7b71e4f928e38438bf24296cfdb6e12561e7ee65dfb5f8">
+<p>This keeps existing deterministic workflow control while allowing
+provider-specific execution logic. The main cost is adapter complexity
+and extra validation logic.</p>
+</div>
+<section id="configuration-and-defaults" class="source-block"
+data-source-block="25"
+data-source-sha256="e77899027ed2708e3b936a51a56c1d0c0a46ea6304ca97cab4de57a41058fd6b">
+<h3>Configuration and defaults</h3>
+</section>
+<div class="source-block" data-source-block="26"
+data-source-sha256="9d3843ad875041a87f41a805cad34d776d51424bc55d64b2ee5dc70c8932fbdb">
+<p><strong>Decision:</strong> use repository variables, not
+workflow-file edits, for provider selection.</p>
+</div>
+<div class="source-block" data-source-block="27"
+data-source-sha256="e08fd679ed42c69645813c30fc9e1dbe70ce3e0d1fc0e05fc9e483e98d25af0f">
+<ul>
+<li><code>AUTOBOT_SPEC_PROVIDER</code>,
+<code>AUTOBOT_PLAN_PROVIDER</code>,
+<code>AUTOBOT_IMPLEMENT_PROVIDER</code></li>
+<li><code>AUTOBOT_COPILOT_ASSIGNEE</code> (required when any phase uses
+<code>github-copilot</code>)</li>
+<li><code>AUTOBOT_COPILOT_TIMEOUT_MINUTES</code> (default 90, max
+360)</li>
+</ul>
+</div>
+<div class="source-block" data-source-block="28"
+data-source-sha256="42de8cd7722983c73b8143a9a6cb37557f040523663dbaa27d411464675f87c0">
+<p>Secrets:</p>
+</div>
+<div class="source-block" data-source-block="29"
+data-source-sha256="43afbecbaf465ab345d064d40404800ced471154e0f2bf977e7da9b298ed0c72">
+<ul>
+<li>Codex phases require <code>CODEX_API_KEY</code>.</li>
+<li>Copilot phases do not require <code>CODEX_API_KEY</code>, but still
+require GitHub token permissions for issue assignment, PR read/write,
+labels, and project sync.</li>
+</ul>
+</div>
+<div class="source-block" data-source-block="30"
+data-source-sha256="3e9d89327807e248bd94782c8d068eadb6692c089b3be752df16f6a0fd617241">
+<p>This choice favors operational control and backward compatibility.
+The tradeoff is more repo-level configuration.</p>
+</div>
+<section id="github-copilot-adapter" class="source-block"
+data-source-block="31"
+data-source-sha256="e0c7d9b504c7bc6434ce2f3775acb719d551ac4f36f458f2f45ddb470e0d4cd3">
+<h3>GitHub Copilot adapter</h3>
+</section>
+<div class="source-block" data-source-block="32"
+data-source-sha256="1af57dbaf3dae7e9015cae31c4bf319c9a001326eb62288e9460f81f84f49a11">
+<p><strong>Decision:</strong> for Copilot mode, use assignment plus PR
+correlation token.</p>
+</div>
+<div class="source-block" data-source-block="33"
+data-source-sha256="94979f16a6afde352314b640e0abb0fb1652598fbcd824f08816e9db168ed1d4">
+<p>Flow:</p>
+</div>
+<div class="source-block" data-source-block="34"
+data-source-sha256="eb08dc584ceea2605272d3621304b920b5fca746322626cdd2112a8c9a5c549a">
+<ol type="1">
+<li>Generate run token
+<code>autobot-&lt;phase&gt;-&lt;issue&gt;-&lt;run-id&gt;</code>.</li>
+<li>Comment token and required output contract on the issue.</li>
+<li>Assign issue to <code>AUTOBOT_COPILOT_ASSIGNEE</code>.</li>
+<li>Poll for a PR that:
+<ul>
+<li>references the issue,</li>
+<li>is authored by the Copilot assignee account, and</li>
+<li>includes the run token in body or comment.</li>
+</ul></li>
+<li>Validate phase output from the PR and complete normal side
+effects.</li>
+</ol>
+</div>
+<div class="source-block" data-source-block="35"
+data-source-sha256="cb7ec736c719377b293b9267e0852dc2f3f3cb775cc9691002889e98ce461926">
+<p>For planning phase, Copilot PR must include machine-readable task
+payload in a defined file path (<code>.autobot/output/plan.json</code>)
+so Autobot can create issues deterministically.</p>
+</div>
+<div class="source-block" data-source-block="36"
+data-source-sha256="4f24ae3c21937b86c248f20499c049d4537fcfaadf7597f0f76d0ce3f63228a7">
+<p>This fits the requirement to keep work inside GitHub framework. The
+cost is higher latency and one extra PR artifact for planning.</p>
+</div>
+<section id="invariants" class="source-block role-invariants"
+data-source-block="37"
+data-source-sha256="41701f368993e3f63ab599cb3ebcf32756d56c298bf06612195e918bf86cd6b4">
+<h3>Invariants</h3>
+</section>
+<div class="source-block" data-source-block="38"
+data-source-sha256="c64832d9f24f412f22256380c4b1751083dfeb81c1396daf3dd6017947a9fd4f">
+<ul>
+<li><strong>INV-1:</strong> Provider selection is explicit per phase
+(<code>codex</code> or <code>github-copilot</code>) and defaults to
+<code>codex</code> when unset.</li>
+<li><strong>INV-2:</strong> Side effects (labels, project stage, issue
+creation, PR metadata updates) remain workflow-owned for both
+providers.</li>
+<li><strong>INV-3:</strong> Copilot mode accepts completion only from
+PRs correlated by run token and expected author identity.</li>
+<li><strong>INV-4:</strong> No automatic provider fallback is allowed.
+Provider failure leads to <code>autobot-blocked</code>.</li>
+<li><strong>INV-5:</strong> Planning-phase task creation remains
+idempotent regardless of provider.</li>
+</ul>
+</div>
+<section id="failure-security-and-operations" class="source-block"
+data-source-block="39"
+data-source-sha256="62ac72518e5bdba90e8b8f02e4c8e15f60cfeb8393e6945d49f4b9756a90c592">
+<h3>Failure, security, and operations</h3>
+</section>
+<div class="source-block" data-source-block="40"
+data-source-sha256="04d468fedb9301edaeace39c53fde7c55c08fe88d7c8e75f14766d62edaef529">
+<p>Trust boundaries:</p>
+</div>
+<div class="source-block" data-source-block="41"
+data-source-sha256="f1858e3b8aa002593b3edecab8c71414993efe220a319bb1c2ec2f84e6f70dcb">
+<ul>
+<li>Issue body and Copilot/Codex text outputs remain untrusted
+input.</li>
+<li>Existing secret-content guard is reused before posting generated
+content.</li>
+</ul>
+</div>
+<div class="source-block" data-source-block="42"
+data-source-sha256="d19721c004bf7380444488c417904848b4395ee7bcd49b7f4af8219682d7df8b">
+<p>Operational limits:</p>
+</div>
+<div class="source-block" data-source-block="43"
+data-source-sha256="8e890a4280ce8be63e8a12a759ff631836a3570f3032b005932bddc3f7fb7205">
+<ul>
+<li>Copilot polling uses bounded timeout and interval (for example
+2-minute polling).</li>
+<li>On timeout, phase exits blocked with reason and run URL.</li>
+<li>Concurrency keys remain per issue to prevent duplicate
+transitions.</li>
+</ul>
+</div>
+<div class="source-block" data-source-block="44"
+data-source-sha256="0102410c24794cedf5f6ab21d0a5b53d6e85e80bf0ca5772534792d922b647ab">
+<p>Rejected alternative:</p>
+</div>
+<div class="source-block" data-source-block="45"
+data-source-sha256="4c87c1beecb4e39f644946e819fc3a2b2d88dd3e2b04229fe30de4de42064f36">
+<ul>
+<li>Automatic fallback to Codex after Copilot timeout was rejected. It
+hides provider failure and can produce unexpected spend and behavior
+changes.</li>
+</ul>
+</div>
+<section id="4-acceptance-and-proof" class="source-block"
+data-source-block="46"
+data-source-sha256="372906f1cdb3dc83bd8f993088fcbd3655fee7cb46ed817e2c7c274f86dad817">
+<h2>4. Acceptance and proof</h2>
+</section>
+<div class="source-block table-wrap" data-source-block="47"
+data-source-sha256="c3acaf3ca97e5bda7539cac8691c5bd1bcf614e83d3db6eacbb95890fa02818b">
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Done when</th>
+<th>How to check</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>AC-1</td>
+<td>With no provider variables set, all phases still run with Codex
+behavior</td>
+<td>Run existing label-flow sandbox checks and compare with baseline
+outputs</td>
+</tr>
+<tr>
+<td>AC-2</td>
+<td>Setting <code>AUTOBOT_*_PROVIDER=github-copilot</code> for one phase
+routes only that phase to Copilot adapter</td>
+<td>Trigger one phase and verify assignment + token comment + Copilot
+polling logs</td>
+</tr>
+<tr>
+<td>AC-3</td>
+<td>Copilot phase completion is accepted only with matching run token
+and expected author</td>
+<td>Submit a PR without token or from another author and verify phase
+stays blocked</td>
+</tr>
+<tr>
+<td>AC-4</td>
+<td>Copilot timeout or assignment failure applies
+<code>autobot-blocked</code> with actionable reason</td>
+<td>Force timeout/invalid assignee and verify label + comment
+behavior</td>
+</tr>
+<tr>
+<td>AC-5</td>
+<td>No automatic fallback occurs when Copilot fails</td>
+<td>Configure Copilot mode with missing assignee and verify Codex is not
+invoked</td>
+</tr>
+<tr>
+<td>AC-6</td>
+<td>Planning phase in Copilot mode creates deterministic
+<code>autobot-task</code> issues from
+<code>.autobot/output/plan.json</code> and remains idempotent</td>
+<td>Trigger plan twice with same source output and verify no duplicate
+task issues</td>
+</tr>
+<tr>
+<td>AC-7</td>
+<td>Project stage sync remains correct across new provider modes</td>
+<td>Run phase transitions in Project #8 and verify stage mappings still
+match labels</td>
+</tr>
+<tr>
+<td>AC-8</td>
+<td>Documentation clearly describes provider variables, secrets, and
+recovery steps</td>
+<td>Manual doc review against implemented workflow behavior</td>
+</tr>
+</tbody>
+</table>
+</div>
+<section id="5-open-questions" class="source-block role-open-questions"
+data-source-block="48"
+data-source-sha256="028a19fde90928e0153ae234a6da431e92b57e965368d736138d6df706f01023">
+<h2>5. Open questions</h2>
+</section>
+<div class="source-block" data-source-block="49"
+data-source-sha256="a4a88fd614f744d27e3576f98c1f3892a8089c6f7ec509cb5306740786fa9953">
+<ol type="1">
+<li><strong>Copilot assignee identity per organization.</strong>
+Recommended: keep <code>AUTOBOT_COPILOT_ASSIGNEE</code> mandatory and
+repository-configurable, with no hardcoded account name.
+<strong>Non-blocking</strong> because implementation can enforce
+required configuration.</li>
+<li><strong>Plan artifact retention policy for Copilot PRs.</strong>
+Recommended: keep planning PR open until task issues are created, then
+close with a standard comment to reduce board noise.
+<strong>Non-blocking</strong>.</li>
+</ol>
+</div>
+
+    </main>
+  </div>
+  <footer class="document-footer">Generated from docs\autobot-provider-routing\design.md by blueprint/html-doc@1. Edit the Markdown source, then regenerate.</footer>
+</body>
+</html>
