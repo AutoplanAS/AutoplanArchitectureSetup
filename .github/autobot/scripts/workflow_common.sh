@@ -434,18 +434,42 @@ EOF
   pr_head="${rest#*|}"
 
   mkdir -p .autobot/output .autobot/copilot
-  git fetch origin "$pr_head" >/dev/null 2>&1 || true
-
-  local ref="origin/${pr_head}"
   local artifact_path=".autobot/output/${phase}.json"
-  if ! git show "${ref}:${artifact_path}" > .autobot/copilot/provider.json 2>/dev/null; then
-    write_provider_blocked_output "$phase" "$output_json" "Correlated Copilot PR found (${pr_url}) but missing ${artifact_path}."
-    {
-      echo "RESULT: blocked"
-      echo "SUMMARY: Correlated Copilot PR missing required phase artifact."
-    } > "${output_json%.json}.log"
-    return 0
-  fi
+  local ref="origin/${pr_head}"
+  local artifact_deadline artifact_now artifact_status
+  artifact_deadline=$(( $(date +%s) + timeout_minutes * 60 ))
+
+  while true; do
+    git fetch origin "$pr_head" >/dev/null 2>&1 || true
+    if git show "${ref}:${artifact_path}" > .autobot/copilot/provider.json 2>/dev/null; then
+      artifact_status="$(python - <<'PY'
+import json
+import pathlib
+path = pathlib.Path(".autobot/copilot/provider.json")
+try:
+    payload = json.loads(path.read_text(encoding="utf-8"))
+except Exception:
+    print("")
+    raise SystemExit(0)
+print(str(payload.get("status", "")).strip().lower())
+PY
+)"
+      if [[ "$artifact_status" == "completed" ]]; then
+        break
+      fi
+    fi
+
+    artifact_now="$(date +%s)"
+    if (( artifact_now >= artifact_deadline )); then
+      write_provider_blocked_output "$phase" "$output_json" "Timed out waiting for correlated Copilot PR artifact ${artifact_path} with status=completed (token: ${run_token})."
+      {
+        echo "RESULT: blocked"
+        echo "SUMMARY: Timed out waiting for correlated Copilot PR artifact."
+      } > "${output_json%.json}.log"
+      return 0
+    fi
+    sleep 30
+  done
 
   cp .autobot/copilot/provider.json "$output_json"
   {
