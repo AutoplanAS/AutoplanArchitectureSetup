@@ -50,6 +50,8 @@ For full reference, see [DOCUMENTATION.md](DOCUMENTATION.md).
      - optional values: `codex` or `github-copilot` (default is `codex`)
      - `AUTOBOT_COPILOT_ASSIGNEE` is required if any phase uses `github-copilot`
      - optional `AUTOBOT_COPILOT_TIMEOUT_MINUTES` (default `90`)
+     - timeout value is a handoff SLA hint in Copilot comments (no long-running workflow polling)
+     - optional `AUTOBOT_COPILOT_STRICT_ARTIFACT` (`false` default; set `true` to require explicit completed phase artifacts in Copilot mode)
    - set repository variables for project sync:
      - `AUTOBOT_PROJECT_OWNER` (example: `AutoplanAS`)
      - `AUTOBOT_PROJECT_NUMBER` (example: `8`)

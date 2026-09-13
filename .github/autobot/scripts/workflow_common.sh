@@ -270,6 +270,21 @@ copilot_timeout_minutes() {
   echo "$raw"
 }
 
+copilot_strict_artifact_mode() {
+  local raw
+  raw="$(printf '%s' "${AUTOBOT_COPILOT_STRICT_ARTIFACT:-false}" | tr '[:upper:]' '[:lower:]')"
+  case "$raw" in
+    1|true|yes|on) echo "true" ;;
+    *) echo "false" ;;
+  esac
+}
+
+copilot_run_token() {
+  local phase="$1"
+  local issue_number="$2"
+  printf 'autobot-%s-%s-%s' "$phase" "$issue_number" "${GITHUB_RUN_ID:-manual}"
+}
+
 require_copilot_assignee_or_block() {
   local repo="$1"
   local issue_number="$2"
@@ -278,6 +293,110 @@ require_copilot_assignee_or_block() {
   if [[ -z "${AUTOBOT_COPILOT_ASSIGNEE:-}" ]]; then
     blocked_and_exit "$repo" "$issue_number" "$trigger_label" "AUTOBOT_COPILOT_ASSIGNEE is required when provider is github-copilot." "$run_url"
   fi
+}
+
+create_or_update_handoff_pr() {
+  local phase="$1"
+  local repo="$2"
+  local issue_number="$3"
+  local branch_name="$4"
+  local run_token="$5"
+  local artifact_path="$6"
+  local strict_mode="$7"
+
+  local pr_title="Autobot ${phase} handoff for issue #${issue_number}"
+  mkdir -p .autobot/output
+  cat > .autobot/output/handoff-pr-body.md <<EOF
+This pull request is the Autobot ${phase} handoff for #${issue_number}.
+
+Run token: \`${run_token}\`
+Expected assignee: @${AUTOBOT_COPILOT_ASSIGNEE}
+Phase artifact: \`${artifact_path}\`
+Strict artifact mode: \`${strict_mode}\`
+
+Completion contract:
+1. Keep this PR referencing #${issue_number}.
+2. Keep the run token in PR body or PR comments.
+3. Update \`${artifact_path}\` with final phase output. In strict mode it must set \`status\` to \`completed\`.
+EOF
+
+  local pr_number
+  pr_number="$(gh pr list --repo "$repo" --head "$branch_name" --json number --jq '.[0].number' 2>/dev/null || true)"
+  local pr_url
+  if [[ -z "$pr_number" ]]; then
+    pr_url="$(gh pr create --repo "$repo" --base "${DEFAULT_BRANCH}" --head "$branch_name" --title "$pr_title" --body-file .autobot/output/handoff-pr-body.md --draft)"
+    pr_number="$(gh pr view "$pr_url" --repo "$repo" --json number --jq .number 2>/dev/null || true)"
+  else
+    gh pr edit "$pr_number" --repo "$repo" --title "$pr_title" --body-file .autobot/output/handoff-pr-body.md >/dev/null
+    pr_url="$(gh pr view "$pr_number" --repo "$repo" --json url --jq .url)"
+  fi
+  printf '%s|%s' "$pr_number" "$pr_url"
+}
+
+start_copilot_handoff() {
+  local phase="$1"
+  local repo="$2"
+  local issue_number="$3"
+  local branch_name="$4"
+  local artifact_path="$5"
+  local run_url="$6"
+  local trigger_label="$7"
+
+  require_copilot_assignee_or_block "$repo" "$issue_number" "$trigger_label" "$run_url"
+
+  local run_token timeout_minutes strict_mode
+  run_token="$(copilot_run_token "$phase" "$issue_number")"
+  timeout_minutes="$(copilot_timeout_minutes)"
+  strict_mode="$(copilot_strict_artifact_mode)"
+
+  if ! gh issue edit "$issue_number" --repo "$repo" --add-assignee "$AUTOBOT_COPILOT_ASSIGNEE" >/dev/null 2>&1; then
+    blocked_and_exit "$repo" "$issue_number" "$trigger_label" "Failed to assign issue to @${AUTOBOT_COPILOT_ASSIGNEE} for Copilot provider." "$run_url"
+  fi
+
+  local pr_data pr_number pr_url
+  pr_data="$(create_or_update_handoff_pr "$phase" "$repo" "$issue_number" "$branch_name" "$run_token" "$artifact_path" "$strict_mode")"
+  pr_number="${pr_data%%|*}"
+  pr_url="${pr_data#*|}"
+  if [[ -z "$pr_url" ]]; then
+    blocked_and_exit "$repo" "$issue_number" "$trigger_label" "Failed to create or update Copilot handoff PR for branch ${branch_name}." "$run_url"
+  fi
+
+  mkdir -p .autobot/copilot
+  python - "$phase" "$issue_number" "$branch_name" "$run_token" "$pr_number" "$pr_url" "$artifact_path" <<'PY'
+import json
+import pathlib
+import sys
+payload = {
+    "phase": sys.argv[1],
+    "issue_number": int(sys.argv[2]),
+    "branch": sys.argv[3],
+    "run_token": sys.argv[4],
+    "pr_number": int(sys.argv[5]) if sys.argv[5] else None,
+    "pr_url": sys.argv[6],
+    "artifact_path": sys.argv[7],
+}
+path = pathlib.Path(".autobot/copilot/handoff.json")
+path.parent.mkdir(parents=True, exist_ok=True)
+path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+PY
+
+  local kickoff
+  kickoff=$(
+    cat <<EOF
+Autobot ${phase} provider is set to GitHub Copilot.
+
+Run token: \`${run_token}\`
+Expected assignee: @${AUTOBOT_COPILOT_ASSIGNEE}
+Handoff PR: ${pr_url}
+Branch: \`${branch_name}\`
+Phase artifact: \`${artifact_path}\`
+Timeout hint: ${timeout_minutes} minutes
+
+Autobot will evaluate completion on pull request updates.
+EOF
+  )
+  gh issue comment "$issue_number" --repo "$repo" --body "$kickoff" >/dev/null || true
+  printf '%s' "$pr_url"
 }
 
 write_provider_blocked_output() {

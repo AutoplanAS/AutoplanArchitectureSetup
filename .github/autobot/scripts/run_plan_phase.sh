@@ -52,6 +52,44 @@ EOF
 gh issue comment "$ISSUE_NUMBER" --repo "$REPOSITORY" --body "Autobot planning run started for merged design \`${design_path}\`." >/dev/null
 sync_project_stage_with_warning "$REPOSITORY" "$ISSUE_NUMBER" "Ready to implement" || true
 
+if [[ "$provider" == "github-copilot" ]]; then
+  title="$(issue_title_from_json .autobot/input/issue.json)"
+  slug="$(slugify "$title")"
+  branch_name="autobot-plan/${ISSUE_NUMBER}-${slug}"
+
+  git checkout -B "$branch_name" "origin/$DEFAULT_BRANCH"
+  git checkout "origin/$DEFAULT_BRANCH" -- "$design_path"
+  mkdir -p .autobot/output
+  cat > .autobot/output/plan.json <<EOF
+{
+  "status": "in_progress",
+  "blocked_reason": "Copilot handoff initialized; update this artifact to status=completed in the correlated PR.",
+  "feature_comment": "",
+  "tasks": []
+}
+EOF
+  git add .autobot/output/plan.json
+  git config user.name "github-actions[bot]"
+  git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+  if ! git diff --cached --quiet; then
+    if ! git commit -m "Initialize Copilot plan handoff for issue #${ISSUE_NUMBER}" >/dev/null 2>&1; then
+      blocked_and_exit "$REPOSITORY" "$ISSUE_NUMBER" "$TRIGGER_LABEL" "Failed to create Copilot plan handoff artifact commit for ${branch_name}." "${WORKFLOW_RUN_URL:-}"
+    fi
+  fi
+  if ! git push --force-with-lease origin "$branch_name" >/dev/null 2>&1; then
+    blocked_and_exit "$REPOSITORY" "$ISSUE_NUMBER" "$TRIGGER_LABEL" "Failed to publish branch ${branch_name} for Copilot plan handoff." "${WORKFLOW_RUN_URL:-}"
+  fi
+
+  if ! pr_url="$(start_copilot_handoff "plan" "$REPOSITORY" "$ISSUE_NUMBER" "$branch_name" ".autobot/output/plan.json" "${WORKFLOW_RUN_URL:-}" "$TRIGGER_LABEL")"; then
+    blocked_and_exit "$REPOSITORY" "$ISSUE_NUMBER" "$TRIGGER_LABEL" "Failed to start Copilot planning handoff." "${WORKFLOW_RUN_URL:-}"
+  fi
+  gh issue edit "$ISSUE_NUMBER" --repo "$REPOSITORY" --remove-label autobot-blocked --add-label "$TRIGGER_LABEL" >/dev/null || true
+  sync_project_stage_with_warning "$REPOSITORY" "$ISSUE_NUMBER" "Ready to implement" || true
+  printf 'Copilot planning handoff started with PR: %s\n' "$pr_url"
+  rm -rf .autobot
+  exit 0
+fi
+
 run_phase_provider "plan" ".autobot/input/plan-prompt.md" ".autobot/output/plan.log" ".autobot/output/plan.json" "$REPOSITORY" "$ISSUE_NUMBER" "${WORKFLOW_RUN_URL:-}"
 result="$(result_from_log .autobot/output/plan.log)"
 summary="$(summary_from_log .autobot/output/plan.log)"

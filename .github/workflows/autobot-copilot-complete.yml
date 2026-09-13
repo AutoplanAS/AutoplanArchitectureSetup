@@ -1,4 +1,4 @@
-name: autobot-implement
+name: autobot-copilot-complete
 
 on:
   workflow_call:
@@ -7,14 +7,10 @@ on:
         description: Target repository in owner/repo form
         required: true
         type: string
-      issue_number:
-        description: Task issue number
+      pr_number:
+        description: Pull request number to evaluate
         required: true
         type: number
-      actor:
-        description: User that triggered the label event
-        required: true
-        type: string
       default_branch:
         description: Target repository default branch
         required: true
@@ -32,6 +28,16 @@ on:
         required: false
         type: string
         default: Status
+      spec_provider:
+        description: Provider for spec phase (codex or github-copilot)
+        required: false
+        type: string
+        default: codex
+      plan_provider:
+        description: Provider for plan phase (codex or github-copilot)
+        required: false
+        type: string
+        default: codex
       implement_provider:
         description: Provider for implement phase (codex or github-copilot)
         required: false
@@ -41,22 +47,15 @@ on:
         description: GitHub login to assign in Copilot mode
         required: false
         type: string
-      copilot_timeout_minutes:
-        description: Copilot polling timeout in minutes
-        required: false
-        type: string
-        default: "90"
       copilot_strict_artifact:
         description: Require explicit completed artifact payloads before acceptance
         required: false
         type: string
         default: "false"
     secrets:
-      CODEX_API_KEY:
+      AUTOBOT_PROJECT_TOKEN:
         required: false
       BASELINE_REPO_TOKEN:
-        required: false
-      AUTOBOT_PROJECT_TOKEN:
         required: false
 
 permissions:
@@ -66,8 +65,8 @@ permissions:
   repository-projects: write
 
 concurrency:
-  group: autobot-${{ inputs.repository }}-${{ inputs.issue_number }}
-  cancel-in-progress: false
+  group: autobot-copilot-complete-${{ inputs.repository }}-${{ inputs.pr_number }}
+  cancel-in-progress: true
 
 jobs:
   run:
@@ -79,21 +78,13 @@ jobs:
           repository: ${{ inputs.repository }}
           fetch-depth: 0
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: "22"
-
-      - name: Install Codex CLI
-        run: npm install --global @openai/codex
-
       - name: Bootstrap baseline tooling
         env:
           GITHUB_TOKEN: ${{ github.token }}
           BASELINE_REPO_TOKEN: ${{ secrets.BASELINE_REPO_TOKEN }}
           GITHUB_WORKFLOW_REF: ${{ github.workflow_ref }}
           REPOSITORY: ${{ inputs.repository }}
-          ISSUE_NUMBER: ${{ inputs.issue_number }}
+          PR_NUMBER: ${{ inputs.pr_number }}
         run: |
           set -euo pipefail
           export GH_TOKEN="$GITHUB_TOKEN"
@@ -106,36 +97,27 @@ jobs:
           fi
           if ! gh repo clone "$baseline_repo" .autobot-baseline -- --depth 1 --branch "$baseline_ref"; then
             export GH_TOKEN="$GITHUB_TOKEN"
-            gh issue comment "$ISSUE_NUMBER" --repo "$REPOSITORY" --body "Autobot could not read baseline tooling repository ($baseline_repo@$baseline_ref). If the baseline repository is private, pass BASELINE_REPO_TOKEN with read access. Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-            gh issue edit "$ISSUE_NUMBER" --repo "$REPOSITORY" --remove-label autobot-in-review --add-label autobot-blocked || true
+            gh pr comment "$PR_NUMBER" --repo "$REPOSITORY" --body "Autobot could not read baseline tooling repository ($baseline_repo@$baseline_ref). If the baseline repository is private, pass BASELINE_REPO_TOKEN with read access. Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
             exit 0
           fi
 
-      - name: Install skill packages
-        run: |
-          set -euo pipefail
-          bash .autobot-baseline/machinist/scripts/install-autoplan-skills.sh --targets copilot
-
-      - name: Run implementation phase
+      - name: Evaluate Copilot completion
         env:
           GITHUB_TOKEN: ${{ github.token }}
           GH_TOKEN: ${{ github.token }}
-          CODEX_API_KEY: ${{ secrets.CODEX_API_KEY }}
           REPOSITORY: ${{ inputs.repository }}
-          ISSUE_NUMBER: ${{ inputs.issue_number }}
-          ACTOR: ${{ inputs.actor }}
+          PR_NUMBER: ${{ inputs.pr_number }}
           DEFAULT_BRANCH: ${{ inputs.default_branch }}
-          TRIGGER_LABEL: autobot-in-review
-          WORKFLOW_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           PROJECT_OWNER: ${{ inputs.project_owner }}
           PROJECT_NUMBER: ${{ inputs.project_number }}
           PROJECT_STATUS_FIELD: ${{ inputs.project_status_field }}
           AUTOBOT_PROJECT_TOKEN: ${{ secrets.AUTOBOT_PROJECT_TOKEN }}
+          AUTOBOT_SPEC_PROVIDER: ${{ inputs.spec_provider }}
+          AUTOBOT_PLAN_PROVIDER: ${{ inputs.plan_provider }}
           AUTOBOT_IMPLEMENT_PROVIDER: ${{ inputs.implement_provider }}
           AUTOBOT_COPILOT_ASSIGNEE: ${{ inputs.copilot_assignee }}
-          AUTOBOT_COPILOT_TIMEOUT_MINUTES: ${{ inputs.copilot_timeout_minutes }}
           AUTOBOT_COPILOT_STRICT_ARTIFACT: ${{ inputs.copilot_strict_artifact }}
-          GITHUB_RUN_ID: ${{ github.run_id }}
+          WORKFLOW_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
           set -euo pipefail
-          bash .autobot-baseline/.github/autobot/scripts/run_implement_phase.sh
+          bash .autobot-baseline/.github/autobot/scripts/run_copilot_completion_phase.sh
