@@ -1,0 +1,19 @@
+name: issues-event-smoke
+
+on:
+  issues:
+    types: [labeled]
+
+permissions:
+  contents: read
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Emit issues event context
+        run: |
+          echo "issues labeled workflow fired"
+          echo "action=${{ github.event.action }}"
+          echo "issue=${{ github.event.issue.number }}"
+          echo "label=${{ github.event.label.name }}"
