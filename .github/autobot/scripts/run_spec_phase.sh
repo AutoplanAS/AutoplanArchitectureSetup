@@ -64,12 +64,23 @@ EOF
   git add .autobot/output/spec.json
   git config user.name "github-actions[bot]"
   git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-  if ! git commit -m "Initialize Copilot spec handoff for issue #${ISSUE_NUMBER}" >/dev/null 2>&1; then
-    blocked_and_exit "$REPOSITORY" "$ISSUE_NUMBER" "$TRIGGER_LABEL" "Failed to create Copilot handoff artifact commit for ${branch_name}." "${WORKFLOW_RUN_URL:-}"
+  if ! git diff --cached --quiet; then
+    if ! git commit -m "Initialize Copilot spec handoff for issue #${ISSUE_NUMBER}" >/dev/null 2>&1; then
+      blocked_and_exit "$REPOSITORY" "$ISSUE_NUMBER" "$TRIGGER_LABEL" "Failed to create Copilot handoff artifact commit for ${branch_name}." "${WORKFLOW_RUN_URL:-}"
+    fi
   fi
   if ! git push --force-with-lease origin "$branch_name" >/dev/null 2>&1; then
     blocked_and_exit "$REPOSITORY" "$ISSUE_NUMBER" "$TRIGGER_LABEL" "Failed to publish branch ${branch_name} for Copilot handoff." "${WORKFLOW_RUN_URL:-}"
   fi
+
+  if ! pr_url="$(start_copilot_handoff "spec" "$REPOSITORY" "$ISSUE_NUMBER" "$branch_name" ".autobot/output/spec.json" "${WORKFLOW_RUN_URL:-}" "$TRIGGER_LABEL")"; then
+    blocked_and_exit "$REPOSITORY" "$ISSUE_NUMBER" "$TRIGGER_LABEL" "Failed to start Copilot spec handoff." "${WORKFLOW_RUN_URL:-}"
+  fi
+  gh issue edit "$ISSUE_NUMBER" --repo "$REPOSITORY" --remove-label "$TRIGGER_LABEL" --remove-label autobot-blocked --add-label autobot-creating-specification >/dev/null || true
+  sync_project_stage_with_warning "$REPOSITORY" "$ISSUE_NUMBER" "Creating specification" || true
+  printf 'Copilot spec handoff started with PR: %s\n' "$pr_url"
+  rm -rf .autobot
+  exit 0
 fi
 
 run_phase_provider "spec" ".autobot/input/spec-prompt.md" ".autobot/output/spec.log" ".autobot/output/spec.json" "$REPOSITORY" "$ISSUE_NUMBER" "${WORKFLOW_RUN_URL:-}"

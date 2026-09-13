@@ -11,17 +11,18 @@ the agent work.
 | `.github/workflows/autobot-spec.yml` | Reusable | Generate design PR from feature issue |
 | `.github/workflows/autobot-plan.yml` | Reusable | Create task issues from merged design |
 | `.github/workflows/autobot-implement.yml` | Reusable | Implement one task issue into one PR |
+| `.github/workflows/autobot-copilot-complete.yml` | Reusable | Evaluate Copilot handoff PR updates and apply phase side effects |
 | `.github/workflows/autobot-project-sync.yml` | Reusable | Add issue to project and set stage/status field |
 | `.github/workflows/autobot-setup.yml` | Dispatch | Create or refresh required labels |
-| `.github/workflows/autobot.yml` | Router | Label event router for this repository |
+| `.github/workflows/autobot.yml` | Router | Label + pull-request event router for this repository |
 
 ## Label contract
 
 | Label | Trigger | Outcome |
 |---|---|---|
-| `autobot-ready-for-spec` | Spec phase starts | On success: design PR + `autobot-creating-specification` |
-| `autobot-ready-to-implement` | Plan phase starts | On success: task issues labelled `autobot-task` |
-| `autobot-in-review` | Implement phase starts | On success: one task PR |
+| `autobot-ready-for-spec` | Spec phase starts | Codex: direct design PR. Copilot: handoff PR + `autobot-creating-specification` |
+| `autobot-ready-to-implement` | Plan phase starts | Codex: create task issues. Copilot: handoff PR, then create task issues on completion |
+| `autobot-in-review` | Implement phase starts | Codex: direct task PR updates. Copilot: handoff PR, then completion comment/stage sync on PR updates |
 | `autobot-creating-specification` | No | Design waiting for human review |
 | `autobot-review-specification` | No | Human review/rework gate before planning |
 | `autobot-task` | No | Marks issue as implementation task |
@@ -48,7 +49,8 @@ Provider routing uses repository variables:
 - `AUTOBOT_PLAN_PROVIDER` (`codex` or `github-copilot`, default `codex`)
 - `AUTOBOT_IMPLEMENT_PROVIDER` (`codex` or `github-copilot`, default `codex`)
 - `AUTOBOT_COPILOT_ASSIGNEE` (required when any phase uses `github-copilot`; must be a real assignable GitHub login in the target repository)
-- `AUTOBOT_COPILOT_TIMEOUT_MINUTES` (optional, default `90`, max `360`)
+- `AUTOBOT_COPILOT_TIMEOUT_MINUTES` (optional handoff SLA hint in comments, default `90`, max `360`)
+- `AUTOBOT_COPILOT_STRICT_ARTIFACT` (`true`/`false`, default `false`; strict mode requires explicit completed phase artifact payloads before acceptance)
 
 ## Adopting in another repository
 
@@ -77,9 +79,13 @@ Provider routing uses repository variables:
 
 Copilot handoff details:
 
-- For `spec` and `implement` phases, the workflow creates and publishes the deterministic branch (`autobot/<issue>-<slug>`) before waiting for a correlated Copilot PR.
-- The published branch includes an initial phase artifact commit (`.autobot/output/spec.json` or `.autobot/output/implement.json`) so a PR can be opened immediately.
-- Copilot-mode completion still requires the PR to reference the issue, include the run token, and update the phase artifact to `status=completed`.
+- For `spec`, `plan`, and `implement`, the issue-triggered workflow creates and publishes a deterministic handoff branch, then creates or updates a draft handoff PR and exits quickly.
+- Handoff branches:
+  - `spec`/`implement`: `autobot/<issue>-<slug>`
+  - `plan`: `autobot-plan/<issue>-<slug>`
+- Handoff PRs include a run token and initial phase artifact commit under `.autobot/output/` so a PR is openable immediately.
+- Completion is event-driven: `autobot-copilot-complete.yml` runs on PR updates/comments, validates author + issue reference + run token, and applies workflow-owned side effects.
+- With `AUTOBOT_COPILOT_STRICT_ARTIFACT=false`, spec/implement can be accepted without manually editing the artifact when required branch changes are present. Set strict mode to `true` to require explicit `status=completed` artifacts.
 
 Project sync mapping handled by router and phase scripts:
 

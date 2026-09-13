@@ -163,7 +163,8 @@ Minimal setup:
    - `AUTOBOT_SPEC_PROVIDER`, `AUTOBOT_PLAN_PROVIDER`, `AUTOBOT_IMPLEMENT_PROVIDER`
    - allowed values: `codex` or `github-copilot` (defaults to `codex`)
    - `AUTOBOT_COPILOT_ASSIGNEE` required when any phase uses `github-copilot`
-   - optional `AUTOBOT_COPILOT_TIMEOUT_MINUTES` (default `90`, max `360`)
+   - optional `AUTOBOT_COPILOT_TIMEOUT_MINUTES` (handoff SLA hint in comments, default `90`, max `360`)
+   - optional `AUTOBOT_COPILOT_STRICT_ARTIFACT` (`false` default; set `true` to require explicit completed phase artifacts in Copilot mode)
 5. Configure project sync variables in the target repository:
    - `AUTOBOT_PROJECT_OWNER` (for Project #8 this is `AutoplanAS`)
    - `AUTOBOT_PROJECT_NUMBER` (for Project #8 this is `8`)
@@ -260,14 +261,18 @@ Provider routing behavior:
 
 1. Each phase resolves its provider independently (`codex` or `github-copilot`).
 2. Unset provider variables default to `codex`.
-3. `github-copilot` mode assigns the issue to `AUTOBOT_COPILOT_ASSIGNEE`, writes a run token, and
-   waits for a correlated PR by expected author and token.
-4. There is no automatic fallback to Codex when Copilot mode fails or times out.
-5. In `spec` and `implement`, Autobot publishes the deterministic branch (`autobot/<issue>-<slug>`)
-   before waiting, so the assignee can work on that branch directly.
-6. For `spec` and `implement`, that branch includes an initial phase artifact commit under
-   `.autobot/output/` so the PR can be opened immediately; completion requires updating the artifact
-   to `status=completed`.
+3. `github-copilot` mode is event-driven:
+   - issue-trigger workflows publish a deterministic handoff branch and create/update a draft handoff PR;
+   - completion is evaluated on PR events by `autobot-copilot-complete`.
+4. Handoff branches:
+   - `spec`/`implement`: `autobot/<issue>-<slug>`
+   - `plan`: `autobot-plan/<issue>-<slug>`
+5. Copilot completion requires the PR to reference the issue, include the run token, and match the
+   configured assignee author identity.
+6. `AUTOBOT_COPILOT_STRICT_ARTIFACT=false` (default) allows spec/implement completion without
+   manual artifact edits when expected branch changes exist; `true` requires explicit completed
+   artifacts.
+7. There is no automatic fallback to Codex when Copilot mode fails.
 
 Project stage sync mapping:
 
