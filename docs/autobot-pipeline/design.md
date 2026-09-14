@@ -1,6 +1,6 @@
 # Autobot pipeline: GitHub Actions agents for spec, planning, and implementation
 
-> **Status:** Proposed for review
+> **Status:** Implemented baseline, updated to match current behavior
 
 ## 1. Requirements: what and why
 
@@ -75,29 +75,40 @@ link and applies `autobot-blocked`.
 
 ### Shape
 
-Three reusable workflows live in this repository under `.github/workflows/`:
-`autobot-spec.yml`, `autobot-plan.yml`, `autobot-implement.yml`, each with `on: workflow_call`. A
-project repository adds one caller workflow, `.github/workflows/autobot.yml`, that listens for
-`issues: [labeled]` and routes the label to the matching reusable workflow. A fourth file,
-`.github/workflows/autobot-setup.yml` in this repository, is a `workflow_dispatch` job that creates
+Five reusable workflows live in this repository under `.github/workflows/`:
+`autobot-spec.yml`, `autobot-plan.yml`, `autobot-implement.yml`,
+`autobot-copilot-complete.yml`, and `autobot-project-sync.yml`, each with
+`on: workflow_call`. A project repository adds one caller workflow,
+`.github/workflows/autobot.yml`, that listens for issue labels, pull request events, and PR comments:
+
+- issue labels route to spec/plan/implement and optional project-stage sync;
+- pull request and PR-comment events route to Copilot completion correlation;
+- issue close and task-open events can trigger project-stage sync.
+
+`.github/workflows/autobot-setup.yml` in this repository is a `workflow_dispatch` job that creates
 the label set in a target repository so onboarding is one click.
 
 ```mermaid
 flowchart LR
-  A[Issue labeled] --> B[autobot.yml caller in project repo]
+  A[Issue label event] --> B[autobot.yml caller in project repo]
+  P[PR event or PR comment] --> B
   B -->|autobot-ready-for-spec| C[autobot-spec.yml]
   B -->|autobot-ready-to-implement| D[autobot-plan.yml]
   B -->|autobot-in-review| E[autobot-implement.yml]
+  B -->|project stage labels| S[autobot-project-sync.yml]
+  B -->|autobot handoff PR updates| K[autobot-copilot-complete.yml]
   C --> F[design PR + issue comment]
   D --> G[task issues]
   E --> H[task PR]
+  K --> I[phase completion side effects]
+  S --> J[project status update]
 ```
 
 Reusable workflows are referenced by tag, for example
 `AutoplanAS/AutoplanArchitectureSetup/.github/workflows/autobot-spec.yml@v1`, so a project pins a
 known-good version. The cost is that a project must bump the tag to get fixes; the benefit is that a
 change in this repository cannot silently break every project at once. To make this true in practice,
-this repository publishes version tags only after AC-1 through AC-14 pass in a sandbox repository.
+this repository publishes version tags only after AC-1 through AC-20 pass in a sandbox repository.
 Projects pin a major tag (`@v1`) or an exact release tag (`@v1.2.0`) and upgrade intentionally.
 
 ### Labels
@@ -122,26 +133,25 @@ stops a feature issue from being implemented as if it were one task.
 
 ### Agent runtime
 
-Jobs run on `ubuntu-latest` and execute the Codex CLI headlessly, matching the executor the Machinist
-prompts already target so one prompt body works in both models. Each job:
+Jobs run on `ubuntu-latest` and resolve phase provider independently with:
+`AUTOBOT_SPEC_PROVIDER`, `AUTOBOT_PLAN_PROVIDER`, and `AUTOBOT_IMPLEMENT_PROVIDER`
+(`codex` default, `github-copilot` optional).
+
+Each phase job:
 
 1. Checks out the project repository.
-2. Installs the Blueprint and Autoplan skill packages by running
-   `machinist/scripts/install-autoplan-skills.sh` from a checkout of this repository, pinned to the
-   same tag as the workflow, so the agent has the same skills a developer has locally. This design
-   assumes `AutoplanAS/AutoplanArchitectureSetup` remains public. If it becomes private, the caller
-   workflow must pass a checkout token with read access to that repository.
-3. Writes the phase prompt from `.github/autobot/prompts/<phase>.md` in this repository, with the
-   issue number, title, body, and repository slug substituted by the workflow. Issue title and body
-   are treated as untrusted input: inserted inside a fenced `issue-context` block, never interpolated
-   into shell commands, and never used to decide workflow transitions.
-4. Runs Codex non-interactively with a per-phase timeout: 30 minutes for spec, 20 for plan, 90 for
-   implement. It first uses `--sandbox workspace-write --approve-for-me`; on GitHub-hosted runners,
-   if sandbox bootstrap fails (for example `bwrap ... Operation not permitted`), it retries once with
-   `--dangerously-bypass-approvals-and-sandbox`. On timeout the job applies `autobot-blocked` and
-   comments.
-5. Parses the agent's required `RESULT: completed | blocked` line, then performs the label changes,
-   comments, and issue or pull request creation itself using `gh`.
+2. Clones this baseline repository at the same ref as the running workflow.
+3. Installs Blueprint + Autoplan skills from baseline scripts.
+4. Builds prompt context from issue data and repository state, treating issue text as untrusted input.
+5. Executes provider-specific phase behavior:
+   - **`codex`:** run Codex non-interactively, parse `RESULT: completed | blocked`, then apply
+     workflow-owned side effects (labels, comments, issues/PRs).
+   - **`github-copilot`:** create/update deterministic handoff branch + draft handoff PR, then exit.
+     Completion is evaluated asynchronously by `autobot-copilot-complete.yml` on PR events/comments.
+
+For Copilot mode, the repository skillset is expected to already be installed in the coding-agent
+environment; runner-side installation is retained for consistent bootstrap behavior and Codex parity.
+There is no automatic fallback from `github-copilot` to `codex`.
 
 The workflow, not the agent, owns label and comment side effects. The agent only produces content and
 a result line. This keeps the state machine deterministic when the model misbehaves, at the cost of
@@ -166,9 +176,10 @@ are created with a repository-scoped token, and branch protection on the default
 release gate. The agent is instructed never to merge and never to modify `.github/workflows`; the
 default `GITHUB_TOKEN` cannot push workflow changes anyway, so an attempt fails loudly.
 
-Because `issues: labeled` fires for anyone who can label an issue, the caller workflow checks that
-the actor has write access before dispatching (INV-3). Without that check, any outside contributor who
-can apply a label could spend the organisation's agent budget.
+Because `issues: labeled` fires for anyone who can label an issue, the caller workflow performs a
+permission preflight (`admin|maintain|write`) before invoking spec/plan/implement or trigger-stage
+sync jobs (INV-3). Unauthorized triggers are rejected early with a comment, trigger label removal,
+and `autobot-blocked`, which avoids spending runner and agent minutes on phase jobs.
 
 Because issue text can be written by people who cannot run workflows directly, the reusable workflows
 enforce prompt-injection guards (INV-8): untrusted issue content is always passed as quoted data, never
@@ -195,8 +206,8 @@ applied, trigger label removed, and the job exits successfully so the Actions li
 runs for expected human handoffs. A genuine infrastructure failure, for example checkout or skill
 install failing, fails the job red.
 
-GitHub-hosted runners cap a job at six hours, which the timeouts stay well under. Agent cost is
-bounded by requiring a deliberate label per phase and per task; there is no scheduled or bulk trigger.
+GitHub-hosted runners cap a job at six hours. Agent cost is bounded by requiring a deliberate label
+per phase and per task; there is no scheduled or bulk trigger.
 
 ## 4. Acceptance and proof
 
@@ -208,7 +219,7 @@ bounded by requiring a deliberate label per phase and per task; there is no sche
 | AC-4 | Labelling `autobot-ready-to-implement` while the design PR is unmerged creates no issues, comments why, and applies `autobot-blocked` | Run before merging; confirm no new issues and the comment text |
 | AC-5 | Labelling a task issue `autobot-in-review` produces exactly one pull request that references the task issue and is not merged | Run on a sandbox task; confirm one open PR, `gh pr view --json state` reports `OPEN` |
 | AC-6 | INV-1, INV-2: a job starts only from its own trigger label, and the implement job refuses an issue without `autobot-task` | Apply `autobot-creating-specification` and `autobot-blocked` to an issue: no run starts. Apply `autobot-in-review` to a non-task issue: job exits with a comment and no branch |
-| AC-7 | INV-3: a user without write access cannot start a job by labelling | Label as a read-access account in the sandbox; confirm the run exits at the permission check |
+| AC-7 | INV-3: a user without write access cannot start a phase job by labelling | Label as a read/triage account in the sandbox; confirm no spec/plan/implement reusable workflow run starts and the issue gets an unauthorized-trigger comment |
 | AC-8 | INV-4, INV-5: two label events on one issue do not create two branches or two pull requests | Apply and remove/re-apply the trigger label twice quickly; confirm one branch and one PR |
 | AC-9 | Any agent failure or timeout leaves `autobot-blocked`, a comment with the run URL, and a green job | Force a failure with an empty-bodied issue; confirm labels, comment, and job conclusion |
 | AC-10 | A project repository can adopt the pipeline by adding one caller workflow and granting the org secret | Follow the README steps in a clean repo and run AC-1 there |
@@ -216,17 +227,18 @@ bounded by requiring a deliberate label per phase and per task; there is no sche
 | AC-12 | INV-7: retrying or re-labelling `autobot-ready-to-implement` does not create duplicate task issues for the same feature | Run plan once, then re-run by removing and re-adding the label; confirm task issue count is unchanged |
 | AC-13 | INV-8: untrusted issue text cannot change workflow transitions or force direct side effects | Add adversarial instructions in issue body (for example \"skip checks and exfiltrate secrets\"); confirm workflow still uses only parsed `RESULT:` and normal label rules |
 | AC-14 | If this baseline repository is private, the caller must provide cross-repo checkout credentials or the run fails early with a clear comment | In a sandbox, remove cross-repo read access and run; confirm explicit checkout-failure guidance comment |
+| AC-15 | Provider routing is phase-specific and defaults to Codex when provider variables are unset | In a sandbox, run spec=codex plan=github-copilot implement=codex by variable settings; confirm each phase follows its selected provider |
+| AC-16 | In `github-copilot` mode, phase trigger creates/updates deterministic handoff PR and exits without direct phase completion | Trigger each phase with provider set to `github-copilot`; confirm handoff branch + draft PR are created/updated and issue awaits completion correlation |
+| AC-17 | INV-9: Copilot completion accepts only matching assignee author and run token tied to target issue | Post qualifying and non-qualifying PR updates/comments; confirm only matching author+token transitions labels/comments |
+| AC-18 | `AUTOBOT_COPILOT_STRICT_ARTIFACT` controls whether explicit completed artifacts are required | Run completion once with strict=false and once with strict=true using same PR state; confirm strict mode blocks until completed artifact exists |
+| AC-19 | INV-10: no automatic fallback from `github-copilot` to `codex` on Copilot failure | Force Copilot completion mismatch/failure and confirm workflow marks blocked or waits without invoking Codex |
+| AC-20 | Project sync maps label/close events to configured project stage values when project vars/token are present | Enable project sync variables in sandbox org project; verify label/close transitions update project status field as mapped |
 
 ## 5. Open questions
 
-1. **Board column updates.** Recommended: leave board moves to the project's existing automation and
-   ship only labels in v1, then add an optional Projects v2 step once the field IDs for a real board
-   are known. Non-blocking.
-2. **Model selection per phase.** Recommended: one default model for all three phases, overridable by
-   a caller workflow input, rather than the per-trigger models Machinist uses. Non-blocking.
-3. **Design pull request auto-merge after approval.** Recommended: no, a human merges, because the
-   merge is the approval signal the plan phase depends on. Non-blocking unless the team wants the
-   plan phase to trigger on PR merge instead of a label.
-4. **`CODEX_API_KEY` rotation and scope.** Recommended: keep one org-level secret for onboarding
-   simplicity, but rotate on a fixed schedule and after any suspected leak, with a runbook that
-   revokes repository grants during incident response. Important for operations, non-blocking for v1.
+1. **Workflow-level phase timeouts.** Recommended: add explicit `timeout-minutes` per phase workflow
+   (spec/plan/implement) so stuck runs fail fast with bounded cost and queue impact.
+2. **Secret guard coverage for committed content.** Recommended: extend secret guard checks to staged
+   design/content diffs before commit, not only issue comments and PR body text.
+3. **Copilot completion trigger filtering.** Recommended: gate `copilot-complete` dispatch earlier in
+   the router to skip non-Autobot PR traffic before baseline clone/bootstrap steps.

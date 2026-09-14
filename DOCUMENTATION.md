@@ -260,6 +260,12 @@ Autobot is intentionally label-driven and phase-gated:
 If a phase cannot proceed, workflows remove the trigger label and add `autobot-blocked` with a
 comment containing the reason and run link.
 
+Phase trigger permissions:
+
+1. Only users with `write`, `maintain`, or `admin` access can start phase workflows.
+2. Unauthorized trigger labels are rejected by the router before reusable phase workflows are dispatched.
+3. Rejected triggers receive an issue comment, trigger-label removal, and `autobot-blocked`.
+
 Provider routing behavior:
 
 1. Each phase resolves its provider independently (`codex` or `github-copilot`).

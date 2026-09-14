@@ -90,7 +90,7 @@ Provider routing uses repository variables:
 
 - INV-1: One trigger label per phase.
 - INV-2: Implement phase requires `autobot-task`.
-- INV-3: Trigger actor must have write access.
+- INV-3: Trigger actor must have write access (enforced by router preflight before phase dispatch).
 - INV-4: Per-issue concurrency group prevents race duplicates.
 - INV-5: Deterministic per-issue branch reuse for PR updates.
 - INV-6: Missing `CODEX_API_KEY` blocks before agent run for phases configured with provider `codex`.
@@ -121,7 +121,7 @@ Project sync mapping handled by router and phase scripts:
 
 ## Release contract for reusable workflows
 
-Tags are published only after sandbox validation of AC-1 through AC-14 in
+Tags are published only after sandbox validation of AC-1 through AC-20 in
 `docs/autobot-pipeline/design.md`. Consumer repositories should pin either:
 
 - a major compatibility tag (`@v1`), or
@@ -129,5 +129,5 @@ Tags are published only after sandbox validation of AC-1 through AC-14 in
 
 ## Sandbox validation checklist
 
-Run the acceptance checks AC-1 through AC-14 from `docs/autobot-pipeline/design.md` in a sandbox
+Run the acceptance checks AC-1 through AC-20 from `docs/autobot-pipeline/design.md` in a sandbox
 repository before cutting a reusable workflow tag.

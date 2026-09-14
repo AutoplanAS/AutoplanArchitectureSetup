@@ -15,6 +15,47 @@ permissions:
   repository-projects: write
 
 jobs:
+  phase-trigger-permission:
+    if: github.event_name == 'issues' && github.event.action == 'labeled' && github.event.issue.state == 'open' && (github.event.label.name == 'autobot-ready-for-spec' || github.event.label.name == 'autobot-ready-to-implement' || github.event.label.name == 'autobot-in-review')
+    runs-on: ubuntu-latest
+    outputs:
+      allowed: ${{ steps.permission.outputs.allowed }}
+    steps:
+      - name: Check trigger actor permission
+        id: permission
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          ACTOR: ${{ github.actor }}
+        run: |
+          set -euo pipefail
+          permission="$(gh api "repos/${REPOSITORY}/collaborators/${ACTOR}/permission" --jq '.permission' 2>/dev/null || true)"
+          if [[ -z "$permission" ]]; then
+            permission="none"
+          fi
+
+          case "$permission" in
+            admin|maintain|write)
+              echo "allowed=true" >> "$GITHUB_OUTPUT"
+              ;;
+            *)
+              echo "allowed=false" >> "$GITHUB_OUTPUT"
+              ;;
+          esac
+
+      - name: Reject unauthorized trigger
+        if: steps.permission.outputs.allowed != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          TRIGGER_LABEL: ${{ github.event.label.name }}
+          ACTOR: ${{ github.actor }}
+        run: |
+          set -euo pipefail
+          gh issue comment "$ISSUE_NUMBER" --repo "$REPOSITORY" --body "Autobot ignored \`$TRIGGER_LABEL\` from @$ACTOR because only users with write/maintain/admin access can start an Autobot phase."
+          gh issue edit "$ISSUE_NUMBER" --repo "$REPOSITORY" --remove-label "$TRIGGER_LABEL" --add-label autobot-blocked || true
+
   copilot-complete:
     if: |
       (github.event_name == 'pull_request') ||
@@ -37,7 +78,8 @@ jobs:
       BASELINE_REPO_TOKEN: ${{ secrets.BASELINE_REPO_TOKEN }}
 
   sync-ready-for-spec:
-    if: github.event_name == 'issues' && github.event.action == 'labeled' && github.event.issue.state == 'open' && github.event.label.name == 'autobot-ready-for-spec'
+    needs: phase-trigger-permission
+    if: github.event_name == 'issues' && github.event.action == 'labeled' && github.event.issue.state == 'open' && github.event.label.name == 'autobot-ready-for-spec' && needs.phase-trigger-permission.outputs.allowed == 'true'
     uses: ./.github/workflows/autobot-project-sync.yml
     with:
       repository: ${{ github.repository }}
@@ -76,7 +118,8 @@ jobs:
       AUTOBOT_PROJECT_TOKEN: ${{ secrets.AUTOBOT_PROJECT_TOKEN }}
 
   sync-ready-to-implement:
-    if: github.event_name == 'issues' && github.event.action == 'labeled' && github.event.issue.state == 'open' && github.event.label.name == 'autobot-ready-to-implement'
+    needs: phase-trigger-permission
+    if: github.event_name == 'issues' && github.event.action == 'labeled' && github.event.issue.state == 'open' && github.event.label.name == 'autobot-ready-to-implement' && needs.phase-trigger-permission.outputs.allowed == 'true'
     uses: ./.github/workflows/autobot-project-sync.yml
     with:
       repository: ${{ github.repository }}
@@ -89,7 +132,8 @@ jobs:
       AUTOBOT_PROJECT_TOKEN: ${{ secrets.AUTOBOT_PROJECT_TOKEN }}
 
   sync-in-review:
-    if: github.event_name == 'issues' && github.event.action == 'labeled' && github.event.issue.state == 'open' && github.event.label.name == 'autobot-in-review'
+    needs: phase-trigger-permission
+    if: github.event_name == 'issues' && github.event.action == 'labeled' && github.event.issue.state == 'open' && github.event.label.name == 'autobot-in-review' && needs.phase-trigger-permission.outputs.allowed == 'true'
     uses: ./.github/workflows/autobot-project-sync.yml
     with:
       repository: ${{ github.repository }}
@@ -141,7 +185,8 @@ jobs:
       AUTOBOT_PROJECT_TOKEN: ${{ secrets.AUTOBOT_PROJECT_TOKEN }}
 
   spec:
-    if: github.event_name == 'issues' && github.event.action == 'labeled' && github.event.issue.state == 'open' && github.event.label.name == 'autobot-ready-for-spec'
+    needs: phase-trigger-permission
+    if: github.event_name == 'issues' && github.event.action == 'labeled' && github.event.issue.state == 'open' && github.event.label.name == 'autobot-ready-for-spec' && needs.phase-trigger-permission.outputs.allowed == 'true'
     uses: ./.github/workflows/autobot-spec.yml
     with:
       repository: ${{ github.repository }}
@@ -161,7 +206,8 @@ jobs:
       AUTOBOT_PROJECT_TOKEN: ${{ secrets.AUTOBOT_PROJECT_TOKEN }}
 
   plan:
-    if: github.event_name == 'issues' && github.event.action == 'labeled' && github.event.issue.state == 'open' && github.event.label.name == 'autobot-ready-to-implement'
+    needs: phase-trigger-permission
+    if: github.event_name == 'issues' && github.event.action == 'labeled' && github.event.issue.state == 'open' && github.event.label.name == 'autobot-ready-to-implement' && needs.phase-trigger-permission.outputs.allowed == 'true'
     uses: ./.github/workflows/autobot-plan.yml
     with:
       repository: ${{ github.repository }}
@@ -181,7 +227,8 @@ jobs:
       AUTOBOT_PROJECT_TOKEN: ${{ secrets.AUTOBOT_PROJECT_TOKEN }}
 
   implement:
-    if: github.event_name == 'issues' && github.event.action == 'labeled' && github.event.issue.state == 'open' && github.event.label.name == 'autobot-in-review'
+    needs: phase-trigger-permission
+    if: github.event_name == 'issues' && github.event.action == 'labeled' && github.event.issue.state == 'open' && github.event.label.name == 'autobot-in-review' && needs.phase-trigger-permission.outputs.allowed == 'true'
     uses: ./.github/workflows/autobot-implement.yml
     with:
       repository: ${{ github.repository }}
