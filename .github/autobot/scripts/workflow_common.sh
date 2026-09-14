@@ -237,16 +237,40 @@ run_codex_prompt() {
   local prompt_file="$1"
   local log_file="$2"
   local prompt
+  local help_text=""
+  local status=0
   prompt="$(cat "$prompt_file")"
 
   set +e
   if codex exec --help >/dev/null 2>&1; then
-    codex exec --sandbox workspace-write --approve-for-me "$prompt" >"$log_file" 2>&1
-    if [[ "${GITHUB_ACTIONS:-}" == "true" ]] && grep -Eqi 'bwrap:|Failed RTM_NEWADDR|execution sandbox failed|read-only filesystem permissions' "$log_file"; then
-      codex exec --dangerously-bypass-approvals-and-sandbox "$prompt" >"$log_file" 2>&1
+    help_text="$(codex exec --help 2>&1 || true)"
+
+    local -a exec_cmd
+    exec_cmd=(codex exec)
+    if grep -q -- '--sandbox' <<<"$help_text"; then
+      exec_cmd+=(--sandbox workspace-write)
+    fi
+    if grep -q -- '--approve-for-me' <<<"$help_text"; then
+      exec_cmd+=(--approve-for-me)
+    fi
+
+    "${exec_cmd[@]}" - < "$prompt_file" >"$log_file" 2>&1
+    status=$?
+
+    if [[ "${GITHUB_ACTIONS:-}" == "true" ]] && grep -q -- '--dangerously-bypass-approvals-and-sandbox' <<<"$help_text" && grep -Eqi 'bwrap:|Failed RTM_NEWADDR|execution sandbox failed|read-only filesystem permissions|Operation not permitted' "$log_file"; then
+      codex exec --dangerously-bypass-approvals-and-sandbox - < "$prompt_file" >"$log_file" 2>&1
+      status=$?
+    fi
+
+    if [[ $status -ne 0 ]] && grep -Eqi "For more information, try '--help'|unrecognized option|unknown option|unexpected argument" "$log_file"; then
+      if codex --help 2>/dev/null | grep -q -- "--prompt"; then
+        codex --prompt "$prompt" >"$log_file" 2>&1
+        status=$?
+      fi
     fi
   elif codex --help 2>/dev/null | grep -q -- "--prompt"; then
     codex --prompt "$prompt" >"$log_file" 2>&1
+    status=$?
   else
     {
       echo "RESULT: blocked"
@@ -257,16 +281,19 @@ run_codex_prompt() {
   fi
 
   if ! grep -Eiq '^RESULT:\s*(completed|blocked)\s*$' "$log_file"; then
-    local last_line
-    last_line="$(grep -v '^[[:space:]]*$' "$log_file" | tail -n 1 || true)"
-    if [[ -z "$last_line" ]]; then
-      last_line="No diagnostic output from Codex CLI."
+    local diagnostic_line
+    diagnostic_line="$(grep -Eim1 'error:|unrecognized option|unknown option|unexpected argument|invalid value|Operation not permitted|bwrap:' "$log_file" || true)"
+    if [[ -z "$diagnostic_line" ]]; then
+      diagnostic_line="$(grep -v '^[[:space:]]*$' "$log_file" | tail -n 1 || true)"
+    fi
+    if [[ -z "$diagnostic_line" ]]; then
+      diagnostic_line="No diagnostic output from Codex CLI."
     fi
     {
       cat "$log_file"
       echo
       echo "RESULT: blocked"
-      echo "SUMMARY: Codex CLI did not return RESULT/SUMMARY contract. Last log line: ${last_line}"
+      echo "SUMMARY: Codex CLI did not return RESULT/SUMMARY contract. Diagnostic: ${diagnostic_line}"
     } > "${log_file}.tmp"
     mv "${log_file}.tmp" "$log_file"
   fi
