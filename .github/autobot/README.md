@@ -28,6 +28,10 @@ the agent work.
 | `autobot-task` | No | Marks issue as implementation task |
 | `autobot-blocked` | No | Phase needs human decision |
 
+When spec completes, the issue moves to `autobot-creating-specification` and Autobot posts both the
+design PR and design file link. Human approval is the PR merge: review and merge that PR, then add
+`autobot-ready-to-implement` to the same feature issue to start plan generation.
+
 ## Required secrets
 
 - `CODEX_API_KEY` (required only for phases configured with provider `codex`)

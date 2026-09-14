@@ -149,6 +149,11 @@ if [[ "$phase" == "spec" ]]; then
   issue_comment="$(python -c "import json;print(json.load(open('$artifact_file','r',encoding='utf-8')).get('issue_comment','Design draft is ready for review.'))")"
   pr_title="$(python -c "import json;print(json.load(open('$artifact_file','r',encoding='utf-8')).get('pr_title',''))")"
   pr_body="$(python -c "import json;print(json.load(open('$artifact_file','r',encoding='utf-8')).get('pr_body',''))")"
+  design_path="$(git ls-tree -r --name-only "$ref" | grep -E "^docs/${issue_number}-[^/]+/design\.md$" | head -n 1 || true)"
+  design_url=""
+  if [[ -n "$design_path" ]]; then
+    design_url="https://github.com/${REPOSITORY}/blob/${pr_head}/${design_path}"
+  fi
 
   if [[ -n "$pr_title" ]]; then
     printf '%s' "$pr_body" > .autobot/output/correlation-pr-body.txt
@@ -156,7 +161,28 @@ if [[ "$phase" == "spec" ]]; then
     gh pr edit "$PR_NUMBER" --repo "$REPOSITORY" --title "$pr_title" --body-file .autobot/output/correlation-pr-body.txt >/dev/null || true
   fi
 
-  printf '%s\n\nDesign pull request: %s\n\n%s\n' "$issue_comment" "$pr_url" "$marker" > .autobot/output/correlation-issue-comment.txt
+  if [[ -n "$design_url" ]]; then
+    cat > .autobot/output/correlation-issue-comment.txt <<EOF
+${issue_comment}
+
+Design file: [${design_path}](${design_url})
+Design pull request: ${pr_url}
+
+Next step: review and merge the design pull request to approve the specification. After merge, add \`autobot-ready-to-implement\` on this feature issue to start planning.
+
+${marker}
+EOF
+  else
+    cat > .autobot/output/correlation-issue-comment.txt <<EOF
+${issue_comment}
+
+Design pull request: ${pr_url}
+
+Next step: review and merge the design pull request to approve the specification. After merge, add \`autobot-ready-to-implement\` on this feature issue to start planning.
+
+${marker}
+EOF
+  fi
   guard_text_file .autobot/output/correlation-issue-comment.txt || blocked_and_exit "$REPOSITORY" "$issue_number" autobot-ready-for-spec "Issue comment from Copilot completion was blocked by secret guard." "${WORKFLOW_RUN_URL:-}"
 
   gh issue comment "$issue_number" --repo "$REPOSITORY" --body-file .autobot/output/correlation-issue-comment.txt >/dev/null

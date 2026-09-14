@@ -32,6 +32,7 @@ title="$(issue_title_from_json .autobot/input/issue.json)"
 slug="$(slugify "$title")"
 branch_name="autobot/${ISSUE_NUMBER}-${slug}"
 design_path="docs/${ISSUE_NUMBER}-${slug}/design.md"
+design_url="https://github.com/${REPOSITORY}/blob/${branch_name}/${design_path}"
 
 cat "$SCRIPT_DIR/../prompts/spec.md" > .autobot/input/spec-prompt.md
 cat >> .autobot/input/spec-prompt.md <<EOF
@@ -41,6 +42,7 @@ Runtime context:
 - Default branch: ${DEFAULT_BRANCH}
 - Feature issue: #${ISSUE_NUMBER}
 - Design path: ${design_path}
+- Design URL: ${design_url}
 - Issue context file: .autobot/input/issue.json
 - Output JSON path: .autobot/output/spec.json
 EOF
@@ -141,7 +143,14 @@ else
   fi
 fi
 
-printf '%s\n\nDesign pull request: %s\n' "$issue_comment" "$pr_url" > .autobot/output/final-comment.txt
+cat > .autobot/output/final-comment.txt <<EOF
+${issue_comment}
+
+Design file: [${design_path}](${design_url})
+Design pull request: ${pr_url}
+
+Next step: review and merge the design pull request to approve the specification. After merge, add \`autobot-ready-to-implement\` on this feature issue to start planning.
+EOF
 guard_text_file .autobot/output/final-comment.txt || blocked_and_exit "$REPOSITORY" "$ISSUE_NUMBER" "$TRIGGER_LABEL" "Final issue comment was blocked by secret guard." "${WORKFLOW_RUN_URL:-}"
 
 gh issue comment "$ISSUE_NUMBER" --repo "$REPOSITORY" --body-file .autobot/output/final-comment.txt >/dev/null
