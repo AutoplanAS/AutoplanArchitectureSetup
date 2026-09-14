@@ -513,8 +513,12 @@ untrusted input: inserted inside a fenced <code>issue-context</code>
 block, never interpolated into shell commands, and never used to decide
 workflow transitions.</li>
 <li>Runs Codex non-interactively with a per-phase timeout: 30 minutes
-for spec, 20 for plan, 90 for implement. On timeout the job applies
-<code>autobot-blocked</code> and comments.</li>
+for spec, 20 for plan, 90 for implement. It first uses
+<code>--sandbox workspace-write --approve-for-me</code>; on GitHub-hosted
+runners, if sandbox bootstrap fails (for example
+<code>bwrap ... Operation not permitted</code>), it retries once with
+<code>--dangerously-bypass-approvals-and-sandbox</code>. On timeout the
+job applies <code>autobot-blocked</code> and comments.</li>
 <li>Parses the agent's required <code>RESULT: completed | blocked</code>
 line, then performs the label changes, comments, and issue or pull
 request creation itself using <code>gh</code>.</li>
@@ -546,7 +550,9 @@ job stops before starting the agent, comments that the repository has no
 agent credential, and applies <code>autobot-blocked</code> (INV-6). The
 alternative, a per-repository key, was rejected because it makes
 onboarding a manual secret-management step and multiplies rotation
-work.</p>
+work. The key value itself is generated in the Codex provider API portal
+(for example, OpenAI) and then stored in GitHub as that
+organisation-level secret.</p>
 </div>
 <div class="source-block" data-source-block="31"
 data-source-sha256="e584566a4c762fa7817cdcf3d33dbb687f6cb9c57a2f997e7e963ab2286ca10a">

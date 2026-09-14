@@ -136,7 +136,10 @@ prompts already target so one prompt body works in both models. Each job:
    are treated as untrusted input: inserted inside a fenced `issue-context` block, never interpolated
    into shell commands, and never used to decide workflow transitions.
 4. Runs Codex non-interactively with a per-phase timeout: 30 minutes for spec, 20 for plan, 90 for
-   implement. On timeout the job applies `autobot-blocked` and comments.
+   implement. It first uses `--sandbox workspace-write --approve-for-me`; on GitHub-hosted runners,
+   if sandbox bootstrap fails (for example `bwrap ... Operation not permitted`), it retries once with
+   `--dangerously-bypass-approvals-and-sandbox`. On timeout the job applies `autobot-blocked` and
+   comments.
 5. Parses the agent's required `RESULT: completed | blocked` line, then performs the label changes,
    comments, and issue or pull request creation itself using `gh`.
 
@@ -154,6 +157,8 @@ implicitly, which keeps the grant visible in the caller file. If the secret is m
 job stops before starting the agent, comments that the repository has no agent credential, and applies
 `autobot-blocked` (INV-6). The alternative, a per-repository key, was rejected because it makes
 onboarding a manual secret-management step and multiplies rotation work.
+The key value itself is generated in the Codex provider API portal (for example, OpenAI) and then
+stored in GitHub as that organisation-level secret.
 
 The workflows declare
 `permissions: contents: write, issues: write, pull-requests: write` and nothing else. Pull requests

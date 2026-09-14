@@ -114,7 +114,7 @@ jobs:
       - name: Install skill packages
         run: |
           set -euo pipefail
-          bash .autobot-baseline/machinist/scripts/install-autoplan-skills.sh --targets copilot
+          bash .autobot-baseline/machinist/scripts/install-autoplan-skills.sh --targets codex,copilot --install-blueprint
 
       - name: Run planning phase
         env:

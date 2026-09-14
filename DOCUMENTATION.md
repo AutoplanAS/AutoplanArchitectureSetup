@@ -157,6 +157,9 @@ Use:
 Minimal setup:
 
 1. Grant `CODEX_API_KEY` secret only if one or more phases use provider `codex`.
+   - Obtain the key value from your Codex provider API portal (for example, OpenAI), then store it as
+     an organization Actions secret named `CODEX_API_KEY`.
+   - Grant that org secret to each adopting repository; do not commit keys to the repo.
 2. Add `.github/workflows/autobot.yml` in the target repository (use the example file).
 3. Run `autobot-setup` to provision `autobot-*` labels.
 4. Configure provider routing variables:

@@ -37,6 +37,24 @@ the agent work.
 When Codex is used, `CODEX_API_KEY` should be managed as an org-level secret and granted to each
 adopting repository.
 
+### Obtaining `CODEX_API_KEY`
+
+1. Sign in to your Codex provider API account (for example, OpenAI) with API access enabled.
+2. Create a new API key in the provider portal and copy it immediately (most portals show it once).
+3. In GitHub org settings, open **Secrets and variables -> Actions** and create an organization secret
+   named `CODEX_API_KEY`.
+4. Grant the secret to each repository that adopts this pipeline.
+
+Do not commit API keys to the repository. For rotation, create a new provider key, update the
+organization secret, then revoke the old key.
+
+### Codex runtime on GitHub Actions
+
+Autobot runs Codex in non-interactive mode with `--sandbox workspace-write --approve-for-me`.
+If GitHub-hosted runner sandboxing fails during bootstrap (for example `bwrap ... Operation not permitted`),
+Autobot retries once with `--dangerously-bypass-approvals-and-sandbox` so the phase can still run
+inside the runner's own isolation boundary.
+
 Project sync uses repository variables:
 
 - `AUTOBOT_PROJECT_OWNER` (for example `AutoplanAS`)
