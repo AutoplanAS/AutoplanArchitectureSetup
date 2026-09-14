@@ -20,6 +20,16 @@ Create tasks that a new agent can finish without making product or technical dec
 7. Return the plan in chat. Create tracker tickets only when the user asks. Never write a plan document.
 8. Stop after planning. Do not implement.
 
+## Parent feature rule when creating tickets
+
+When the user asks you to create GitHub tracker tickets from an existing intake issue, use this sequence:
+
+1. Create a new parent feature issue that carries the approved design context (short design snapshot + durable design link).
+2. Link every generated subtask to that new parent and include explicit dependency order.
+3. Mark the original intake issue as superseded and close it after all subtasks are re-parented.
+
+This keeps one current feature parent for delivery tracking and avoids losing design context when source branches change.
+
 ## Write for two readers
 
 Each task is read by a human and executed by an agent.
