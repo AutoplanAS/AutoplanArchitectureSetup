@@ -50,7 +50,7 @@ if ($InstallBlueprint) {
         throw "npx was not found in PATH. Install Node.js/npm to use -InstallBlueprint."
     }
 
-    & npx skills add owainlewis/blueprint
+    & npx skills add owainlewis/blueprint --agent '*' -y
     if ($LASTEXITCODE -ne 0) {
         throw "Blueprint skill install failed with exit code $LASTEXITCODE."
     }
