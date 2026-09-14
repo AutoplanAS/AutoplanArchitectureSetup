@@ -153,7 +153,7 @@ if [[ "$install_blueprint" == "1" ]]; then
     echo "npx not found; install Node.js/npm before using --install-blueprint." >&2
     exit 1
   fi
-  npx skills add owainlewis/blueprint
+  npx skills add owainlewis/blueprint --agent '*' -y
 fi
 
 echo "Autoplan skill installation complete."
