@@ -36,7 +36,7 @@ design PR and design file link. Human approval is the PR merge: review and merge
 
 - `CODEX_API_KEY` (required only for phases configured with provider `codex`)
 - `BASELINE_REPO_TOKEN` (optional; required only if this baseline repository is private)
-- `AUTOBOT_PROJECT_TOKEN` (optional; required when project sync needs project-scope token)
+- `AUTOBOT_PROJECT_TOKEN` (required for organization-owned project boards such as `AutoplanAS#8`)
 
 When Codex is used, `CODEX_API_KEY` should be managed as an org-level secret and granted to each
 adopting repository.
