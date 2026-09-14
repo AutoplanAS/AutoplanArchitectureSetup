@@ -606,7 +606,14 @@ data-source-sha256="ffa578920cc67e2cb9ec9c66d1b63afd5bce1036aad4e81af93d2501ce4b
 data-source-sha256="588ad7630b89ac7c1ff0ddd217eb61cd87fd9bcfa1c0537f6ef10ef151eac308">
 <ol type="1">
 <li>Grant <code>CODEX_API_KEY</code> secret only if one or more phases
-use provider <code>codex</code>.</li>
+use provider <code>codex</code>.
+<ul>
+<li>Obtain the key value from your Codex provider API portal (for
+example, OpenAI), then store it as an organization Actions secret named
+<code>CODEX_API_KEY</code>.</li>
+<li>Grant that org secret to each adopting repository; do not commit
+keys to the repo.</li>
+</ul></li>
 <li>Add <code>.github/workflows/autobot.yml</code> in the target
 repository (use the example file).</li>
 <li>Run <code>autobot-setup</code> to provision <code>autobot-*</code>

@@ -236,12 +236,17 @@ EOF
 run_codex_prompt() {
   local prompt_file="$1"
   local log_file="$2"
+  local prompt
+  prompt="$(cat "$prompt_file")"
 
   set +e
   if codex exec --help >/dev/null 2>&1; then
-    codex exec "$(cat "$prompt_file")" >"$log_file" 2>&1
+    codex exec --sandbox workspace-write --approve-for-me "$prompt" >"$log_file" 2>&1
+    if [[ "${GITHUB_ACTIONS:-}" == "true" ]] && grep -Eqi 'bwrap:|Failed RTM_NEWADDR|execution sandbox failed|read-only filesystem permissions' "$log_file"; then
+      codex exec --dangerously-bypass-approvals-and-sandbox "$prompt" >"$log_file" 2>&1
+    fi
   elif codex --help 2>/dev/null | grep -q -- "--prompt"; then
-    codex --prompt "$(cat "$prompt_file")" >"$log_file" 2>&1
+    codex --prompt "$prompt" >"$log_file" 2>&1
   else
     {
       echo "RESULT: blocked"
@@ -249,6 +254,21 @@ run_codex_prompt() {
     } >"$log_file"
     set -e
     return 0
+  fi
+
+  if ! grep -Eiq '^RESULT:\s*(completed|blocked)\s*$' "$log_file"; then
+    local last_line
+    last_line="$(grep -v '^[[:space:]]*$' "$log_file" | tail -n 1 || true)"
+    if [[ -z "$last_line" ]]; then
+      last_line="No diagnostic output from Codex CLI."
+    fi
+    {
+      cat "$log_file"
+      echo
+      echo "RESULT: blocked"
+      echo "SUMMARY: Codex CLI did not return RESULT/SUMMARY contract. Last log line: ${last_line}"
+    } > "${log_file}.tmp"
+    mv "${log_file}.tmp" "$log_file"
   fi
   set -e
 }
