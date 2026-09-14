@@ -247,11 +247,10 @@ run_codex_prompt() {
 
     local -a exec_cmd
     exec_cmd=(codex exec)
-    if grep -q -- '--sandbox' <<<"$help_text"; then
-      exec_cmd+=(--sandbox workspace-write)
-    fi
     if grep -q -- '--approve-for-me' <<<"$help_text"; then
       exec_cmd+=(--approve-for-me)
+    elif grep -q -- '--sandbox' <<<"$help_text"; then
+      exec_cmd+=(--sandbox workspace-write)
     fi
 
     "${exec_cmd[@]}" - < "$prompt_file" >"$log_file" 2>&1
