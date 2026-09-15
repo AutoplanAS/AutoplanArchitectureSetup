@@ -127,6 +127,23 @@ Tags are published only after sandbox validation of AC-1 through AC-14 in
 - a major compatibility tag (`@v1`), or
 - an exact release tag (`@v1.2.0`).
 
+If workflows fail with `reference to workflow should be either a valid branch, tag, or commit`,
+the referenced tag does not exist yet in the baseline repository. Verify available tags with:
+
+```bash
+gh release list --repo AutoplanAS/AutoplanArchitectureSetup
+gh api repos/AutoplanAS/AutoplanArchitectureSetup/tags --jq '.[].name'
+```
+
+When no release tag is available yet, pin temporarily to `@main` until a release tag is published.
+
+## Troubleshooting
+
+| Symptom | Root cause | Fix |
+|---|---|---|
+| `reference to workflow should be either a valid branch, tag, or commit` | The ref in `uses: AutoplanAS/AutoplanArchitectureSetup/...@<ref>` does not exist | Pin to an existing tag/commit/branch (`@v1` once published, or temporary `@main`) |
+| `Could not resolve to a ProjectV2 with the number <n> (organization.projectV2)` | Project access is missing for the workflow token, or owner/number is wrong | Verify `AUTOBOT_PROJECT_OWNER` + `AUTOBOT_PROJECT_NUMBER`; grant `AUTOBOT_PROJECT_TOKEN` with project scope for private org projects |
+
 ## Sandbox validation checklist
 
 Run the acceptance checks AC-1 through AC-14 from `docs/autobot-pipeline/design.md` in a sandbox

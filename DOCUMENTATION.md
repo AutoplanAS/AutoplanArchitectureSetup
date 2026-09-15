@@ -161,6 +161,8 @@ Minimal setup:
      an organization Actions secret named `CODEX_API_KEY`.
    - Grant that org secret to each adopting repository; do not commit keys to the repo.
 2. Add `.github/workflows/autobot.yml` in the target repository (use the example file).
+   - Use a valid reusable-workflow ref (`@v1`, specific release tag, commit SHA, or temporary `@main`).
+   - If Actions reports `reference to workflow should be either a valid branch, tag, or commit`, the chosen ref is not published in `AutoplanAS/AutoplanArchitectureSetup`.
 3. Run `autobot-setup` to provision `autobot-*` labels.
 4. Configure provider routing variables:
    - `AUTOBOT_SPEC_PROVIDER`, `AUTOBOT_PLAN_PROVIDER`, `AUTOBOT_IMPLEMENT_PROVIDER`
@@ -173,6 +175,7 @@ Minimal setup:
    - `AUTOBOT_PROJECT_NUMBER` (for Project #8 this is `8`)
    - optional `AUTOBOT_PROJECT_STATUS_FIELD` (defaults to `Status`)
 6. Grant `AUTOBOT_PROJECT_TOKEN` when project-scope write is required by the org project permissions model.
+   - If Actions reports `Could not resolve to a ProjectV2 with the number <n> (organization.projectV2)`, verify `AUTOBOT_PROJECT_OWNER` / `AUTOBOT_PROJECT_NUMBER` and ensure `AUTOBOT_PROJECT_TOKEN` can access that org project.
 7. Drive phases by labels: `autobot-ready-for-spec`, `autobot-review-specification`, `autobot-ready-to-implement`, `autobot-in-review`.
 
 ---
