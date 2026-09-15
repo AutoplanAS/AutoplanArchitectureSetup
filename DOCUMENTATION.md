@@ -276,12 +276,13 @@ Provider routing behavior:
 4. Handoff branches:
    - `spec`/`implement`: `autobot/<issue>-<slug>`
    - `plan`: `autobot-plan/<issue>-<slug>`
-5. Copilot completion requires the PR to reference the issue, include the run token, and match the
-   configured assignee author identity.
+5. Copilot completion requires the PR to reference the issue, include the run token, and include the
+   configured assignee on the PR.
 6. `AUTOBOT_COPILOT_STRICT_ARTIFACT=false` (default) allows spec/implement completion without
    manual artifact edits when expected branch changes exist; `true` requires explicit completed
    artifacts.
-7. There is no automatic fallback to Codex when Copilot mode fails.
+7. Spec completion requires a design file at `docs/<issue-number>-*/design.md` in the handoff PR.
+8. There is no automatic fallback to Codex when Copilot mode fails.
 
 Project stage sync mapping:
 

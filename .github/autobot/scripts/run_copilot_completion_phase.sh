@@ -14,13 +14,13 @@ fi
 mkdir -p .autobot/copilot .autobot/output
 
 pr_json_path=".autobot/copilot/pr.json"
-gh pr view "$PR_NUMBER" --repo "$REPOSITORY" --json number,title,body,author,headRefName,baseRefName,url,state,isDraft > "$pr_json_path"
+gh pr view "$PR_NUMBER" --repo "$REPOSITORY" --json number,title,body,author,assignees,headRefName,baseRefName,url,state,isDraft > "$pr_json_path"
 
 pr_head="$(python -c "import json;print(json.load(open('$pr_json_path','r',encoding='utf-8')).get('headRefName',''))")"
 pr_url="$(python -c "import json;print(json.load(open('$pr_json_path','r',encoding='utf-8')).get('url',''))")"
 pr_title_current="$(python -c "import json;print(json.load(open('$pr_json_path','r',encoding='utf-8')).get('title',''))")"
 pr_body_current="$(python -c "import json;print(json.load(open('$pr_json_path','r',encoding='utf-8')).get('body',''))")"
-pr_author="$(python -c "import json;print(json.load(open('$pr_json_path','r',encoding='utf-8')).get('author',{}).get('login',''))")"
+pr_assignees="$(python -c "import json;print('\n'.join([a.get('login','') for a in json.load(open('$pr_json_path','r',encoding='utf-8')).get('assignees',[]) if a.get('login')]))")"
 
 issue_number=""
 if [[ "$pr_head" =~ ^autobot/([0-9]+)- ]]; then
@@ -32,9 +32,11 @@ else
   exit 0
 fi
 
-if [[ -n "${AUTOBOT_COPILOT_ASSIGNEE:-}" && "$pr_author" != "$AUTOBOT_COPILOT_ASSIGNEE" ]]; then
-  echo "skip: PR author $pr_author does not match AUTOBOT_COPILOT_ASSIGNEE=$AUTOBOT_COPILOT_ASSIGNEE"
-  exit 0
+if [[ -n "${AUTOBOT_COPILOT_ASSIGNEE:-}" ]]; then
+  if ! printf '%s\n' "$pr_assignees" | grep -Fxq "$AUTOBOT_COPILOT_ASSIGNEE"; then
+    echo "skip: PR assignees do not include AUTOBOT_COPILOT_ASSIGNEE=$AUTOBOT_COPILOT_ASSIGNEE"
+    exit 0
+  fi
 fi
 
 combined_text="$(gh pr view "$PR_NUMBER" --repo "$REPOSITORY" --json body --jq .body 2>/dev/null || true)"
@@ -83,6 +85,15 @@ if git show "${ref}:${artifact_path}" > "$artifact_file" 2>/dev/null; then
   artifact_status="$(python -c "import json;print(str(json.load(open('$artifact_file','r',encoding='utf-8')).get('status','')).strip().lower())" 2>/dev/null || true)"
 fi
 
+design_path=""
+if [[ "$phase" == "spec" ]]; then
+  design_path="$(git ls-tree -r --name-only "$ref" | grep -E "^docs/${issue_number}-[^/]+/design\.md$" | head -n 1 || true)"
+  if [[ -z "$design_path" ]]; then
+    echo "skip: spec completion requires docs/${issue_number}-*/design.md in the handoff PR."
+    exit 0
+  fi
+fi
+
 strict_mode="$(copilot_strict_artifact_mode)"
 if [[ "$artifact_status" != "completed" ]]; then
   if [[ "$strict_mode" == "true" ]]; then
@@ -91,11 +102,6 @@ if [[ "$artifact_status" != "completed" ]]; then
   fi
 
   if [[ "$phase" == "spec" ]]; then
-    design_path="$(git ls-tree -r --name-only "$ref" | grep -E "^docs/${issue_number}-[^/]+/design\.md$" | head -n 1 || true)"
-    if [[ -z "$design_path" ]]; then
-      echo "skip: relaxed mode still requires a design file for spec completion."
-      exit 0
-    fi
     python - "$artifact_file" "$pr_title_current" "$pr_body_current" "$design_path" <<'PY'
 import json
 import pathlib
@@ -147,9 +153,11 @@ fi
 
 if [[ "$phase" == "spec" ]]; then
   issue_comment="$(python -c "import json;print(json.load(open('$artifact_file','r',encoding='utf-8')).get('issue_comment','Design draft is ready for review.'))")"
+  if [[ -z "${issue_comment//[[:space:]]/}" ]]; then
+    issue_comment="Design draft is ready for review."
+  fi
   pr_title="$(python -c "import json;print(json.load(open('$artifact_file','r',encoding='utf-8')).get('pr_title',''))")"
   pr_body="$(python -c "import json;print(json.load(open('$artifact_file','r',encoding='utf-8')).get('pr_body',''))")"
-  design_path="$(git ls-tree -r --name-only "$ref" | grep -E "^docs/${issue_number}-[^/]+/design\.md$" | head -n 1 || true)"
   design_url=""
   if [[ -n "$design_path" ]]; then
     design_url="https://github.com/${REPOSITORY}/blob/${pr_head}/${design_path}"

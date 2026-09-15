@@ -101,7 +101,7 @@ Baseline source selection (optional) uses repository variables:
 - INV-6: Missing `CODEX_API_KEY` blocks before agent run for phases configured with provider `codex`.
 - INV-7: Plan phase issue creation is idempotent.
 - INV-8: Issue text is treated as untrusted input and side effects are workflow-owned.
-- INV-9: Copilot mode completion is accepted only for PRs that match expected author and run token.
+- INV-9: Copilot mode completion is accepted only for PRs that include the expected assignee and run token.
 - INV-10: No automatic fallback from `github-copilot` to `codex` is allowed.
 
 Copilot handoff details:
@@ -111,7 +111,8 @@ Copilot handoff details:
   - `spec`/`implement`: `autobot/<issue>-<slug>`
   - `plan`: `autobot-plan/<issue>-<slug>`
 - Handoff PRs include a run token and initial phase artifact commit under `.autobot/output/` so a PR is openable immediately.
-- Completion is event-driven: `autobot-copilot-complete.yml` runs on PR updates/comments, validates author + issue reference + run token, and applies workflow-owned side effects.
+- Completion is event-driven: `autobot-copilot-complete.yml` runs on PR updates/comments, validates assignee + issue reference + run token, and applies workflow-owned side effects.
+- Spec completion requires a design document at `docs/<issue-number>-*/design.md` in the handoff PR branch.
 - With `AUTOBOT_COPILOT_STRICT_ARTIFACT=false`, spec/implement can be accepted without manually editing the artifact when required branch changes are present. Set strict mode to `true` to require explicit `status=completed` artifacts.
 
 Project sync mapping handled by router and phase scripts:
