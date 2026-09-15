@@ -91,16 +91,15 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
           BASELINE_REPO_TOKEN: ${{ secrets.BASELINE_REPO_TOKEN }}
-          GITHUB_WORKFLOW_REF: ${{ github.workflow_ref }}
+          BASELINE_REPOSITORY: ${{ vars.AUTOBOT_BASELINE_REPOSITORY != '' && vars.AUTOBOT_BASELINE_REPOSITORY || 'AutoplanAS/AutoplanArchitectureSetup' }}
+          BASELINE_REF: ${{ vars.AUTOBOT_BASELINE_REF != '' && vars.AUTOBOT_BASELINE_REF || 'v1' }}
           REPOSITORY: ${{ inputs.repository }}
           ISSUE_NUMBER: ${{ inputs.issue_number }}
         run: |
           set -euo pipefail
           export GH_TOKEN="$GITHUB_TOKEN"
-          baseline_repo="${GITHUB_WORKFLOW_REF%%/.github/*}"
-          baseline_ref="${GITHUB_WORKFLOW_REF##*@}"
-          baseline_ref="${baseline_ref#refs/heads/}"
-          baseline_ref="${baseline_ref#refs/tags/}"
+          baseline_repo="${BASELINE_REPOSITORY:-AutoplanAS/AutoplanArchitectureSetup}"
+          baseline_ref="${BASELINE_REF:-v1}"
           if [[ -n "${BASELINE_REPO_TOKEN:-}" ]]; then
             export GH_TOKEN="$BASELINE_REPO_TOKEN"
           fi

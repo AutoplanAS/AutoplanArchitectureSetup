@@ -74,6 +74,11 @@ Provider routing uses repository variables:
 - `AUTOBOT_COPILOT_TIMEOUT_MINUTES` (optional handoff SLA hint in comments, default `90`, max `360`)
 - `AUTOBOT_COPILOT_STRICT_ARTIFACT` (`true`/`false`, default `false`; strict mode requires explicit completed phase artifact payloads before acceptance)
 
+Baseline source selection (optional) uses repository variables:
+
+- `AUTOBOT_BASELINE_REPOSITORY` (defaults to `AutoplanAS/AutoplanArchitectureSetup`)
+- `AUTOBOT_BASELINE_REF` (defaults to `v1`; set to a branch, tag, or commit that exists in the baseline repository)
+
 ## Adopting in another repository
 
 1. Add labels using this repository's setup workflow:
@@ -143,6 +148,7 @@ When no release tag is available yet, pin temporarily to `@main` until a release
 |---|---|---|
 | `reference to workflow should be either a valid branch, tag, or commit` | The ref in `uses: AutoplanAS/AutoplanArchitectureSetup/...@<ref>` does not exist | Pin to an existing tag/commit/branch (`@v1` once published, or temporary `@main`) |
 | `Could not resolve to a ProjectV2 with the number <n> (organization.projectV2)` | Project access is missing for the workflow token, or owner/number is wrong | Verify `AUTOBOT_PROJECT_OWNER` + `AUTOBOT_PROJECT_NUMBER`; grant `AUTOBOT_PROJECT_TOKEN` with project scope for private org projects |
+| `bash: .autobot-baseline/machinist/scripts/install-autoplan-skills.sh: No such file or directory` | Baseline repository/ref resolved to a repo that does not contain Machinist scripts | Use `AUTOBOT_BASELINE_REPOSITORY=AutoplanAS/AutoplanArchitectureSetup` and a valid `AUTOBOT_BASELINE_REF` (for example `v1` or `main`) |
 
 ## Sandbox validation checklist
 

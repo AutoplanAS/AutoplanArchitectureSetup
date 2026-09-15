@@ -170,6 +170,8 @@ Minimal setup:
    - `AUTOBOT_COPILOT_ASSIGNEE` required when any phase uses `github-copilot`
    - optional `AUTOBOT_COPILOT_TIMEOUT_MINUTES` (handoff SLA hint in comments, default `90`, max `360`)
    - optional `AUTOBOT_COPILOT_STRICT_ARTIFACT` (`false` default; set `true` to require explicit completed phase artifacts in Copilot mode)
+   - optional `AUTOBOT_BASELINE_REPOSITORY` (defaults to `AutoplanAS/AutoplanArchitectureSetup`)
+   - optional `AUTOBOT_BASELINE_REF` (defaults to `v1`; set when you need a different branch/tag/commit)
 5. Configure project sync variables in the target repository:
    - `AUTOBOT_PROJECT_OWNER` (for Project #8 this is `AutoplanAS`)
    - `AUTOBOT_PROJECT_NUMBER` (for Project #8 this is `8`)
@@ -177,6 +179,7 @@ Minimal setup:
 6. Grant `AUTOBOT_PROJECT_TOKEN` when project-scope write is required by the org project permissions model.
    - If Actions reports `Could not resolve to a ProjectV2 with the number <n> (organization.projectV2)`, verify `AUTOBOT_PROJECT_OWNER` / `AUTOBOT_PROJECT_NUMBER` and ensure `AUTOBOT_PROJECT_TOKEN` can access that org project.
 7. Drive phases by labels: `autobot-ready-for-spec`, `autobot-review-specification`, `autobot-ready-to-implement`, `autobot-in-review`.
+   - If Actions reports `bash: .autobot-baseline/machinist/scripts/install-autoplan-skills.sh: No such file or directory`, ensure `AUTOBOT_BASELINE_REPOSITORY` points to `AutoplanAS/AutoplanArchitectureSetup` (or another baseline containing Machinist scripts) and `AUTOBOT_BASELINE_REF` exists there.
 
 ---
 
