@@ -599,6 +599,11 @@ start_copilot_handoff() {
   if [[ -z "$pr_url" ]]; then
     blocked_and_exit "$repo" "$issue_number" "$trigger_label" "Failed to create or update Copilot handoff PR for branch ${branch_name}." "$run_url"
   fi
+  if [[ -n "$pr_number" ]]; then
+    if ! gh pr edit "$pr_number" --repo "$repo" --add-assignee "$AUTOBOT_COPILOT_ASSIGNEE" >/dev/null 2>&1; then
+      blocked_and_exit "$repo" "$issue_number" "$trigger_label" "Failed to assign PR #${pr_number} to @${AUTOBOT_COPILOT_ASSIGNEE} for Copilot provider." "$run_url"
+    fi
+  fi
 
   mkdir -p .autobot/copilot
   python - "$phase" "$issue_number" "$branch_name" "$run_token" "$pr_number" "$pr_url" "$artifact_path" <<'PY'
