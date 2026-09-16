@@ -1,6 +1,26 @@
 {
-  "status": "in_progress",
-  "blocked_reason": "Copilot handoff initialized; update this artifact to status=completed in the correlated PR.",
-  "feature_comment": "",
-  "tasks": []
+  "status": "completed",
+  "blocked_reason": "",
+  "feature_comment": "Implementation plan for #69 is ready. The work is split into task issues that cover the autonomous spec handoff flow, completion validation, and end-to-end verification against the merged design.",
+  "tasks": [
+    {
+      "title": "Implement Copilot-driven spec handoff fixture for issue #69",
+      "body": "## Objective\nUpdate the spec E2E test setup so issue #69 can drive a GitHub Copilot spec handoff from the normal Autobot label flow.\n\n## Scope\n- Ensure the workflow posts the Copilot instruction comment with the configured trigger handle/token.\n- Preserve the exact required design artifact path from the merged design contract.\n- Keep the handoff PR metadata aligned with the issue reference and run-token traceability requirements.\n\n## Acceptance notes\n- The spec handoff can be started without manual intervention.\n- The generated handoff keeps issue #69 and the run token traceable in PR metadata or comments.",
+      "depends_on_titles": []
+    },
+    {
+      "title": "Add completion polling checks for spec artifact finalization",
+      "body": "## Objective\nExtend the completion logic so the spec phase only finishes when both the design artifact and `.autobot/output/spec.json` satisfy the merged design contract.\n\n## Scope\n- Validate the existence of `docs/69-autonomous-copilot-spec-e2e-test-20260916-152707/design.md`.\n- Require non-placeholder design content before success is reported.\n- Require `.autobot/output/spec.json` to contain a completed status and completion-ready metadata.\n- Surface a clear blocked reason when one of the completion checks fails.\n\n## Acceptance notes\n- Partial completion does not advance the phase.\n- Successful completion updates the phase output consistently with existing workflow contracts.",
+      "depends_on_titles": [
+        "Implement Copilot-driven spec handoff fixture for issue #69"
+      ]
+    },
+    {
+      "title": "Verify autonomous spec E2E behavior end to end",
+      "body": "## Objective\nAdd or update end-to-end verification so the autonomous spec flow proves the merged design behavior from trigger through completion.\n\n## Scope\n- Exercise the label-driven entry point for issue #69.\n- Assert that the required design file is created with substantive content.\n- Assert that `.autobot/output/spec.json` is finalized with `status: completed`.\n- Confirm issue linkage and run-token traceability remain visible in the resulting PR flow.\n\n## Acceptance notes\n- The test demonstrates that no manual PR comment or manual artifact edit is needed to complete the spec phase.",
+      "depends_on_titles": [
+        "Add completion polling checks for spec artifact finalization"
+      ]
+    }
+  ]
 }
