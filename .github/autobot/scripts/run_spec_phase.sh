@@ -53,30 +53,17 @@ sync_project_stage_with_warning "$REPOSITORY" "$ISSUE_NUMBER" "Ready for spec" |
 git fetch origin "$DEFAULT_BRANCH"
 git checkout -B "$branch_name" "origin/$DEFAULT_BRANCH"
 if [[ "$provider" == "github-copilot" ]]; then
-  mkdir -p "$(dirname "$design_path")"
-  cat > "$design_path" <<EOF
-# Design draft for issue #${ISSUE_NUMBER}: ${title}
-
-> Autobot Copilot handoff placeholder.
-> Replace this file with the final approved design content before marking spec completion.
-
-## Source context
-- Feature issue: #${ISSUE_NUMBER}
-- Repository: ${REPOSITORY}
-- Branch: ${branch_name}
-EOF
-
   mkdir -p .autobot/output
   cat > .autobot/output/spec.json <<EOF
 {
   "status": "in_progress",
-  "blocked_reason": "Copilot handoff initialized; update this artifact to status=completed and finalize ${design_path} in the correlated PR.",
+  "blocked_reason": "Copilot handoff initialized; create ${design_path} and update this artifact to status=completed in the correlated PR (required when strict artifact mode is enabled).",
   "issue_comment": "",
   "pr_title": "",
   "pr_body": ""
 }
 EOF
-  git add "$design_path" .autobot/output/spec.json
+  git add .autobot/output/spec.json
   git config user.name "github-actions[bot]"
   git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
   if ! git diff --cached --quiet; then
