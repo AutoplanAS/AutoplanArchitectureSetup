@@ -169,6 +169,7 @@ Minimal setup:
    - `AUTOBOT_SPEC_PROVIDER`, `AUTOBOT_PLAN_PROVIDER`, `AUTOBOT_IMPLEMENT_PROVIDER`
    - allowed values: `codex` or `github-copilot` (defaults to `codex`)
    - `AUTOBOT_COPILOT_ASSIGNEE` required when any phase uses `github-copilot`
+   - optional `AUTOBOT_COPILOT_TRIGGER_HANDLE` (default `@copilot`) for spec handoff PR instruction mentions
    - optional `AUTOBOT_COPILOT_TIMEOUT_MINUTES` (handoff SLA hint in comments, default `90`, max `360`)
    - optional `AUTOBOT_COPILOT_STRICT_ARTIFACT` (`false` default; set `true` to require explicit completed phase artifacts in Copilot mode)
    - optional `AUTOBOT_BASELINE_REPOSITORY` (defaults to `AutoplanAS/AutoplanArchitectureSetup`)
@@ -304,10 +305,11 @@ Provider routing behavior:
    manual artifact edits when expected branch changes exist; `true` requires explicit completed
    artifacts.
 7. Spec completion requires a design file at `docs/<issue-number>-*/design.md` in the handoff PR.
-8. There is no automatic fallback to Codex when Copilot mode fails.
-9. External spec artifact publishing is optional and non-blocking; canonical repository links remain source of truth.
-10. External spec artifact publishing uses SAS-only Azure Blob access with separate write/read SAS tokens.
-11. Rejected implementation PR feedback is included in rework context, but rework run start still requires explicit relabel.
+8. Spec handoff auto-posts a PR instruction comment mentioning `@copilot` (or `AUTOBOT_COPILOT_TRIGGER_HANDLE`) to request design generation at the required path.
+9. There is no automatic fallback to Codex when Copilot mode fails.
+10. External spec artifact publishing is optional and non-blocking; canonical repository links remain source of truth.
+11. External spec artifact publishing uses SAS-only Azure Blob access with separate write/read SAS tokens.
+12. Rejected implementation PR feedback is included in rework context, but rework run start still requires explicit relabel.
 
 Project stage sync mapping:
 

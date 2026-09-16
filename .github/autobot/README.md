@@ -98,6 +98,7 @@ Provider routing uses repository variables:
 - `AUTOBOT_PLAN_PROVIDER` (`codex` or `github-copilot`, default `codex`)
 - `AUTOBOT_IMPLEMENT_PROVIDER` (`codex` or `github-copilot`, default `codex`)
 - `AUTOBOT_COPILOT_ASSIGNEE` (required when any phase uses `github-copilot`; must be a real assignable GitHub login in the target repository)
+- `AUTOBOT_COPILOT_TRIGGER_HANDLE` (optional, defaults to `@copilot`; mention used in spec handoff PR instruction comment)
 - `AUTOBOT_COPILOT_TIMEOUT_MINUTES` (optional handoff SLA hint in comments, default `90`, max `360`)
 - `AUTOBOT_COPILOT_STRICT_ARTIFACT` (`true`/`false`, default `false`; strict mode requires explicit completed phase artifact payloads before acceptance)
 
@@ -162,6 +163,7 @@ Copilot handoff details:
   - `spec`/`implement`: `autobot/<issue>-<slug>`
   - `plan`: `autobot-plan/<issue>-<slug>`
 - Handoff PRs include a run token and initial phase artifact commit under `.autobot/output/` so a PR is openable immediately.
+- Spec handoff auto-posts a PR instruction comment that mentions `@copilot` (or `AUTOBOT_COPILOT_TRIGGER_HANDLE`) and requires creating `docs/<issue>-<slug>/design.md`.
 - Completion is event-driven: `autobot-copilot-complete.yml` runs on PR updates/comments, validates assignee + issue reference + run token, and applies workflow-owned side effects.
 - Spec completion requires a design document at `docs/<issue-number>-*/design.md` in the handoff PR branch.
 - With `AUTOBOT_COPILOT_STRICT_ARTIFACT=false`, spec/implement can be accepted without manually editing the artifact when required branch changes are present. Set strict mode to `true` to require explicit `status=completed` artifacts.
@@ -202,6 +204,7 @@ When no release tag is available yet, pin temporarily to `@main` until a release
 | `reference to workflow should be either a valid branch, tag, or commit` | The ref in `uses: AutoplanAS/AutoplanArchitectureSetup/...@<ref>` does not exist | Pin to an existing tag/commit/branch (`@v1` once published, or temporary `@main`) |
 | `Could not resolve to a ProjectV2 with the number <n> (organization.projectV2)` | Project access is missing for the workflow token, or owner/number is wrong | Verify `AUTOBOT_PROJECT_OWNER` + `AUTOBOT_PROJECT_NUMBER`; grant `AUTOBOT_PROJECT_TOKEN` with project scope for private org projects |
 | `bash: .autobot-baseline/machinist/scripts/install-autoplan-skills.sh: No such file or directory` | Baseline repository/ref resolved to a repo that does not contain Machinist scripts | Use `AUTOBOT_BASELINE_REPOSITORY=AutoplanAS/AutoplanArchitectureSetup` and a valid `AUTOBOT_BASELINE_REF` (for example `v1` or `main`) |
+| `autobot-router` run shows `action_required` with no jobs after Copilot bot activity | Repository Actions policy requires approval for bot-originated workflow runs | Approve the run in Actions UI, or add a maintainer PR comment to trigger a trusted `issue_comment` run that evaluates completion |
 
 ## Sandbox validation checklist
 
