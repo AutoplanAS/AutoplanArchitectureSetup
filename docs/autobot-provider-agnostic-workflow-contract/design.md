@@ -120,10 +120,12 @@ Azure setup contract:
 
 - One Azure Storage account dedicated to Autobot transient review artifacts.
 - One private blob container, for example `autobot-spec-artifacts`.
-- GitHub Actions uses OIDC federation with Azure AD. No storage account key is stored in GitHub.
-- Workflow identity needs:
-  - `Storage Blob Data Contributor` on the target container or storage account scope.
-  - Azure login rights to the configured subscription and tenant.
+- GitHub Actions uses container-scoped SAS tokens only for this increment.
+- SAS model:
+  - one write SAS token for workflow upload and pointer updates;
+  - one read-only SAS token for reviewer links in issue comments;
+  - both tokens are scoped to this dedicated storage account and container.
+- SAS tokens should be created from stored access policies so revocation and rotation can be done without changing workflow code.
 
 Publishing behavior:
 
@@ -146,17 +148,17 @@ Required configuration:
   - `AUTOBOT_SPEC_ARTIFACTS_STORAGE_ACCOUNT` (Azure Storage account name).
   - `AUTOBOT_SPEC_ARTIFACTS_CONTAINER` (blob container name).
   - `AUTOBOT_SPEC_ARTIFACTS_PREFIX` (optional static prefix root, default `autobot-spec`).
-  - `AUTOBOT_SPEC_ARTIFACTS_SAS_TTL_MINUTES` (optional read-link TTL, default `1440`, max `10080`).
-- Repository or environment secrets/variables used by `azure/login`:
-  - `AZURE_CLIENT_ID` (federated credential application client id).
-  - `AZURE_TENANT_ID`.
-  - `AZURE_SUBSCRIPTION_ID`.
+  - `AUTOBOT_SPEC_ARTIFACTS_ENDPOINT_SUFFIX` (optional, default `blob.core.windows.net`, override for sovereign cloud).
+- Repository secrets:
+  - `AUTOBOT_SPEC_ARTIFACTS_WRITE_SAS` (container SAS token with minimum write/list/create permissions for `runs/*` and `latest.json` updates).
+  - `AUTOBOT_SPEC_ARTIFACTS_READ_SAS` (container SAS token with read-only permission, used only for reviewer-facing links).
 
 Runtime behavior:
 
 - If `AUTOBOT_SPEC_ARTIFACTS_ENABLED` is `false`, workflows skip external upload and keep repository-only links.
-- If enabled and any required Azure setting is missing, spec phase continues but posts a warning and fallback repository links.
-- Workflows upload with Azure AD login auth mode, then create short-lived read-only URLs for issue comments.
+- If enabled and any required Azure setting or SAS secret is missing, spec phase continues but posts a warning and fallback repository links.
+- Workflows upload with `AUTOBOT_SPEC_ARTIFACTS_WRITE_SAS`, then build reviewer links with `AUTOBOT_SPEC_ARTIFACTS_READ_SAS`.
+- Write SAS tokens must never be included in issue comments, logs, PR bodies, or artifact payloads.
 
 ### Main feature issue contract
 
@@ -193,8 +195,9 @@ Main feature issue content:
 - **INV-17:** Spec review comments must include canonical repo links even when external artifact links are present.
 - **INV-18:** External artifact publishing failure must not silently pass. It must produce an explicit warning and leave canonical repository artifacts as source of truth.
 - **INV-19:** External spec artifacts are stored only in Azure Blob Storage for this increment.
-- **INV-20:** Azure Blob publishing must use federated identity and RBAC, not storage account keys or connection strings in workflow secrets.
-- **INV-21:** When artifact publishing is enabled, missing required Azure config must produce explicit warning output and fallback repository links.
+- **INV-20:** Azure Blob publishing must use SAS-only access for this increment, with separate write and read SAS tokens scoped to the artifact container.
+- **INV-21:** When artifact publishing is enabled, missing required Azure config or SAS secrets must produce explicit warning output and fallback repository links.
+- **INV-22:** Reviewer-facing links must use read-only SAS only, and must never expose the write SAS token.
 
 ### Security and operations
 
@@ -228,8 +231,9 @@ Issue and PR text remain untrusted input; scripts continue to own all state tran
 | AC-22 | External artifact upload failure is visible and non-blocking | Force storage write failure and verify spec still reaches review state with explicit warning comment |
 | AC-23 | Azure Blob publishing uses repo+branch+issue scoped paths and stores only `design.md` and `design.html` | Run spec with publishing enabled and verify object names and file types |
 | AC-24 | `latest.json` remains branch-scoped and does not cross-reference another branch in same repo | Publish spec from two branches and verify each branch pointer remains isolated |
-| AC-25 | OIDC and RBAC setup is sufficient without storage account keys | Disable any key-based config, run publish, and verify upload succeeds with `azure/login` identity |
-| AC-26 | Missing Azure settings in enabled mode produce fallback behavior without blocking phase completion | Remove one required variable, run spec, and verify warning plus canonical repo links |
+| AC-25 | SAS-only setup is sufficient for upload and review links without Azure login identity config | Remove Azure login settings, run publish with SAS secrets, and verify upload plus read-link generation succeeds |
+| AC-26 | Missing Azure settings or SAS secrets in enabled mode produce fallback behavior without blocking phase completion | Remove one required variable or SAS secret, run spec, and verify warning plus canonical repo links |
+| AC-27 | Review comments and logs expose read-only SAS links only, never write SAS tokens | Inspect emitted comments/logs and verify write SAS token material is absent |
 
 ## 5. Open questions
 
@@ -238,4 +242,4 @@ Issue and PR text remain untrusted input; scripts continue to own all state tran
 3. **Main feature closure policy.** Recommended: keep human-controlled closure for the main feature issue in v1, and evaluate auto-close only after reliable dependency completeness checks are available. **Non-blocking**.
 4. **Rework escalation threshold.** Recommended: after three consecutive rejected implementation cycles on the same task, add `autobot-blocked` with a summary comment that asks for manual triage before another rerun. **Non-blocking**.
 5. **External artifact retention window.** Recommended: expire spec mirror artifacts after 60 days, with optional extension for still-open review issues. **Non-blocking**.
-6. **Blob access model for reviewers.** Recommended: private container with short-lived read-only links in issue comments, instead of public container access. **Non-blocking**.
+6. **SAS rotation cadence.** Recommended: rotate read and write SAS policies every 30 days, with emergency revocation playbook and per-repository token isolation. **Non-blocking**.
