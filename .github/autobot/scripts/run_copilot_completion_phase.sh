@@ -126,7 +126,7 @@ EOF
   fi
 
   git show "${ref}:${design_path}" > .autobot/output/spec-design.md 2>/dev/null || true
-  if [[ "$(python -c "import pathlib; print(' '.join(pathlib.Path('.autobot/output/spec-design.md').read_text(encoding='utf-8').replace('\\r', '\\n').split()))" 2>/dev/null || true)" == "Autobot Copilot handoff placeholder." ]]; then
+  if grep -Eq '^[[:space:]]*Autobot Copilot handoff placeholder\.[[:space:]]*$' .autobot/output/spec-design.md 2>/dev/null; then
     if [[ -n "$pending_marker" ]] && ! printf '%s' "$issue_comments" | grep -Fq "$pending_marker"; then
       cat > .autobot/output/spec-pending-comment.txt <<EOF
 Autobot spec completion is still waiting for real design content.

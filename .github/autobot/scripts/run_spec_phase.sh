@@ -100,7 +100,7 @@ EOF
 
     design_ready="false"
     if design_content="$(git show "origin/${branch_name}:${design_path}" 2>/dev/null)"; then
-      if [[ "$(printf '%s' "$design_content" | python -c "import sys; print(' '.join(sys.stdin.read().replace('\r', '\n').split()))")" == "Autobot Copilot handoff placeholder." ]]; then
+      if printf '%s\n' "$design_content" | grep -Eq '^[[:space:]]*Autobot Copilot handoff placeholder\.[[:space:]]*$'; then
         last_pending_reason="spec completion is waiting for non-placeholder design content in ${design_path}."
       elif [[ -z "${design_content//[[:space:]]/}" ]]; then
         last_pending_reason="spec completion is waiting for non-empty design content in ${design_path}."
