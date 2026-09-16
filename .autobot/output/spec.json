@@ -1,0 +1,7 @@
+{
+  "status": "in_progress",
+  "blocked_reason": "Copilot handoff initialized; create docs/60-spec-auto-assignee-verification-20260916-144932/design.md and update this artifact to status=completed in the correlated PR (required when strict artifact mode is enabled).",
+  "issue_comment": "",
+  "pr_title": "",
+  "pr_body": ""
+}
