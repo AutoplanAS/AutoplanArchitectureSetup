@@ -570,6 +570,21 @@ create_or_update_handoff_pr() {
   local expected_design_path="${8:-}"
 
   local pr_title="Autobot ${phase} handoff for issue #${issue_number}"
+  local phase_requirement
+  case "$phase" in
+    spec)
+      phase_requirement="For spec phase, create or update the expected design file with the actual design content."
+      ;;
+    plan)
+      phase_requirement="For plan phase, derive a concrete implementation task breakdown from the merged design (no placeholder output)."
+      ;;
+    implement)
+      phase_requirement="For implement phase, commit real task implementation changes and do not include generated cache artifacts."
+      ;;
+    *)
+      phase_requirement="Provide the required phase output for this handoff."
+      ;;
+  esac
   mkdir -p .autobot/output
   cat > .autobot/output/handoff-pr-body.md <<EOF
 This pull request is the Autobot ${phase} handoff for #${issue_number}.
@@ -582,7 +597,7 @@ Strict artifact mode: \`${strict_mode}\`
 Completion contract:
 1. Keep this PR referencing #${issue_number}.
 2. Keep the run token in PR body or PR comments.
-3. For spec phase, create or update the expected design file with the actual design content.
+3. ${phase_requirement}
 4. Update \`${artifact_path}\` with final phase output. In strict mode it must set \`status\` to \`completed\`.
 EOF
   if [[ "$phase" == "spec" && -n "$expected_design_path" ]]; then
@@ -638,10 +653,16 @@ start_copilot_handoff() {
     fi
   fi
 
-  if [[ "$phase" == "spec" && -n "$pr_number" && -n "$expected_design_path" ]]; then
+  if [[ -n "$pr_number" ]]; then
     local trigger_handle
+    local instruction_file
     trigger_handle="$(copilot_trigger_handle)"
-    cat > .autobot/output/spec-copilot-instruction.md <<EOF
+    instruction_file=".autobot/output/${phase}-copilot-instruction.md"
+    if [[ "$phase" == "spec" ]]; then
+      if [[ -z "$expected_design_path" ]]; then
+        blocked_and_exit "$repo" "$issue_number" "$trigger_label" "Missing expected design path for Copilot spec handoff instruction." "$run_url"
+      fi
+      cat > "$instruction_file" <<EOF
 ${trigger_handle} Generate the specification design document for issue #${issue_number}.
 
 Required actions:
@@ -651,9 +672,46 @@ Required actions:
 
 After committing, leave a short summary comment.
 EOF
-    guard_text_file .autobot/output/spec-copilot-instruction.md || blocked_and_exit "$repo" "$issue_number" "$trigger_label" "Copilot instruction comment was blocked by secret guard." "$run_url"
-    if ! post_pr_comment "$repo" "$pr_number" .autobot/output/spec-copilot-instruction.md; then
-      blocked_and_exit "$repo" "$issue_number" "$trigger_label" "Failed to post Copilot spec instruction comment to PR #${pr_number}." "$run_url"
+    elif [[ "$phase" == "plan" ]]; then
+      cat > "$instruction_file" <<EOF
+${trigger_handle} Generate the implementation plan for issue #${issue_number} from the merged design on \`${DEFAULT_BRANCH}\`.
+
+Required actions:
+1. Keep the run token \`${run_token}\` in this PR body or comments.
+2. Update \`${artifact_path}\` with \`status: "completed"\`.
+3. Include a non-empty \`feature_comment\`.
+4. Include a non-empty \`tasks\` array where each task has \`title\`, \`body\`, and \`depends_on_titles\` (array of task titles).
+5. Do not commit generated cache artifacts (for example \`__pycache__/\` or \`*.pyc\`).
+
+After committing, leave a short summary comment.
+EOF
+    elif [[ "$phase" == "implement" ]]; then
+      cat > "$instruction_file" <<EOF
+${trigger_handle} Implement task issue #${issue_number} in this pull request.
+
+Required actions:
+1. Keep the run token \`${run_token}\` in this PR body or comments.
+2. Commit the task implementation changes on this branch (not only artifact changes).
+3. Update \`${artifact_path}\` with final phase output. In strict mode, set \`status\` to \`completed\`.
+4. Do not commit generated cache artifacts (for example \`__pycache__/\` or \`*.pyc\`).
+
+After committing, leave a short summary comment.
+EOF
+    else
+      cat > "$instruction_file" <<EOF
+${trigger_handle} Complete the Autobot ${phase} handoff for issue #${issue_number}.
+
+Required actions:
+1. Keep the run token \`${run_token}\` in this PR body or comments.
+2. Update \`${artifact_path}\` with final phase output.
+
+After committing, leave a short summary comment.
+EOF
+    fi
+
+    guard_text_file "$instruction_file" || blocked_and_exit "$repo" "$issue_number" "$trigger_label" "Copilot instruction comment was blocked by secret guard." "$run_url"
+    if ! post_pr_comment "$repo" "$pr_number" "$instruction_file"; then
+      blocked_and_exit "$repo" "$issue_number" "$trigger_label" "Failed to post Copilot ${phase} instruction comment to PR #${pr_number}." "$run_url"
     fi
   fi
 

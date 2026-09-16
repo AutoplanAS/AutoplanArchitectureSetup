@@ -169,9 +169,11 @@ Minimal setup:
    - `AUTOBOT_SPEC_PROVIDER`, `AUTOBOT_PLAN_PROVIDER`, `AUTOBOT_IMPLEMENT_PROVIDER`
    - allowed values: `codex` or `github-copilot` (defaults to `codex`)
    - `AUTOBOT_COPILOT_ASSIGNEE` required when any phase uses `github-copilot`
-   - optional `AUTOBOT_COPILOT_TRIGGER_HANDLE` (default `@copilot`) for spec handoff PR instruction mentions
-   - optional `AUTOBOT_COPILOT_TRIGGER_TOKEN` secret to post spec handoff instruction comments as a human identity
+   - optional `AUTOBOT_COPILOT_TRIGGER_HANDLE` (default `@copilot`) for Copilot handoff PR instruction mentions
+   - optional `AUTOBOT_COPILOT_TRIGGER_TOKEN` secret to post Copilot handoff instruction comments as a human identity
    - optional `AUTOBOT_COPILOT_SPEC_AUTOCOMPLETE_WAIT_MINUTES` (default `20`, max `180`) to keep the issue-triggered spec run open and self-evaluate completion when design appears
+   - optional `AUTOBOT_COPILOT_PLAN_AUTOCOMPLETE_WAIT_MINUTES` (default `20`, max `180`) to keep the issue-triggered plan run open and self-evaluate completion when plan artifact output appears
+   - optional `AUTOBOT_COPILOT_IMPLEMENT_AUTOCOMPLETE_WAIT_MINUTES` (default `20`, max `180`) to keep the issue-triggered implement run open and self-evaluate completion when implementation output appears
    - optional `AUTOBOT_COPILOT_TIMEOUT_MINUTES` (handoff SLA hint in comments, default `90`, max `360`)
    - optional `AUTOBOT_COPILOT_STRICT_ARTIFACT` (`false` default; set `true` to require explicit completed phase artifacts in Copilot mode)
    - optional `AUTOBOT_BASELINE_REPOSITORY` (defaults to `AutoplanAS/AutoplanArchitectureSetup`)
@@ -297,7 +299,7 @@ Provider routing behavior:
 2. Unset provider variables default to `codex`.
 3. `github-copilot` mode is event-driven:
    - issue-trigger workflows publish a deterministic handoff branch and create/update a draft handoff PR;
-   - completion is evaluated on PR events by `autobot-copilot-complete`.
+   - completion is evaluated by `autobot-copilot-complete` on PR events and can also be self-invoked from bounded issue-trigger polling.
 4. Handoff branches:
    - `spec`/`implement`: `autobot/<issue>-<slug>`
    - `plan`: `autobot-plan/<issue>-<slug>`
@@ -307,11 +309,12 @@ Provider routing behavior:
    manual artifact edits when expected branch changes exist; `true` requires explicit completed
    artifacts.
 7. Spec completion requires a design file at `docs/<issue-number>-*/design.md` in the handoff PR.
-8. Spec handoff auto-posts a PR instruction comment mentioning `@copilot` (or `AUTOBOT_COPILOT_TRIGGER_HANDLE`) to request design generation at the required path.
-9. There is no automatic fallback to Codex when Copilot mode fails.
-10. External spec artifact publishing is optional and non-blocking; canonical repository links remain source of truth.
-11. External spec artifact publishing uses SAS-only Azure Blob access with separate write/read SAS tokens.
-12. Rejected implementation PR feedback is included in rework context, but rework run start still requires explicit relabel.
+8. Spec/plan/implement handoffs auto-post phase-specific PR instruction comments mentioning `@copilot` (or `AUTOBOT_COPILOT_TRIGGER_HANDLE`).
+9. Issue-triggered Copilot runs can wait briefly and self-evaluate completion for spec/plan/implement to reduce dependence on follow-up PR event approvals.
+10. There is no automatic fallback to Codex when Copilot mode fails.
+11. External spec artifact publishing is optional and non-blocking; canonical repository links remain source of truth.
+12. External spec artifact publishing uses SAS-only Azure Blob access with separate write/read SAS tokens.
+13. Rejected implementation PR feedback is included in rework context, but rework run start still requires explicit relabel.
 
 Project stage sync mapping:
 

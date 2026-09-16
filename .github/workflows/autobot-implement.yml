@@ -58,6 +58,8 @@ on:
         required: false
       AUTOBOT_PROJECT_TOKEN:
         required: false
+      AUTOBOT_COPILOT_TRIGGER_TOKEN:
+        required: false
 
 permissions:
   contents: write
@@ -132,6 +134,9 @@ jobs:
           AUTOBOT_PROJECT_TOKEN: ${{ secrets.AUTOBOT_PROJECT_TOKEN }}
           AUTOBOT_IMPLEMENT_PROVIDER: ${{ inputs.implement_provider }}
           AUTOBOT_COPILOT_ASSIGNEE: ${{ inputs.copilot_assignee }}
+          AUTOBOT_COPILOT_TRIGGER_HANDLE: ${{ vars.AUTOBOT_COPILOT_TRIGGER_HANDLE }}
+          AUTOBOT_COPILOT_TRIGGER_TOKEN: ${{ secrets.AUTOBOT_COPILOT_TRIGGER_TOKEN }}
+          AUTOBOT_COPILOT_IMPLEMENT_AUTOCOMPLETE_WAIT_MINUTES: ${{ vars.AUTOBOT_COPILOT_IMPLEMENT_AUTOCOMPLETE_WAIT_MINUTES != '' && vars.AUTOBOT_COPILOT_IMPLEMENT_AUTOCOMPLETE_WAIT_MINUTES || '20' }}
           AUTOBOT_COPILOT_TIMEOUT_MINUTES: ${{ inputs.copilot_timeout_minutes }}
           AUTOBOT_COPILOT_STRICT_ARTIFACT: ${{ inputs.copilot_strict_artifact }}
           GITHUB_RUN_ID: ${{ github.run_id }}

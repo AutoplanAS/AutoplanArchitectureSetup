@@ -134,6 +134,61 @@ EOF
   fi
   gh issue edit "$ISSUE_NUMBER" --repo "$REPOSITORY" --remove-label autobot-in-review --remove-label autobot-blocked --add-label "$TRIGGER_LABEL" >/dev/null || true
   sync_project_stage_with_warning "$REPOSITORY" "$ISSUE_NUMBER" "Implementing" || true
+
+  pr_number="${pr_url##*/}"
+  wait_minutes_raw="${AUTOBOT_COPILOT_IMPLEMENT_AUTOCOMPLETE_WAIT_MINUTES:-20}"
+  if [[ ! "$wait_minutes_raw" =~ ^[0-9]+$ ]]; then
+    wait_minutes_raw=20
+  fi
+  if (( wait_minutes_raw < 1 )); then
+    wait_minutes_raw=1
+  fi
+  if (( wait_minutes_raw > 180 )); then
+    wait_minutes_raw=180
+  fi
+
+  strict_mode="$(copilot_strict_artifact_mode)"
+  autocomplete_deadline=$(( $(date +%s) + wait_minutes_raw * 60 ))
+  while true; do
+    git fetch origin "$branch_name" >/dev/null 2>&1 || true
+
+    artifact_completed="false"
+    if git show "origin/${branch_name}:.autobot/output/implement.json" > .autobot/output/implement-check.json 2>/dev/null; then
+      artifact_status="$(python -c "import json;print(str(json.load(open('.autobot/output/implement-check.json','r',encoding='utf-8')).get('status','')).strip().lower())" 2>/dev/null || true)"
+      if [[ "$artifact_status" == "completed" ]]; then
+        artifact_completed="true"
+      fi
+    fi
+
+    has_non_autobot_changes="false"
+    changed_files="$(git diff --name-only "origin/${DEFAULT_BRANCH}...origin/${branch_name}" | grep -Ev '^(\.autobot/|$)' || true)"
+    if [[ -n "$changed_files" ]]; then
+      has_non_autobot_changes="true"
+    fi
+
+    should_evaluate_completion="false"
+    if [[ "$strict_mode" == "true" ]]; then
+      if [[ "$artifact_completed" == "true" ]]; then
+        should_evaluate_completion="true"
+      fi
+    else
+      if [[ "$artifact_completed" == "true" || "$has_non_autobot_changes" == "true" ]]; then
+        should_evaluate_completion="true"
+      fi
+    fi
+
+    if [[ "$should_evaluate_completion" == "true" ]]; then
+      PR_NUMBER="$pr_number" bash "$SCRIPT_DIR/run_copilot_completion_phase.sh" || true
+      break
+    fi
+
+    now_epoch="$(date +%s)"
+    if (( now_epoch >= autocomplete_deadline )); then
+      break
+    fi
+    sleep 60
+  done
+
   printf 'Copilot implementation handoff started with PR: %s\n' "$pr_url"
   rm -rf .autobot
   exit 0

@@ -64,7 +64,7 @@ The Codex and GitHub Copilot providers use the same lifecycle semantics:
 - `AUTOBOT_PROJECT_TOKEN` (required for organization-owned project boards such as `AutoplanAS#8`)
 - `AUTOBOT_SPEC_ARTIFACTS_WRITE_SAS` (optional; required only when `AUTOBOT_SPEC_ARTIFACTS_ENABLED=true`)
 - `AUTOBOT_SPEC_ARTIFACTS_READ_SAS` (optional; required only when `AUTOBOT_SPEC_ARTIFACTS_ENABLED=true`)
-- `AUTOBOT_COPILOT_TRIGGER_TOKEN` (optional; PAT used to post the spec handoff `@copilot` instruction as a human account when bot-originated mentions are ignored; if unset, `BASELINE_REPO_TOKEN` is used when available)
+- `AUTOBOT_COPILOT_TRIGGER_TOKEN` (optional; PAT used to post Copilot handoff `@copilot` instruction comments as a human account when bot-originated mentions are ignored; if unset, `BASELINE_REPO_TOKEN` is used when available)
 
 When Codex is used, `CODEX_API_KEY` should be managed as an org-level secret and granted to each
 adopting repository.
@@ -99,8 +99,10 @@ Provider routing uses repository variables:
 - `AUTOBOT_PLAN_PROVIDER` (`codex` or `github-copilot`, default `codex`)
 - `AUTOBOT_IMPLEMENT_PROVIDER` (`codex` or `github-copilot`, default `codex`)
 - `AUTOBOT_COPILOT_ASSIGNEE` (required when any phase uses `github-copilot`; must be a real assignable GitHub login in the target repository)
-- `AUTOBOT_COPILOT_TRIGGER_HANDLE` (optional, defaults to `@copilot`; mention used in spec handoff PR instruction comment)
+- `AUTOBOT_COPILOT_TRIGGER_HANDLE` (optional, defaults to `@copilot`; mention used in Copilot handoff PR instruction comments)
 - `AUTOBOT_COPILOT_SPEC_AUTOCOMPLETE_WAIT_MINUTES` (optional, defaults to `20`, max `180`; how long the issue-triggered spec job waits and self-runs completion checks)
+- `AUTOBOT_COPILOT_PLAN_AUTOCOMPLETE_WAIT_MINUTES` (optional, defaults to `20`, max `180`; how long the issue-triggered plan job waits and self-runs completion checks)
+- `AUTOBOT_COPILOT_IMPLEMENT_AUTOCOMPLETE_WAIT_MINUTES` (optional, defaults to `20`, max `180`; how long the issue-triggered implement job waits and self-runs completion checks)
 - `AUTOBOT_COPILOT_TIMEOUT_MINUTES` (optional handoff SLA hint in comments, default `90`, max `360`)
 - `AUTOBOT_COPILOT_STRICT_ARTIFACT` (`true`/`false`, default `false`; strict mode requires explicit completed phase artifact payloads before acceptance)
 
@@ -136,6 +138,7 @@ Baseline source selection (optional) uses repository variables:
    - `CODEX_API_KEY` (only needed for phases that use provider `codex`)
    - `BASELINE_REPO_TOKEN` only if needed.
    - `AUTOBOT_PROJECT_TOKEN` when project scope permissions are required.
+   - `AUTOBOT_COPILOT_TRIGGER_TOKEN` (optional, recommended when any phase uses `github-copilot`)
    - `AUTOBOT_SPEC_ARTIFACTS_WRITE_SAS` and `AUTOBOT_SPEC_ARTIFACTS_READ_SAS` when spec artifact publishing is enabled.
 4. Configure provider routing variables for your preferred execution model.
 
@@ -165,11 +168,12 @@ Copilot handoff details:
   - `spec`/`implement`: `autobot/<issue>-<slug>`
   - `plan`: `autobot-plan/<issue>-<slug>`
 - Handoff PRs include a run token and initial phase artifact commit under `.autobot/output/` so a PR is openable immediately.
-- Spec handoff auto-posts a PR instruction comment that mentions `@copilot` (or `AUTOBOT_COPILOT_TRIGGER_HANDLE`) and requires creating `docs/<issue>-<slug>/design.md`.
-- When `AUTOBOT_COPILOT_TRIGGER_TOKEN` is set, that instruction comment is posted with the token owner identity (recommended when Copilot ignores bot-authored mentions).
+- Spec/plan/implement handoff auto-posts a PR instruction comment that mentions `@copilot` (or `AUTOBOT_COPILOT_TRIGGER_HANDLE`) with phase-specific required actions.
+- When `AUTOBOT_COPILOT_TRIGGER_TOKEN` is set, those instruction comments are posted with the token owner identity (recommended when Copilot ignores bot-authored mentions).
 - Completion is event-driven: `autobot-copilot-complete.yml` runs on PR updates/comments, validates assignee + issue reference + run token, and applies workflow-owned side effects.
 - Spec completion requires a design document at `docs/<issue-number>-*/design.md` in the handoff PR branch.
 - With `AUTOBOT_COPILOT_STRICT_ARTIFACT=false`, spec/implement can be accepted without manually editing the artifact when required branch changes are present. Set strict mode to `true` to require explicit `status=completed` artifacts.
+- Issue-triggered Copilot phase runs can wait briefly and self-evaluate completion for spec/plan/implement; this reduces dependence on follow-up PR event approvals.
 
 Project sync mapping handled by router and phase scripts:
 
@@ -207,7 +211,7 @@ When no release tag is available yet, pin temporarily to `@main` until a release
 | `reference to workflow should be either a valid branch, tag, or commit` | The ref in `uses: AutoplanAS/AutoplanArchitectureSetup/...@<ref>` does not exist | Pin to an existing tag/commit/branch (`@v1` once published, or temporary `@main`) |
 | `Could not resolve to a ProjectV2 with the number <n> (organization.projectV2)` | Project access is missing for the workflow token, or owner/number is wrong | Verify `AUTOBOT_PROJECT_OWNER` + `AUTOBOT_PROJECT_NUMBER`; grant `AUTOBOT_PROJECT_TOKEN` with project scope for private org projects |
 | `bash: .autobot-baseline/machinist/scripts/install-autoplan-skills.sh: No such file or directory` | Baseline repository/ref resolved to a repo that does not contain Machinist scripts | Use `AUTOBOT_BASELINE_REPOSITORY=AutoplanAS/AutoplanArchitectureSetup` and a valid `AUTOBOT_BASELINE_REF` (for example `v1` or `main`) |
-| `autobot-router` run shows `action_required` with no jobs after Copilot bot activity | Repository Actions policy requires approval for bot-originated workflow runs | Approve the run in Actions UI, or add a maintainer PR comment to trigger a trusted `issue_comment` run that evaluates completion |
+| `autobot-router` run shows `action_required` with no jobs after Copilot bot activity | Repository Actions policy requires approval for bot-originated workflow runs | Autobot now self-evaluates completion from issue-triggered spec/plan/implement runs for a bounded window. If the phase still does not complete after that window, approve the run in Actions UI or add a maintainer PR comment to trigger a trusted `issue_comment` run |
 
 ## Sandbox validation checklist
 
