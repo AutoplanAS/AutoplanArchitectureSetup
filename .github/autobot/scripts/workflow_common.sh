@@ -349,6 +349,7 @@ create_or_update_handoff_pr() {
   local run_token="$5"
   local artifact_path="$6"
   local strict_mode="$7"
+  local expected_design_path="${8:-}"
 
   local pr_title="Autobot ${phase} handoff for issue #${issue_number}"
   mkdir -p .autobot/output
@@ -365,6 +366,11 @@ Completion contract:
 2. Keep the run token in PR body or PR comments.
 3. Update \`${artifact_path}\` with final phase output. In strict mode it must set \`status\` to \`completed\`.
 EOF
+  if [[ "$phase" == "spec" && -n "$expected_design_path" ]]; then
+    cat >> .autobot/output/handoff-pr-body.md <<EOF
+4. Keep \`${expected_design_path}\` in this branch and replace its placeholder with the final design before completion.
+EOF
+  fi
 
   local pr_number
   pr_number="$(gh pr list --repo "$repo" --head "$branch_name" --json number --jq '.[0].number' 2>/dev/null || true)"
@@ -387,6 +393,7 @@ start_copilot_handoff() {
   local artifact_path="$5"
   local run_url="$6"
   local trigger_label="$7"
+  local expected_design_path="${8:-}"
 
   require_copilot_assignee_or_block "$repo" "$issue_number" "$trigger_label" "$run_url"
 
@@ -400,7 +407,7 @@ start_copilot_handoff() {
   fi
 
   local pr_data pr_number pr_url
-  pr_data="$(create_or_update_handoff_pr "$phase" "$repo" "$issue_number" "$branch_name" "$run_token" "$artifact_path" "$strict_mode")"
+  pr_data="$(create_or_update_handoff_pr "$phase" "$repo" "$issue_number" "$branch_name" "$run_token" "$artifact_path" "$strict_mode" "$expected_design_path")"
   pr_number="${pr_data%%|*}"
   pr_url="${pr_data#*|}"
   if [[ -z "$pr_url" ]]; then
@@ -427,6 +434,10 @@ path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
 PY
 
   local kickoff
+  local design_line=""
+  if [[ "$phase" == "spec" && -n "$expected_design_path" ]]; then
+    design_line=$'\nExpected design file: `'"${expected_design_path}"$'`'
+  fi
   kickoff=$(
     cat <<EOF
 Autobot ${phase} provider is set to GitHub Copilot.
@@ -436,6 +447,7 @@ Expected assignee: @${AUTOBOT_COPILOT_ASSIGNEE}
 Handoff PR: ${pr_url}
 Branch: \`${branch_name}\`
 Phase artifact: \`${artifact_path}\`
+${design_line}
 Timeout hint: ${timeout_minutes} minutes
 
 Autobot will evaluate completion on pull request updates.
