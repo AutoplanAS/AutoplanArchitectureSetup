@@ -143,6 +143,9 @@ PY
       )"; then
         artifact_ready="true"
       else
+        if [[ -z "${artifact_reason//[[:space:]]/}" ]]; then
+          artifact_reason="spec.json is invalid or missing required completion fields."
+        fi
         last_pending_reason="spec completion is waiting for completion-ready .autobot/output/spec.json (${artifact_reason})."
       fi
     else
