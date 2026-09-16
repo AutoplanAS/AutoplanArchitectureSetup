@@ -197,6 +197,7 @@ jobs:
       CODEX_API_KEY: ${{ secrets.CODEX_API_KEY }}
       BASELINE_REPO_TOKEN: ${{ secrets.BASELINE_REPO_TOKEN }}
       AUTOBOT_PROJECT_TOKEN: ${{ secrets.AUTOBOT_PROJECT_TOKEN }}
+      AUTOBOT_COPILOT_TRIGGER_TOKEN: ${{ secrets.AUTOBOT_COPILOT_TRIGGER_TOKEN }}
 
   implement:
     if: github.event_name == 'issues' && github.event.action == 'labeled' && github.event.issue.state == 'open' && github.event.label.name == 'autobot-implementing'
@@ -217,3 +218,4 @@ jobs:
       CODEX_API_KEY: ${{ secrets.CODEX_API_KEY }}
       BASELINE_REPO_TOKEN: ${{ secrets.BASELINE_REPO_TOKEN }}
       AUTOBOT_PROJECT_TOKEN: ${{ secrets.AUTOBOT_PROJECT_TOKEN }}
+      AUTOBOT_COPILOT_TRIGGER_TOKEN: ${{ secrets.AUTOBOT_COPILOT_TRIGGER_TOKEN }}
