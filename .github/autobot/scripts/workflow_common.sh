@@ -549,11 +549,12 @@ Strict artifact mode: \`${strict_mode}\`
 Completion contract:
 1. Keep this PR referencing #${issue_number}.
 2. Keep the run token in PR body or PR comments.
-3. Update \`${artifact_path}\` with final phase output. In strict mode it must set \`status\` to \`completed\`.
+3. For spec phase, create or update the expected design file with the actual design content.
+4. Update \`${artifact_path}\` with final phase output. In strict mode it must set \`status\` to \`completed\`.
 EOF
   if [[ "$phase" == "spec" && -n "$expected_design_path" ]]; then
     cat >> .autobot/output/handoff-pr-body.md <<EOF
-4. Keep \`${expected_design_path}\` in this branch and replace its placeholder with the final design before completion.
+- Required spec file path: \`${expected_design_path}\`.
 EOF
   fi
 

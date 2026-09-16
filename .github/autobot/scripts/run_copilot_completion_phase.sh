@@ -86,9 +86,41 @@ if git show "${ref}:${artifact_path}" > "$artifact_file" 2>/dev/null; then
 fi
 
 design_path=""
+expected_design_path=""
 if [[ "$phase" == "spec" ]]; then
+  if [[ "$pr_head" =~ ^autobot/(.+)$ ]]; then
+    expected_design_path="docs/${BASH_REMATCH[1]}/design.md"
+  else
+    expected_design_path="docs/${issue_number}-<slug>/design.md"
+  fi
   design_path="$(git ls-tree -r --name-only "$ref" | grep -E "^docs/${issue_number}-[^/]+/design\.md$" | head -n 1 || true)"
+fi
+
+marker="Autobot ${phase} completion accepted for token \`${run_token}\`."
+pending_marker=""
+if [[ "$phase" == "spec" ]]; then
+  pending_marker="Autobot spec completion pending for token \`${run_token}\`."
+fi
+issue_comments="$(gh issue view "$issue_number" --repo "$REPOSITORY" --comments 2>/dev/null || true)"
+
+if [[ "$phase" == "spec" ]]; then
   if [[ -z "$design_path" ]]; then
+    if [[ -n "$pending_marker" ]] && ! printf '%s' "$issue_comments" | grep -Fq "$pending_marker"; then
+      cat > .autobot/output/spec-pending-comment.txt <<EOF
+Autobot spec completion is still waiting for the design document.
+
+- Expected design file path in this PR branch: \`${expected_design_path}\`
+- Current state: no \`docs/${issue_number}-*/design.md\` file found in branch \`${pr_head}\`
+- Required: add the design markdown file, then update the PR (push commit or comment)
+
+${pending_marker}
+EOF
+      if guard_text_file .autobot/output/spec-pending-comment.txt; then
+        gh issue comment "$issue_number" --repo "$REPOSITORY" --body-file .autobot/output/spec-pending-comment.txt >/dev/null || true
+      else
+        gh issue comment "$issue_number" --repo "$REPOSITORY" --body "Autobot spec completion is waiting for design content in \`${expected_design_path}\` (${pending_marker})." >/dev/null || true
+      fi
+    fi
     echo "skip: spec completion requires docs/${issue_number}-*/design.md in the handoff PR."
     exit 0
   fi
@@ -102,6 +134,27 @@ if [[ "$artifact_status" != "completed" ]]; then
   fi
 
   if [[ "$phase" == "spec" ]]; then
+    git show "${ref}:${design_path}" > .autobot/output/spec-design.md 2>/dev/null || true
+    if grep -Fq "Autobot Copilot handoff placeholder." .autobot/output/spec-design.md 2>/dev/null; then
+      if [[ -n "$pending_marker" ]] && ! printf '%s' "$issue_comments" | grep -Fq "$pending_marker"; then
+        cat > .autobot/output/spec-pending-comment.txt <<EOF
+Autobot spec completion is still waiting for real design content.
+
+- Required design file: \`${design_path}\`
+- Current state: file still contains placeholder handoff text
+- Required: replace placeholder text with the final design, then update the PR
+
+${pending_marker}
+EOF
+        if guard_text_file .autobot/output/spec-pending-comment.txt; then
+          gh issue comment "$issue_number" --repo "$REPOSITORY" --body-file .autobot/output/spec-pending-comment.txt >/dev/null || true
+        else
+          gh issue comment "$issue_number" --repo "$REPOSITORY" --body "Autobot spec completion is waiting for non-placeholder design content in \`${design_path}\` (${pending_marker})." >/dev/null || true
+        fi
+      fi
+      echo "skip: spec design file still contains placeholder handoff text."
+      exit 0
+    fi
     python - "$artifact_file" "$pr_title_current" "$pr_body_current" "$design_path" <<'PY'
 import json
 import pathlib
@@ -144,8 +197,6 @@ PY
   fi
 fi
 
-marker="Autobot ${phase} completion accepted for token \`${run_token}\`."
-issue_comments="$(gh issue view "$issue_number" --repo "$REPOSITORY" --comments 2>/dev/null || true)"
 if printf '%s' "$issue_comments" | grep -Fq "$marker"; then
   echo "skip: completion already accepted for token ${run_token}."
   exit 0
