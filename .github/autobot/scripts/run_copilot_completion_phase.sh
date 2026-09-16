@@ -162,6 +162,30 @@ if [[ "$phase" == "spec" ]]; then
   if [[ -n "$design_path" ]]; then
     design_url="https://github.com/${REPOSITORY}/blob/${pr_head}/${design_path}"
   fi
+  spec_design_local=".autobot/output/spec-design.md"
+  if [[ -n "$design_path" ]]; then
+    git show "${ref}:${design_path}" > "$spec_design_local" 2>/dev/null || true
+  fi
+  publish_spec_artifacts "$REPOSITORY" "$issue_number" "$pr_head" "$spec_design_local"
+  artifact_warning_block=""
+  if [[ -n "${SPEC_ARTIFACTS_WARNING:-}" ]]; then
+    artifact_warning_block=$(
+      cat <<EOF
+
+Autobot warning: ${SPEC_ARTIFACTS_WARNING}
+Run: ${WORKFLOW_RUN_URL:-}
+EOF
+    )
+  fi
+  artifact_links_block=""
+  if [[ -n "${SPEC_ARTIFACTS_LINKS_MARKDOWN:-}" ]]; then
+    artifact_links_block=$(
+      cat <<EOF
+
+${SPEC_ARTIFACTS_LINKS_MARKDOWN}
+EOF
+    )
+  fi
 
   if [[ -n "$pr_title" ]]; then
     printf '%s' "$pr_body" > .autobot/output/correlation-pr-body.txt
@@ -175,6 +199,8 @@ ${issue_comment}
 
 Design file: [${design_path}](${design_url})
 Design pull request: ${pr_url}
+${artifact_links_block}
+${artifact_warning_block}
 
 Next step: review and merge the design pull request to approve the specification. After merge, add \`autobot-ready-to-implement\` on this feature issue to start planning.
 
@@ -185,6 +211,8 @@ EOF
 ${issue_comment}
 
 Design pull request: ${pr_url}
+${artifact_links_block}
+${artifact_warning_block}
 
 Next step: review and merge the design pull request to approve the specification. After merge, add \`autobot-ready-to-implement\` on this feature issue to start planning.
 
@@ -194,30 +222,42 @@ EOF
   guard_text_file .autobot/output/correlation-issue-comment.txt || blocked_and_exit "$REPOSITORY" "$issue_number" autobot-ready-for-spec "Issue comment from Copilot completion was blocked by secret guard." "${WORKFLOW_RUN_URL:-}"
 
   gh issue comment "$issue_number" --repo "$REPOSITORY" --body-file .autobot/output/correlation-issue-comment.txt >/dev/null
-  gh issue edit "$issue_number" --repo "$REPOSITORY" --remove-label autobot-ready-for-spec --remove-label autobot-blocked --add-label autobot-creating-specification >/dev/null || true
-  sync_project_stage_with_warning "$REPOSITORY" "$issue_number" "Creating specification" || true
+  gh issue edit "$issue_number" --repo "$REPOSITORY" --remove-label autobot-ready-for-spec --remove-label autobot-creating-specification --remove-label autobot-blocked --add-label autobot-review-specification >/dev/null || true
+  sync_project_stage_with_warning "$REPOSITORY" "$issue_number" "Review specification" || true
   echo "accepted spec completion for issue #${issue_number} from PR #${PR_NUMBER}"
   exit 0
 fi
 
 if [[ "$phase" == "plan" ]]; then
+  design_path="$(git ls-tree -r --name-only "origin/${DEFAULT_BRANCH}" | grep -E "^docs/${issue_number}-[^/]+/design\.md$" | head -n 1 || true)"
+  if [[ -z "$design_path" ]]; then
+    design_path="docs/${issue_number}-unknown/design.md"
+  fi
   cp "$artifact_file" .autobot/output/plan.json
   python "$SCRIPT_DIR/create_plan_issues.py" \
     --repo "$REPOSITORY" \
     --feature-issue "$issue_number" \
     --plan-json .autobot/output/plan.json \
+    --default-branch "$DEFAULT_BRANCH" \
+    --design-path "$design_path" \
     --project-owner "${PROJECT_OWNER:-}" \
     --project-number "${PROJECT_NUMBER:-}" \
     --project-status-field "${PROJECT_STATUS_FIELD:-Status}" \
     > .autobot/output/created-plan.json
 
   feature_comment="$(python -c "import json;print(json.load(open('.autobot/output/created-plan.json','r',encoding='utf-8')).get('feature_comment','Plan completed.'))")"
+  close_comment="$(python -c "import json;print(json.load(open('.autobot/output/created-plan.json','r',encoding='utf-8')).get('close_comment',''))")"
   printf '%s\n\nSource planning PR: %s\n\n%s\n' "$feature_comment" "$pr_url" "$marker" > .autobot/output/correlation-feature-comment.txt
   guard_text_file .autobot/output/correlation-feature-comment.txt || blocked_and_exit "$REPOSITORY" "$issue_number" autobot-ready-to-implement "Feature comment from Copilot plan completion was blocked by secret guard." "${WORKFLOW_RUN_URL:-}"
 
   gh issue comment "$issue_number" --repo "$REPOSITORY" --body-file .autobot/output/correlation-feature-comment.txt >/dev/null
   gh issue edit "$issue_number" --repo "$REPOSITORY" --remove-label autobot-ready-to-implement --remove-label autobot-blocked >/dev/null || true
-  sync_project_stage_with_warning "$REPOSITORY" "$issue_number" "Ready to implement" || true
+  if [[ -n "${close_comment//[[:space:]]/}" ]]; then
+    gh issue close "$issue_number" --repo "$REPOSITORY" --reason completed --comment "$close_comment" >/dev/null || true
+  else
+    gh issue close "$issue_number" --repo "$REPOSITORY" --reason completed >/dev/null || true
+  fi
+  sync_project_stage_with_warning "$REPOSITORY" "$issue_number" "Done" || true
   echo "accepted plan completion for issue #${issue_number} from PR #${PR_NUMBER}"
   exit 0
 fi
@@ -229,15 +269,15 @@ if [[ "$phase" == "implement" ]]; then
 
   if [[ -n "$pr_title" ]]; then
     printf '%s' "$pr_body" > .autobot/output/correlation-pr-body.txt
-    guard_text_file .autobot/output/correlation-pr-body.txt || blocked_and_exit "$REPOSITORY" "$issue_number" autobot-in-review "PR body from Copilot implementation completion was blocked by secret guard." "${WORKFLOW_RUN_URL:-}"
+    guard_text_file .autobot/output/correlation-pr-body.txt || blocked_and_exit "$REPOSITORY" "$issue_number" autobot-implementing "PR body from Copilot implementation completion was blocked by secret guard." "${WORKFLOW_RUN_URL:-}"
     gh pr edit "$PR_NUMBER" --repo "$REPOSITORY" --title "$pr_title" --body-file .autobot/output/correlation-pr-body.txt >/dev/null || true
   fi
 
   printf '%s\n\nPull request: %s\n\n%s\n' "$issue_comment" "$pr_url" "$marker" > .autobot/output/correlation-issue-comment.txt
-  guard_text_file .autobot/output/correlation-issue-comment.txt || blocked_and_exit "$REPOSITORY" "$issue_number" autobot-in-review "Issue comment from Copilot implementation completion was blocked by secret guard." "${WORKFLOW_RUN_URL:-}"
+  guard_text_file .autobot/output/correlation-issue-comment.txt || blocked_and_exit "$REPOSITORY" "$issue_number" autobot-implementing "Issue comment from Copilot implementation completion was blocked by secret guard." "${WORKFLOW_RUN_URL:-}"
 
   gh issue comment "$issue_number" --repo "$REPOSITORY" --body-file .autobot/output/correlation-issue-comment.txt >/dev/null
-  gh issue edit "$issue_number" --repo "$REPOSITORY" --remove-label autobot-blocked --add-label autobot-in-review >/dev/null || true
+  gh issue edit "$issue_number" --repo "$REPOSITORY" --remove-label autobot-implementing --remove-label autobot-blocked --add-label autobot-in-review >/dev/null || true
   sync_project_stage_with_warning "$REPOSITORY" "$issue_number" "In review" || true
   echo "accepted implement completion for issue #${issue_number} from PR #${PR_NUMBER}"
   exit 0

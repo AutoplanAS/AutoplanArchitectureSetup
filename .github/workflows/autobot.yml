@@ -35,6 +35,8 @@ jobs:
     secrets:
       AUTOBOT_PROJECT_TOKEN: ${{ secrets.AUTOBOT_PROJECT_TOKEN }}
       BASELINE_REPO_TOKEN: ${{ secrets.BASELINE_REPO_TOKEN }}
+      AUTOBOT_SPEC_ARTIFACTS_WRITE_SAS: ${{ secrets.AUTOBOT_SPEC_ARTIFACTS_WRITE_SAS }}
+      AUTOBOT_SPEC_ARTIFACTS_READ_SAS: ${{ secrets.AUTOBOT_SPEC_ARTIFACTS_READ_SAS }}
 
   sync-ready-for-spec:
     if: github.event_name == 'issues' && github.event.action == 'labeled' && github.event.issue.state == 'open' && github.event.label.name == 'autobot-ready-for-spec'
@@ -101,6 +103,19 @@ jobs:
     secrets:
       AUTOBOT_PROJECT_TOKEN: ${{ secrets.AUTOBOT_PROJECT_TOKEN }}
 
+  sync-implementing:
+    if: github.event_name == 'issues' && github.event.action == 'labeled' && github.event.issue.state == 'open' && github.event.label.name == 'autobot-implementing'
+    uses: ./.github/workflows/autobot-project-sync.yml
+    with:
+      repository: ${{ github.repository }}
+      issue_number: ${{ github.event.issue.number }}
+      project_stage: Implementing
+      project_owner: ${{ vars.AUTOBOT_PROJECT_OWNER }}
+      project_number: ${{ vars.AUTOBOT_PROJECT_NUMBER }}
+      project_status_field: ${{ vars.AUTOBOT_PROJECT_STATUS_FIELD != '' && vars.AUTOBOT_PROJECT_STATUS_FIELD || 'Status' }}
+    secrets:
+      AUTOBOT_PROJECT_TOKEN: ${{ secrets.AUTOBOT_PROJECT_TOKEN }}
+
   sync-blocked:
     if: github.event_name == 'issues' && github.event.action == 'labeled' && github.event.issue.state == 'open' && github.event.label.name == 'autobot-blocked'
     uses: ./.github/workflows/autobot-project-sync.yml
@@ -159,6 +174,8 @@ jobs:
       CODEX_API_KEY: ${{ secrets.CODEX_API_KEY }}
       BASELINE_REPO_TOKEN: ${{ secrets.BASELINE_REPO_TOKEN }}
       AUTOBOT_PROJECT_TOKEN: ${{ secrets.AUTOBOT_PROJECT_TOKEN }}
+      AUTOBOT_SPEC_ARTIFACTS_WRITE_SAS: ${{ secrets.AUTOBOT_SPEC_ARTIFACTS_WRITE_SAS }}
+      AUTOBOT_SPEC_ARTIFACTS_READ_SAS: ${{ secrets.AUTOBOT_SPEC_ARTIFACTS_READ_SAS }}
 
   plan:
     if: github.event_name == 'issues' && github.event.action == 'labeled' && github.event.issue.state == 'open' && github.event.label.name == 'autobot-ready-to-implement'
@@ -181,7 +198,7 @@ jobs:
       AUTOBOT_PROJECT_TOKEN: ${{ secrets.AUTOBOT_PROJECT_TOKEN }}
 
   implement:
-    if: github.event_name == 'issues' && github.event.action == 'labeled' && github.event.issue.state == 'open' && github.event.label.name == 'autobot-in-review'
+    if: github.event_name == 'issues' && github.event.action == 'labeled' && github.event.issue.state == 'open' && github.event.label.name == 'autobot-implementing'
     uses: ./.github/workflows/autobot-implement.yml
     with:
       repository: ${{ github.repository }}

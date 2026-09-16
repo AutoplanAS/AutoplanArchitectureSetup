@@ -121,7 +121,9 @@ ensure_autobot_labels() {
   gh label create autobot-review-specification --repo "$repo" --color C5DEF5 --description "Final design review before implementation planning" --force >/dev/null
   gh label create autobot-ready-to-implement --repo "$repo" --color 0E8A16 --description "Specification approved and ready for task planning" --force >/dev/null
   gh label create autobot-task --repo "$repo" --color FBCA04 --description "Task issue generated for implementation" --force >/dev/null
-  gh label create autobot-in-review --repo "$repo" --color B60205 --description "Task is assigned to an implementation run" --force >/dev/null
+  gh label create autoboot --repo "$repo" --color FBCA04 --description "Compatibility task marker label for autobot-generated implementation tasks" --force >/dev/null
+  gh label create autobot-implementing --repo "$repo" --color D4C5F9 --description "Task implementation is in progress" --force >/dev/null
+  gh label create autobot-in-review --repo "$repo" --color B60205 --description "Implementation is complete and awaits human PR review" --force >/dev/null
   gh label create autobot-blocked --repo "$repo" --color D93F0B --description "Needs human decision before continuing" --force >/dev/null
 }
 
@@ -314,6 +316,189 @@ copilot_timeout_minutes() {
     return 0
   fi
   echo "$raw"
+}
+
+flag_is_true() {
+  local raw
+  raw="$(printf '%s' "$1" | tr '[:upper:]' '[:lower:]')"
+  case "$raw" in
+    1|true|yes|on) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+normalize_sas_token() {
+  local token="$1"
+  token="${token#\?}"
+  printf '%s' "$token"
+}
+
+urlencode_blob_path() {
+  python - "$1" <<'PY'
+import sys
+import urllib.parse
+print(urllib.parse.quote(sys.argv[1], safe='/-_.~'))
+PY
+}
+
+render_markdown_to_html_file() {
+  local markdown_path="$1"
+  local html_path="$2"
+  if command -v pandoc >/dev/null 2>&1; then
+    pandoc "$markdown_path" --from gfm --to html5 --standalone --output "$html_path" >/dev/null 2>&1
+    return 0
+  fi
+  python - "$markdown_path" "$html_path" <<'PY'
+import html
+import pathlib
+import re
+import sys
+source = pathlib.Path(sys.argv[1]).read_text(encoding="utf-8")
+title = "Autobot design artifact"
+for line in source.splitlines():
+    match = re.match(r"^#\s+(.+)$", line)
+    if match:
+        title = match.group(1).strip()
+        break
+body = html.escape(source)
+document = f"""<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{html.escape(title)}</title>
+  <style>
+    body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; margin: 2rem; line-height: 1.5; }}
+    pre {{ white-space: pre-wrap; word-break: break-word; }}
+  </style>
+</head>
+<body>
+  <h1>{html.escape(title)}</h1>
+  <pre>{body}</pre>
+</body>
+</html>
+"""
+pathlib.Path(sys.argv[2]).write_text(document, encoding="utf-8")
+PY
+}
+
+upload_blob_file_with_sas() {
+  local local_path="$1"
+  local account="$2"
+  local endpoint_suffix="$3"
+  local container="$4"
+  local blob_path="$5"
+  local sas_token="$6"
+  local content_type="$7"
+
+  local encoded_blob
+  encoded_blob="$(urlencode_blob_path "$blob_path")"
+  local url="https://${account}.${endpoint_suffix}/${container}/${encoded_blob}?${sas_token}"
+
+  curl --silent --show-error --fail \
+    --request PUT \
+    --header "x-ms-version: 2023-11-03" \
+    --header "x-ms-blob-type: BlockBlob" \
+    --header "Content-Type: ${content_type}" \
+    --data-binary "@${local_path}" \
+    "$url" >/dev/null 2>&1
+}
+
+publish_spec_artifacts() {
+  local repo="$1"
+  local issue_number="$2"
+  local branch_name="$3"
+  local design_markdown_path="$4"
+
+  SPEC_ARTIFACTS_ENABLED="false"
+  SPEC_ARTIFACTS_WARNING=""
+  SPEC_ARTIFACTS_MD_URL=""
+  SPEC_ARTIFACTS_HTML_URL=""
+  SPEC_ARTIFACTS_LATEST_URL=""
+  SPEC_ARTIFACTS_LINKS_MARKDOWN=""
+
+  if ! flag_is_true "${AUTOBOT_SPEC_ARTIFACTS_ENABLED:-false}"; then
+    return 0
+  fi
+  SPEC_ARTIFACTS_ENABLED="true"
+
+  local account="${AUTOBOT_SPEC_ARTIFACTS_STORAGE_ACCOUNT:-}"
+  local container="${AUTOBOT_SPEC_ARTIFACTS_CONTAINER:-}"
+  local prefix_root="${AUTOBOT_SPEC_ARTIFACTS_PREFIX:-autobot-spec}"
+  local endpoint_suffix="${AUTOBOT_SPEC_ARTIFACTS_ENDPOINT_SUFFIX:-blob.core.windows.net}"
+  local write_sas read_sas
+  write_sas="$(normalize_sas_token "${AUTOBOT_SPEC_ARTIFACTS_WRITE_SAS:-}")"
+  read_sas="$(normalize_sas_token "${AUTOBOT_SPEC_ARTIFACTS_READ_SAS:-}")"
+  if [[ -z "$account" || -z "$container" || -z "$write_sas" || -z "$read_sas" ]]; then
+    SPEC_ARTIFACTS_WARNING="Spec artifact publishing is enabled, but Azure Blob settings or SAS secrets are missing."
+    return 0
+  fi
+  if [[ ! -f "$design_markdown_path" ]]; then
+    SPEC_ARTIFACTS_WARNING="Spec artifact publishing is enabled, but the design markdown file was not found for upload."
+    return 0
+  fi
+
+  local owner name
+  owner="${repo%%/*}"
+  name="${repo#*/}"
+  local run_id
+  run_id="${GITHUB_RUN_ID:-manual-$(date +%s)}"
+  local base_prefix="${prefix_root}/${owner}/${name}/${branch_name}/issue-${issue_number}"
+  local run_prefix="${base_prefix}/runs/${run_id}"
+  local blob_md="${run_prefix}/design.md"
+  local blob_html="${run_prefix}/design.html"
+  local blob_latest="${base_prefix}/latest.json"
+
+  local html_tmp=".autobot/output/spec-artifact-design.html"
+  if ! render_markdown_to_html_file "$design_markdown_path" "$html_tmp"; then
+    SPEC_ARTIFACTS_WARNING="Spec artifact publishing is enabled, but generating design.html from design.md failed."
+    return 0
+  fi
+
+  if ! upload_blob_file_with_sas "$design_markdown_path" "$account" "$endpoint_suffix" "$container" "$blob_md" "$write_sas" "text/markdown; charset=utf-8"; then
+    SPEC_ARTIFACTS_WARNING="Spec artifact publishing failed while uploading design.md to Azure Blob Storage."
+    return 0
+  fi
+  if ! upload_blob_file_with_sas "$html_tmp" "$account" "$endpoint_suffix" "$container" "$blob_html" "$write_sas" "text/html; charset=utf-8"; then
+    SPEC_ARTIFACTS_WARNING="Spec artifact publishing failed while uploading design.html to Azure Blob Storage."
+    return 0
+  fi
+
+  local source_commit
+  source_commit="$(git rev-parse HEAD 2>/dev/null || true)"
+  python - "$blob_md" "$blob_html" "$run_id" "$repo" "$branch_name" "$issue_number" "$source_commit" > .autobot/output/spec-latest.json <<'PY'
+import json
+import sys
+payload = {
+    "run_id": sys.argv[3],
+    "repository": sys.argv[4],
+    "branch": sys.argv[5],
+    "issue_number": int(sys.argv[6]),
+    "source_commit": sys.argv[7],
+    "artifacts": {
+        "design_md": sys.argv[1],
+        "design_html": sys.argv[2],
+    },
+}
+print(json.dumps(payload, indent=2))
+PY
+
+  if ! upload_blob_file_with_sas ".autobot/output/spec-latest.json" "$account" "$endpoint_suffix" "$container" "$blob_latest" "$write_sas" "application/json; charset=utf-8"; then
+    SPEC_ARTIFACTS_WARNING="Spec artifact publishing failed while updating latest.json in Azure Blob Storage."
+    return 0
+  fi
+
+  SPEC_ARTIFACTS_MD_URL="https://${account}.${endpoint_suffix}/${container}/$(urlencode_blob_path "$blob_md")?${read_sas}"
+  SPEC_ARTIFACTS_HTML_URL="https://${account}.${endpoint_suffix}/${container}/$(urlencode_blob_path "$blob_html")?${read_sas}"
+  SPEC_ARTIFACTS_LATEST_URL="https://${account}.${endpoint_suffix}/${container}/$(urlencode_blob_path "$blob_latest")?${read_sas}"
+  SPEC_ARTIFACTS_LINKS_MARKDOWN=$(
+    cat <<EOF
+External spec artifacts:
+- Markdown: ${SPEC_ARTIFACTS_MD_URL}
+- HTML: ${SPEC_ARTIFACTS_HTML_URL}
+- Latest pointer: ${SPEC_ARTIFACTS_LATEST_URL}
+EOF
+  )
 }
 
 copilot_strict_artifact_mode() {

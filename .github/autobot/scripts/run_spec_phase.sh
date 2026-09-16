@@ -91,7 +91,7 @@ EOF
   if ! pr_url="$(start_copilot_handoff "spec" "$REPOSITORY" "$ISSUE_NUMBER" "$branch_name" ".autobot/output/spec.json" "${WORKFLOW_RUN_URL:-}" "$TRIGGER_LABEL" "$design_path")"; then
     blocked_and_exit "$REPOSITORY" "$ISSUE_NUMBER" "$TRIGGER_LABEL" "Failed to start Copilot spec handoff." "${WORKFLOW_RUN_URL:-}"
   fi
-  gh issue edit "$ISSUE_NUMBER" --repo "$REPOSITORY" --remove-label "$TRIGGER_LABEL" --remove-label autobot-blocked --add-label autobot-creating-specification >/dev/null || true
+  gh issue edit "$ISSUE_NUMBER" --repo "$REPOSITORY" --remove-label "$TRIGGER_LABEL" --remove-label autobot-review-specification --remove-label autobot-blocked --add-label autobot-creating-specification >/dev/null || true
   sync_project_stage_with_warning "$REPOSITORY" "$ISSUE_NUMBER" "Creating specification" || true
   printf 'Copilot spec handoff started with PR: %s\n' "$pr_url"
   rm -rf .autobot
@@ -156,18 +156,41 @@ else
   fi
 fi
 
+publish_spec_artifacts "$REPOSITORY" "$ISSUE_NUMBER" "$branch_name" "$design_path"
+artifact_warning_block=""
+if [[ -n "${SPEC_ARTIFACTS_WARNING:-}" ]]; then
+  artifact_warning_block=$(
+    cat <<EOF
+
+Autobot warning: ${SPEC_ARTIFACTS_WARNING}
+Run: ${WORKFLOW_RUN_URL:-}
+EOF
+  )
+fi
+artifact_links_block=""
+if [[ -n "${SPEC_ARTIFACTS_LINKS_MARKDOWN:-}" ]]; then
+  artifact_links_block=$(
+    cat <<EOF
+
+${SPEC_ARTIFACTS_LINKS_MARKDOWN}
+EOF
+  )
+fi
+
 cat > .autobot/output/final-comment.txt <<EOF
 ${issue_comment}
 
 Design file: [${design_path}](${design_url})
 Design pull request: ${pr_url}
+${artifact_links_block}
+${artifact_warning_block}
 
 Next step: review and merge the design pull request to approve the specification. After merge, add \`autobot-ready-to-implement\` on this feature issue to start planning.
 EOF
 guard_text_file .autobot/output/final-comment.txt || blocked_and_exit "$REPOSITORY" "$ISSUE_NUMBER" "$TRIGGER_LABEL" "Final issue comment was blocked by secret guard." "${WORKFLOW_RUN_URL:-}"
 
 gh issue comment "$ISSUE_NUMBER" --repo "$REPOSITORY" --body-file .autobot/output/final-comment.txt >/dev/null
-gh issue edit "$ISSUE_NUMBER" --repo "$REPOSITORY" --remove-label "$TRIGGER_LABEL" --remove-label autobot-blocked --add-label autobot-creating-specification >/dev/null || true
-sync_project_stage_with_warning "$REPOSITORY" "$ISSUE_NUMBER" "Creating specification" || true
+gh issue edit "$ISSUE_NUMBER" --repo "$REPOSITORY" --remove-label "$TRIGGER_LABEL" --remove-label autobot-creating-specification --remove-label autobot-blocked --add-label autobot-review-specification >/dev/null || true
+sync_project_stage_with_warning "$REPOSITORY" "$ISSUE_NUMBER" "Review specification" || true
 
 echo "spec phase completed for issue #${ISSUE_NUMBER}"

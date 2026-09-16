@@ -111,16 +111,24 @@ python "$SCRIPT_DIR/create_plan_issues.py" \
   --repo "$REPOSITORY" \
   --feature-issue "$ISSUE_NUMBER" \
   --plan-json .autobot/output/plan.json \
+  --default-branch "$DEFAULT_BRANCH" \
+  --design-path "$design_path" \
   --project-owner "${PROJECT_OWNER:-}" \
   --project-number "${PROJECT_NUMBER:-}" \
   --project-status-field "${PROJECT_STATUS_FIELD:-Status}" \
   > .autobot/output/created-plan.json
 feature_comment="$(python -c "import json;print(json.load(open('.autobot/output/created-plan.json','r',encoding='utf-8')).get('feature_comment','Plan completed.'))")"
+close_comment="$(python -c "import json;print(json.load(open('.autobot/output/created-plan.json','r',encoding='utf-8')).get('close_comment',''))")"
 printf '%s' "$feature_comment" > .autobot/output/feature-comment.txt
 guard_text_file .autobot/output/feature-comment.txt || blocked_and_exit "$REPOSITORY" "$ISSUE_NUMBER" "$TRIGGER_LABEL" "Feature comment from planner was blocked by secret guard." "${WORKFLOW_RUN_URL:-}"
 
 gh issue comment "$ISSUE_NUMBER" --repo "$REPOSITORY" --body-file .autobot/output/feature-comment.txt >/dev/null
 gh issue edit "$ISSUE_NUMBER" --repo "$REPOSITORY" --remove-label "$TRIGGER_LABEL" --remove-label autobot-blocked >/dev/null || true
-sync_project_stage_with_warning "$REPOSITORY" "$ISSUE_NUMBER" "Ready to implement" || true
+if [[ -n "${close_comment//[[:space:]]/}" ]]; then
+  gh issue close "$ISSUE_NUMBER" --repo "$REPOSITORY" --reason completed --comment "$close_comment" >/dev/null || true
+else
+  gh issue close "$ISSUE_NUMBER" --repo "$REPOSITORY" --reason completed >/dev/null || true
+fi
+sync_project_stage_with_warning "$REPOSITORY" "$ISSUE_NUMBER" "Done" || true
 
 echo "plan phase completed for issue #${ISSUE_NUMBER}"

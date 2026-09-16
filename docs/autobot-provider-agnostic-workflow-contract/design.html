@@ -1,0 +1,1022 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data:; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'">
+  <meta name="document-kind" content="design">
+  <meta name="source-path" content="docs\autobot-provider-agnostic-workflow-contract\design.md">
+  <meta name="source-sha256" content="917a30d3d154c4807b27f022aa6023f667c4b89de430492635252c12eb32338b">
+  <meta name="generator" content="blueprint/html-doc@1">
+  <title>Autobot provider-agnostic workflow contract alignment</title>
+  <style>:root {
+  color-scheme: light;
+  --paper: #f7f9fb;
+  --surface: #ffffff;
+  --surface-soft: #edf2f5;
+  --ink: #172630;
+  --muted: #526773;
+  --line: #ccd8df;
+  --line-strong: #8fa5b3;
+  --accent: #385e75;
+  --accent-soft: #dbe5ec;
+  --focus: #176b93;
+  --risk: #6b4f28;
+  --risk-soft: #f3ecdf;
+  --radius: 12px;
+  --shadow: 0 16px 42px rgb(31 54 68 / 10%);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 16px;
+  line-height: 1.65;
+  background: var(--paper);
+  color: var(--ink);
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { margin: 0; background: var(--paper); }
+a { color: var(--accent); text-underline-offset: 0.16em; }
+a:hover { text-decoration-thickness: 2px; }
+a:focus-visible, summary:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 3px;
+  border-radius: 3px;
+}
+
+.skip-link {
+  position: fixed;
+  z-index: 10;
+  left: 1rem;
+  top: 1rem;
+  padding: .65rem .9rem;
+  background: var(--ink);
+  color: white;
+  transform: translateY(-180%);
+}
+.skip-link:focus { transform: translateY(0); }
+
+.document-header {
+  border-bottom: 1px solid var(--line);
+  background: linear-gradient(145deg, #e5edf2 0%, #f7f9fb 70%);
+}
+.document-header__inner,
+.page-shell,
+.document-footer {
+  width: min(1180px, calc(100% - 2rem));
+  margin-inline: auto;
+}
+.document-header__inner { padding: 3.8rem 0 3rem; }
+.eyebrow {
+  margin: 0 0 .8rem;
+  color: var(--accent);
+  font-size: .78rem;
+  font-weight: 750;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+.document-title {
+  max-width: 900px;
+  margin: 0;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(2.25rem, 5vw, 4.6rem);
+  font-weight: 500;
+  line-height: 1.05;
+  letter-spacing: -.035em;
+}
+.metadata {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .55rem 1.25rem;
+  margin: 1.6rem 0 0;
+  color: var(--muted);
+  font-size: .88rem;
+}
+.metadata dt { font-weight: 700; color: var(--ink); }
+.metadata dd { margin: 0; overflow-wrap: anywhere; }
+.metadata__item { display: grid; grid-template-columns: auto 1fr; gap: .35rem; }
+
+.page-shell {
+  display: grid;
+  grid-template-columns: minmax(190px, 250px) minmax(0, 1fr);
+  gap: clamp(2rem, 5vw, 5rem);
+  align-items: start;
+  padding-block: 3rem 5rem;
+}
+.toc {
+  position: sticky;
+  top: 1rem;
+  max-height: calc(100vh - 2rem);
+  overflow: auto;
+  padding: 1.1rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: rgb(255 255 255 / 78%);
+}
+.toc-title { margin: 0 0 .75rem; font: 750 .78rem/1.2 Inter, sans-serif; letter-spacing: .09em; text-transform: uppercase; }
+.toc ol { list-style: none; padding: 0; margin: 0; }
+.toc li + li { margin-top: .34rem; }
+.toc li[data-level="3"] { padding-left: .8rem; font-size: .88rem; }
+.toc a { display: block; color: var(--muted); text-decoration: none; line-height: 1.35; }
+.toc a:hover { color: var(--ink); }
+
+.document-content {
+  min-width: 0;
+  padding: clamp(1.4rem, 4vw, 3.8rem);
+  border: 1px solid var(--line);
+  border-radius: calc(var(--radius) + 4px);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+.source-block { min-width: 0; }
+.source-block > :first-child { margin-top: 0; }
+.source-block > :last-child { margin-bottom: 0; }
+.source-block + .source-block { margin-top: 1rem; }
+.source-block:has(> h1), .source-block:has(> h2) { margin-top: 3.7rem; }
+.source-block:first-child { margin-top: 0; }
+h1, h2, h3, h4 { color: var(--ink); line-height: 1.2; scroll-margin-top: 1.5rem; }
+.document-content h1 { font: 500 clamp(2rem, 5vw, 3.2rem)/1.08 Georgia, serif; letter-spacing: -.025em; }
+.document-content h2 { padding-top: .4rem; font: 500 clamp(1.7rem, 3vw, 2.3rem)/1.15 Georgia, serif; letter-spacing: -.018em; }
+.document-content h3 { font-size: 1.12rem; }
+.document-content h4 { font-size: 1rem; }
+p, ul, ol, blockquote, pre, table, figure { margin-block: 1rem; }
+blockquote {
+  margin-inline: 0;
+  padding: .8rem 1rem;
+  border-left: 4px solid var(--line-strong);
+  background: var(--surface-soft);
+  color: #314854;
+}
+blockquote > :first-child { margin-top: 0; }
+blockquote > :last-child { margin-bottom: 0; }
+.role-requirements, .role-acceptance-criteria, .role-invariants,
+.role-decisions, .role-risks, .role-open-questions {
+  margin-top: 1.25rem;
+  padding: 1rem 1.2rem;
+  border-left: 4px solid var(--line-strong);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  background: var(--surface-soft);
+}
+.role-risks, .role-open-questions { border-left-color: var(--risk); background: var(--risk-soft); }
+code, pre { font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace; }
+code { padding: .12em .32em; border-radius: 4px; background: var(--surface-soft); font-size: .9em; }
+code { overflow-wrap: anywhere; word-break: break-word; }
+pre {
+  max-width: 100%;
+  overflow: auto;
+  padding: 1rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #132630;
+  color: #edf4f7;
+  line-height: 1.48;
+}
+pre code { padding: 0; background: transparent; color: inherit; }
+.table-wrap { max-width: 100%; overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: .93rem; }
+th, td { padding: .68rem .75rem; border: 1px solid var(--line); text-align: left; vertical-align: top; }
+th, td { overflow-wrap: anywhere; word-break: break-word; }
+th { background: var(--surface-soft); font-weight: 720; }
+tbody tr:nth-child(even) { background: #f9fbfc; }
+.diagram {
+  padding: 1rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: #fbfcfd;
+}
+.diagram img { display: block; width: 100%; height: auto; max-height: 650px; object-fit: contain; }
+.diagram figcaption { margin-top: .75rem; color: var(--muted); font-size: .86rem; }
+.diagram details { margin-top: .8rem; }
+.diagram summary { cursor: pointer; color: var(--accent); font-weight: 650; }
+.diagram details pre { max-height: 18rem; }
+.document-footer { padding: 0 0 3rem; color: var(--muted); font-size: .82rem; }
+
+@media (max-width: 760px) {
+  .document-header__inner { padding: 2.7rem 0 2.2rem; }
+  .page-shell { grid-template-columns: 1fr; gap: 1.2rem; padding-top: 1.25rem; }
+  .toc { position: static; max-height: none; }
+  .document-content { padding: 1.25rem; border-radius: var(--radius); }
+  .source-block:has(> h1), .source-block:has(> h2) { margin-top: 2.7rem; }
+}
+
+@media print {
+  :root { background: white; font-size: 10.5pt; }
+  @page { size: auto; margin: 16mm; }
+  .skip-link, .toc { display: none; }
+  .document-header { background: white; }
+  .document-header__inner, .page-shell, .document-footer { width: 100%; }
+  .document-header__inner { padding: 0 0 12mm; }
+  .document-title { font-size: 28pt; }
+  .page-shell { display: block; padding: 0; }
+  .document-content { padding: 0; border: 0; box-shadow: none; }
+  h1, h2, h3, h4 { break-after: avoid-page; }
+  table, figure, pre, blockquote { break-inside: avoid; }
+  thead { display: table-header-group; }
+  pre { white-space: pre-wrap; overflow-wrap: anywhere; }
+  .document-footer { padding: 10mm 0 0; }
+}
+</style>
+</head>
+<body>
+  <a class="skip-link" href="#document-content">Skip to document</a>
+  <header class="document-header">
+    <div class="document-header__inner">
+      <p class="eyebrow">Technical design</p>
+      <p class="document-title">Autobot provider-agnostic workflow contract alignment</p>
+      <dl class="metadata">
+        <div class="metadata__item"><dt>Status</dt><dd>Proposed for review</dd></div>
+        <div class="metadata__item"><dt>Source</dt><dd>docs\autobot-provider-agnostic-workflow-contract\design.md</dd></div>
+        <div class="metadata__item"><dt>SHA-256</dt><dd><code>917a30d3d154c4807b27f022aa6023f667c4b89de430492635252c12eb32338b</code></dd></div>
+      </dl>
+    </div>
+  </header>
+  <div class="page-shell">
+    <nav class="toc" aria-label="Document contents"><p class="toc-title">Contents</p><ol><li data-level="2"><a href="#1-requirements-what-and-why">1. Requirements: what and why</a></li><li data-level="2"><a href="#2-user-experience">2. User experience</a></li><li data-level="2"><a href="#3-technical-design-and-choices">3. Technical design and choices</a></li><li data-level="3"><a href="#label-contract-normalization">Label contract normalization</a></li><li data-level="3"><a href="#provider-independent-phase-engine">Provider-independent phase engine</a></li><li data-level="3"><a href="#spec-external-artifact-mirror-on-azure-blob-pilot">Spec external artifact mirror on Azure Blob (pilot)</a></li><li data-level="3"><a href="#required-repository-variables-and-secrets-for-azure-blob-publishing">Required repository variables and secrets for Azure Blob publishing</a></li><li data-level="3"><a href="#main-feature-issue-contract">Main feature issue contract</a></li><li data-level="3"><a href="#invariants">Invariants</a></li><li data-level="3"><a href="#security-and-operations">Security and operations</a></li><li data-level="2"><a href="#4-acceptance-and-proof">4. Acceptance and proof</a></li><li data-level="2"><a href="#5-open-questions">5. Open questions</a></li></ol></nav>
+    <main id="document-content" class="document-content" data-source-block-count="51">
+<section id="autobot-provider-agnostic-workflow-contract-alignment"
+class="source-block" data-source-block="1"
+data-source-sha256="0a1e7afd69ac8565fb24e5f337a2c6ceddf28c85d6f58a965bf076965347032e">
+<h1>Autobot provider-agnostic workflow contract alignment</h1>
+</section>
+<div class="source-block" data-source-block="2"
+data-source-sha256="f3cfda141bb0d969e973d91600064c759ac4c936fa82e9f2c3f6bb2a60fbb270">
+<blockquote>
+<p><strong>Status:</strong> Proposed for review</p>
+</blockquote>
+</div>
+<section id="1-requirements-what-and-why" class="source-block"
+data-source-block="3"
+data-source-sha256="97c886c1e41bd4a5bb4fe29a0dbfa859d88226e2df3d51627c0eea774bb6a981">
+<h2>1. Requirements: what and why</h2>
+</section>
+<div class="source-block" data-source-block="4"
+data-source-sha256="bbe714a5002636838b6c9594df6407aacca63af807fb63b056bdf8b5bb632621">
+<p>Autobot already supports both Codex and GitHub Copilot execution
+paths, but the workflow contract still has gaps against the intended
+human-gated operating model. The biggest gap is around
+<code>autobot-ready-to-implement</code>: today planning creates tasks,
+but the parent issue lifecycle does not match the desired behavior where
+the original issue is closed and work continues in a new main feature
+tracker.</p>
+</div>
+<div class="source-block" data-source-block="5"
+data-source-sha256="0b97176bfd77424a67dc92b6657ec9562df5bfce3da396d9615863a21d600cd6">
+<p>The required outcome is one provider-agnostic phase contract where
+Codex and Copilot runs must follow the same issue lifecycle and
+project-stage mapping:</p>
+</div>
+<div class="source-block" data-source-block="6"
+data-source-sha256="927ecd0efe2f924d9a85931d465e9d8a4d4da81a75aa85d1657094babf6ac6ec">
+<ul>
+<li><code>autobot-ready-for-spec</code> starts specification work.</li>
+<li><code>autobot-creating-specification</code> means Autobot is
+producing the design artifact.</li>
+<li><code>autobot-review-specification</code> is the explicit human gate
+for design acceptance or rework.</li>
+<li>Spec output must be readable outside branch context by publishing
+temporary Azure Blob artifacts for the generated design
+(<code>.md</code> and <code>.html</code>).</li>
+<li><code>autobot-ready-to-implement</code> starts planning from
+approved design on the original issue, then closes that original issue
+as superseded.</li>
+<li>Planning creates a new main feature issue that contains a short
+human-readable design summary and links to full design and
+implementation tasks.</li>
+<li>Planned task issues are created in <strong>Ready to
+implement</strong>, are explicitly marked as Autobot tasks, and are
+linked from the new main feature issue.</li>
+<li><code>autobot-implementing</code> starts implementation for one
+approved task.</li>
+<li><code>autobot-in-review</code> means implementation is complete and
+awaiting human PR review.</li>
+<li>Closing an approved task or main feature issue moves it to
+<strong>Done</strong>.</li>
+</ul>
+</div>
+<div class="source-block" data-source-block="7"
+data-source-sha256="b6e1a17f7fd1219d9597f5a57343e336542eb28d4631c66a5612b1580bfb2fc7">
+<p>Constraints:</p>
+</div>
+<div class="source-block" data-source-block="8"
+data-source-sha256="b68886fb0bbf4d8fa0b5a71fea70d1a39daa8fc9050327eff5b4b5e0ae9da39e">
+<ul>
+<li>No automatic phase skipping, regardless of provider. In this
+contract that means Autobot can only do immediate next-step transitions
+for the active phase, and must never jump across a human gate. Examples:
+it may move <code>autobot-ready-for-spec</code> to
+<code>autobot-creating-specification</code>, but it must not jump
+directly to <code>autobot-ready-to-implement</code>; it may complete
+<code>autobot-implementing</code> to <code>autobot-in-review</code>, but
+it must not auto-close the issue as approved. For rejected
+implementation PRs, reviewer comments alone must not restart
+implementation. A human must explicitly reapply
+<code>autobot-implementing</code> on the task issue.</li>
+<li>External artifact scope starts with spec phase only. Only
+<code>design.md</code> and <code>design.html</code> are published
+externally in this increment.</li>
+<li>Any <code>latest.json</code> pointer used for external artifact
+discovery must be namespaced by repository and branch, not globally
+shared.</li>
+<li>External artifact backend for this increment is Azure Blob Storage
+only.</li>
+<li>Workflow-owned label and project-stage side effects remain
+deterministic.</li>
+<li>Existing repositories must have a migration path from typo-prone
+<code>autoboot*</code> labels without breaking active queues.</li>
+</ul>
+</div>
+<div class="source-block" data-source-block="9"
+data-source-sha256="1dc137df84b6cfda067cd437d01723b6dd342a91a0fb96402cf1d43600695235">
+<p>Out of scope:</p>
+</div>
+<div class="source-block" data-source-block="10"
+data-source-sha256="16fb05523e4c5f64bfc45cf94216cbe79c31ccb84a51ee9c793cb41cf2889b21">
+<ul>
+<li>Automatic PR merge or deployment orchestration.</li>
+<li>Multi-branch release flow beyond current main-branch process.</li>
+<li>Adding new AI providers beyond Codex and GitHub Copilot.</li>
+</ul>
+</div>
+<section id="2-user-experience" class="source-block"
+data-source-block="11"
+data-source-sha256="46fbd79d74f3e09c7eeb160eb90581b4f56dc2e628ec4f9f1910935bd1d5630e">
+<h2>2. User experience</h2>
+</section>
+<div class="source-block" data-source-block="12"
+data-source-sha256="da905258a39de7c62760cc852e20959030dd144df0be801a137c581e6fc75324">
+<p>A human drives lifecycle intent with labels, and Autobot executes
+only the phase requested by that label.</p>
+</div>
+<div class="source-block" data-source-block="13"
+data-source-sha256="5e0028e433aa5a62cb090b7c8c1865d93c2386db8ce60540241301ad9cb021f9">
+<p>Main flow:</p>
+</div>
+<div class="source-block" data-source-block="14"
+data-source-sha256="bed82abdbaa2272b483c9d9c4e1aa5589b5b52036c3e77ad149e3e996e125b8d">
+<ol type="1">
+<li>A feature issue is moved to <strong>Ready for spec</strong> and
+labelled <code>autobot-ready-for-spec</code>.</li>
+<li>Autobot starts specification (<code>design</code> skill), removes
+trigger label, applies <code>autobot-creating-specification</code>, and
+keeps the issue in <strong>Creating specification</strong> while
+producing or updating the design PR/artifact.</li>
+<li>When design output is ready, Autobot applies
+<code>autobot-review-specification</code> and removes
+<code>autobot-creating-specification</code>.
+<ul>
+<li>In the same step, Autobot publishes temporary spec artifacts
+(<code>design.md</code>, <code>design.html</code>) to Azure Blob Storage
+and comments links for branch-independent reading.</li>
+</ul></li>
+<li>Human review happens in <strong>Review specification</strong>:
+<ul>
+<li>If changes are needed, the reviewer comments, moves back to
+<strong>Ready for spec</strong>, and reapplies
+<code>autobot-ready-for-spec</code>.</li>
+<li>If approved, the reviewer applies
+<code>autobot-ready-to-implement</code>.</li>
+</ul></li>
+<li>Autobot planning (<code>plan</code> skill) runs on the original
+issue and creates:
+<ul>
+<li>one new main feature issue that becomes the execution parent;</li>
+<li>a short design summary section for human readability;</li>
+<li>links to the approved design document and source issue;</li>
+<li>implementation task issues linked under the main feature.</li>
+</ul></li>
+<li>After successful main feature and task creation, Autobot closes the
+original issue with a "superseded by main feature" comment and
+links.</li>
+<li>A human approves a task for coding by adding
+<code>autobot-implementing</code> on a task issue.</li>
+<li>Autobot implementation (<code>task-to-pr</code> skill) runs for that
+task, moves issue to <strong>Implementing</strong> during active work,
+then sets <code>autobot-in-review</code> when the PR is ready.</li>
+<li>Human reviews the PR:
+<ul>
+<li>If changes are needed, reviewer requests changes or comments on the
+PR, then explicitly reapplies <code>autobot-implementing</code> on the
+task issue to restart implementation.</li>
+<li>If approved and completed, issue is closed and stage becomes
+<strong>Done</strong>.</li>
+</ul></li>
+<li>The main feature issue stays as the execution summary issue. Humans
+close it when its linked implementation tasks are done.</li>
+</ol>
+</div>
+<div class="source-block" data-source-block="15"
+data-source-sha256="e36f3a1f8b9cc41e0baf87cbcf4c13e2afa5d0128472eb3c68f4c98248f4c0b3">
+<p>Failure outcomes:</p>
+</div>
+<div class="source-block" data-source-block="16"
+data-source-sha256="d184c7c735455012010171c458f08c306028be9630329afe45b3345fda590c91">
+<ul>
+<li>Missing configuration, invalid provider, or artifact contract
+failure applies <code>autobot-blocked</code> with a single actionable
+comment.</li>
+<li>Retries always require explicit human re-labelling.</li>
+<li>If external spec artifact publishing fails, Autobot keeps the normal
+repository and PR flow as source of truth, and adds a warning comment
+with the run link and failure reason.</li>
+</ul>
+</div>
+<section id="3-technical-design-and-choices" class="source-block"
+data-source-block="17"
+data-source-sha256="a85017480a06b18076467a0c66aa44309a60208f66d349106c8eb1db148c4eb6">
+<h2>3. Technical design and choices</h2>
+</section>
+<section id="label-contract-normalization" class="source-block"
+data-source-block="18"
+data-source-sha256="5b62a6af595e707bbb93e7c35715bf4925ea534db1ff4fbff6f10d6d8db58468">
+<h3>Label contract normalization</h3>
+</section>
+<div class="source-block" data-source-block="19"
+data-source-sha256="219a7927b7850e845e5010a4e951f8f162c6173bbd0c8d966817eb5504b15825">
+<p><strong>Decision:</strong> keep <code>autobot-*</code> as canonical
+labels and add compatibility alias handling for <code>autoboot*</code>
+triggers.<br />
+<strong>Why:</strong> the current repository and workflows already use
+<code>autobot-*</code>; alias support prevents queue loss from typo or
+legacy usage.<br />
+<strong>Tradeoff:</strong> extra routing and cleanup logic until aliases
+are retired.</p>
+</div>
+<div class="source-block" data-source-block="20"
+data-source-sha256="f485f72b487615c8ad182bc953e935db866d87ab8f1a6c9c5539009064472b8a">
+<p>Canonical labels:</p>
+</div>
+<div class="source-block" data-source-block="21"
+data-source-sha256="261767e739ca80c2878e4ca518e7aa4de1e216bd725dc76d5f97fc947c07ec00">
+<ul>
+<li>Phase triggers: <code>autobot-ready-for-spec</code>,
+<code>autobot-ready-to-implement</code>,
+<code>autobot-implementing</code></li>
+<li>Phase states: <code>autobot-creating-specification</code>,
+<code>autobot-review-specification</code>,
+<code>autobot-in-review</code>, <code>autobot-blocked</code></li>
+<li>Task marker: <code>autobot-task</code> (optional companion alias:
+<code>autoboot</code> for discoverability during migration)</li>
+</ul>
+</div>
+<section id="provider-independent-phase-engine" class="source-block"
+data-source-block="22"
+data-source-sha256="d048e6f79d53b59060c35931e8c24096664197325f42c612f4ceab184d0a4403">
+<h3>Provider-independent phase engine</h3>
+</section>
+<div class="source-block" data-source-block="23"
+data-source-sha256="64d89c0c3b3ea25b1e54eade488c173f35ee219673993a6e568b371a9eef4241">
+<p><strong>Decision:</strong> enforce identical phase transitions in
+workflow-owned scripts for both providers.<br />
+<strong>Why:</strong> "regardless of provider" means provider adapters
+may differ in execution mechanics, but not in lifecycle semantics.<br />
+<strong>Tradeoff:</strong> Copilot completion logic must map to the same
+transitions as synchronous Codex runs.</p>
+</div>
+<div class="source-block" data-source-block="24"
+data-source-sha256="223a75e3996b7e4180c421b279bc632eddb046ea41158e9ce6d77f9c589e51bf">
+<p>Required script and workflow changes:</p>
+</div>
+<div class="source-block" data-source-block="25"
+data-source-sha256="1bb17231c425b92bf4771951905c1ad3e3f46f23ea6d5eeeb448be8b879452f9">
+<ul>
+<li>Router triggers implement phase on <code>autobot-implementing</code>
+(not <code>autobot-in-review</code>).</li>
+<li>Implement script sets stage to <strong>Implementing</strong> at
+start, then to <strong>In review</strong> only after successful
+completion.</li>
+<li>Spec script promotes to <code>autobot-review-specification</code>
+once design output is ready; <code>autobot-creating-specification</code>
+remains strictly "work in progress".</li>
+<li>Plan script creates or reuses a deterministic main feature issue
+keyed to the original issue, writes a short design summary in that
+issue, creates linked <code>autobot-task</code> sub-issues, and places
+both main feature and tasks in <strong>Ready to implement</strong>.</li>
+<li>Plan script closes the original approved-spec issue after successful
+main feature and sub-issue creation, with a comment linking to the new
+main feature issue.</li>
+<li>Copilot completion script applies the same terminal labels/stages as
+Codex scripts for each phase.</li>
+<li>Implementation rework restart is label-driven only.
+<code>pull_request_review</code> or PR comments by themselves do not
+restart implementation.</li>
+<li>Every implementation rework run must include reviewer
+requested-change feedback from the linked PR review/comments plus any
+new task-issue comments.</li>
+<li>Entering a new phase must remove stale Autobot phase-state labels
+from earlier phases so the issue has one active phase state.</li>
+<li>Rework cycles must reuse the same deterministic implementation
+branch and PR for the task issue instead of creating new PR chains.</li>
+<li>Spec completion path mirrors
+<code>docs/&lt;issue&gt;-&lt;slug&gt;/design.md</code> and generated
+<code>design.html</code> to external temporary storage.</li>
+<li>Spec completion writes a <code>latest.json</code> pointer under a
+repo-and-branch-scoped prefix so links are isolated per repository and
+source branch.</li>
+</ul>
+</div>
+<section id="spec-external-artifact-mirror-on-azure-blob-pilot"
+class="source-block" data-source-block="26"
+data-source-sha256="0ce76f78225e165e73e9aa5aae660c6bd6435e3514dcd78d935487400ba7c215">
+<h3>Spec external artifact mirror on Azure Blob (pilot)</h3>
+</section>
+<div class="source-block" data-source-block="27"
+data-source-sha256="0f0b928152679152202d49d5c372487b0c60c838322b10d1596ab97f0ea847d1">
+<p><strong>Decision:</strong> publish only spec artifacts
+(<code>design.md</code> and <code>design.html</code>) to temporary Azure
+Blob Storage in this increment.<br />
+<strong>Why:</strong> it solves the immediate readability problem for
+reviewers who should not need branch checkout context, while keeping
+rollout risk low.<br />
+<strong>Tradeoff:</strong> planning and implementation artifacts remain
+branch-bound until later increments.</p>
+</div>
+<div class="source-block" data-source-block="28"
+data-source-sha256="8c104d923ef69f584b38bc23fe8e3d0b94fc87c1684b091ca9ac6fd277fa6da5">
+<p>Storage contract:</p>
+</div>
+<div class="source-block" data-source-block="29"
+data-source-sha256="407b933a26728ca114c8d538ff758f560203cc5a0600736d090247841463523b">
+<ul>
+<li>Prefix:
+<code>autobot-spec/&lt;owner&gt;/&lt;repo&gt;/&lt;branch&gt;/issue-&lt;issue-number&gt;/</code>.</li>
+<li>Immutable run artifacts:
+<ul>
+<li><code>runs/&lt;run-id&gt;/design.md</code></li>
+<li><code>runs/&lt;run-id&gt;/design.html</code></li>
+</ul></li>
+<li>Branch-scoped pointer:
+<ul>
+<li><code>latest.json</code> (same prefix), containing latest run id,
+source commit SHA, and artifact object paths.</li>
+</ul></li>
+</ul>
+</div>
+<div class="source-block" data-source-block="30"
+data-source-sha256="61d1f6b50f0c168f6e0856366bb1d540e916f7c2399c03eeb2aebb3d15d590eb">
+<p>Azure setup contract:</p>
+</div>
+<div class="source-block" data-source-block="31"
+data-source-sha256="49575267e5c144acb7a7d0690418995a6ed6208dce0e02d717ab3ef799b95bd2">
+<ul>
+<li>One Azure Storage account dedicated to Autobot transient review
+artifacts.</li>
+<li>One private blob container, for example
+<code>autobot-spec-artifacts</code>.</li>
+<li>GitHub Actions uses container-scoped SAS tokens only for this
+increment.</li>
+<li>SAS model:
+<ul>
+<li>one write SAS token for workflow upload and pointer updates;</li>
+<li>one read-only SAS token for reviewer links in issue comments;</li>
+<li>both tokens are scoped to this dedicated storage account and
+container.</li>
+</ul></li>
+<li>SAS tokens should be created from stored access policies so
+revocation and rotation can be done without changing workflow code.</li>
+</ul>
+</div>
+<div class="source-block" data-source-block="32"
+data-source-sha256="03bb5f8c585ede5e6abb120ffc48d766e18280120d8265110dc4290084114df7">
+<p>Publishing behavior:</p>
+</div>
+<div class="source-block" data-source-block="33"
+data-source-sha256="fa67deea0ee75e86cbb17477fa0026f305144ccc67803d495a1806abea23e368">
+<ul>
+<li>Triggered only when spec output reaches completed state and before
+final review comment is posted.</li>
+<li>Review comment includes both:
+<ul>
+<li>canonical repository links (design file and PR),</li>
+<li>external temporary artifact links.</li>
+</ul></li>
+<li>External artifact upload failure does not roll back phase
+completion. It emits warning telemetry/comment and keeps repository
+artifacts as authoritative.</li>
+</ul>
+</div>
+<section
+id="required-repository-variables-and-secrets-for-azure-blob-publishing"
+class="source-block" data-source-block="34"
+data-source-sha256="0f45ad761d30112cb7c7a0412154f7ddf9d07e46e820e1d6646e7281fcf7e776">
+<h3>Required repository variables and secrets for Azure Blob
+publishing</h3>
+</section>
+<div class="source-block" data-source-block="35"
+data-source-sha256="d9b1d33f9443f6e37f6a4fc35952e441f728c8a2674a90b72edce3c1243f531f">
+<p><strong>Decision:</strong> use explicit repository-level
+configuration so each repo can route artifacts to its own storage
+account and branch namespace.<br />
+<strong>Why:</strong> repositories can have different tenants,
+subscriptions, and retention policies while using the same reusable
+workflows.<br />
+<strong>Tradeoff:</strong> setup requires more initial configuration and
+validation checks.</p>
+</div>
+<div class="source-block" data-source-block="36"
+data-source-sha256="4f21071b0b2a06ca4a09983816c7fffabe58709c06b9498e99846f3f595165ae">
+<p>Required configuration:</p>
+</div>
+<div class="source-block" data-source-block="37"
+data-source-sha256="aa17069afba305cd815594c1ef9a0f0fb92f6e07f8060ac6105bd11d4bae9fa4">
+<ul>
+<li>Repository variables:
+<ul>
+<li><code>AUTOBOT_SPEC_ARTIFACTS_ENABLED</code> (<code>true</code> or
+<code>false</code>, default <code>false</code>).</li>
+<li><code>AUTOBOT_SPEC_ARTIFACTS_STORAGE_ACCOUNT</code> (Azure Storage
+account name).</li>
+<li><code>AUTOBOT_SPEC_ARTIFACTS_CONTAINER</code> (blob container
+name).</li>
+<li><code>AUTOBOT_SPEC_ARTIFACTS_PREFIX</code> (optional static prefix
+root, default <code>autobot-spec</code>).</li>
+<li><code>AUTOBOT_SPEC_ARTIFACTS_ENDPOINT_SUFFIX</code> (optional,
+default <code>blob.core.windows.net</code>, override for sovereign
+cloud).</li>
+</ul></li>
+<li>Repository secrets:
+<ul>
+<li><code>AUTOBOT_SPEC_ARTIFACTS_WRITE_SAS</code> (container SAS token
+with minimum write/list/create permissions for <code>runs/*</code> and
+<code>latest.json</code> updates).</li>
+<li><code>AUTOBOT_SPEC_ARTIFACTS_READ_SAS</code> (container SAS token
+with read-only permission, used only for reviewer-facing links).</li>
+</ul></li>
+</ul>
+</div>
+<div class="source-block" data-source-block="38"
+data-source-sha256="4588487eee5cd9383c679c36d1f5daee6654a0c2a22507fc125ef3891087a07d">
+<p>Runtime behavior:</p>
+</div>
+<div class="source-block" data-source-block="39"
+data-source-sha256="6252c0f6fe7e802e9724b64be7315fce77bc029f3bcedeb677bdacde9ae178b7">
+<ul>
+<li>If <code>AUTOBOT_SPEC_ARTIFACTS_ENABLED</code> is
+<code>false</code>, workflows skip external upload and keep
+repository-only links.</li>
+<li>If enabled and any required Azure setting or SAS secret is missing,
+spec phase continues but posts a warning and fallback repository
+links.</li>
+<li>Workflows upload with <code>AUTOBOT_SPEC_ARTIFACTS_WRITE_SAS</code>,
+then build reviewer links with
+<code>AUTOBOT_SPEC_ARTIFACTS_READ_SAS</code>.</li>
+<li>Write SAS tokens must never be included in issue comments, logs, PR
+bodies, or artifact payloads.</li>
+</ul>
+</div>
+<section id="main-feature-issue-contract" class="source-block"
+data-source-block="40"
+data-source-sha256="d496ceff0472207709e0f6bcef22596e6d7062a8224a08c6444065a27500d256">
+<h3>Main feature issue contract</h3>
+</section>
+<div class="source-block" data-source-block="41"
+data-source-sha256="e4325d9d522038f84931ac5df603647ae562749a653e678fc43477014b43f065">
+<p><strong>Decision:</strong> planning rolls work over from original
+issue to a new main feature issue instead of keeping the original
+open.<br />
+<strong>Why:</strong> it matches the required operating model and gives
+one clean implementation tracker with readable summary plus subtask
+links.<br />
+<strong>Tradeoff:</strong> one additional issue object per feature and
+stricter idempotency requirements.</p>
+</div>
+<div class="source-block" data-source-block="42"
+data-source-sha256="aca7226d97b8608862a7c5a4589c4552d4e1e0e47a6575660777a683290e4994">
+<p>Main feature issue content:</p>
+</div>
+<div class="source-block" data-source-block="43"
+data-source-sha256="45bb5d6be763eff8ef233169b4e9e7f735dd29b9d621bf1d00c1623080d1a77a">
+<ul>
+<li>Short summary section generated from approved design intent and
+lifecycle decisions, formatted for quick human reading.</li>
+<li>Link to full design document
+(<code>docs/&lt;issue&gt;-&lt;slug&gt;/design.md</code>).</li>
+<li>Link back to closed original issue.</li>
+<li>Checklist or ordered list of implementation task issue links.</li>
+<li>Marker metadata for idempotent reruns (for example
+<code>Autobot Main Parent: #&lt;original-issue&gt;</code>).</li>
+</ul>
+</div>
+<section id="invariants" class="source-block role-invariants"
+data-source-block="44"
+data-source-sha256="41701f368993e3f63ab599cb3ebcf32756d56c298bf06612195e918bf86cd6b4">
+<h3>Invariants</h3>
+</section>
+<div class="source-block" data-source-block="45"
+data-source-sha256="14f67879ca9967c54808592151cd57891bd6d9ff0456e434b4142600d2abeb7c">
+<ul>
+<li><strong>INV-1:</strong> Provider selection must never change label
+transition semantics.</li>
+<li><strong>INV-2:</strong> Only one trigger label starts each
+phase.</li>
+<li><strong>INV-3:</strong> <code>autobot-in-review</code> is terminal
+for implementation phase, never a phase trigger.</li>
+<li><strong>INV-4:</strong> Implementation can start only for issues
+marked as Autobot tasks.</li>
+<li><strong>INV-5:</strong> Human approval gates between spec, plan, and
+implementation are mandatory and explicit.</li>
+<li><strong>INV-6:</strong> Issue/project stage mapping is derived from
+current labels and close state, not provider-specific outputs.</li>
+<li><strong>INV-7:</strong> Alias labels (<code>autoboot*</code>) are
+normalized to canonical labels before phase logic executes.</li>
+<li><strong>INV-8:</strong> <code>autobot-ready-to-implement</code> must
+close the original issue only after a main feature issue and all planned
+tasks are successfully materialized.</li>
+<li><strong>INV-9:</strong> The main feature issue must always contain
+links to every planned implementation task issue.</li>
+<li><strong>INV-10:</strong> "No automatic phase skipping" means
+transitions are limited to one phase step and can never cross a human
+review gate.</li>
+<li><strong>INV-11:</strong> Rejected implementation PRs restart only
+when a human reapplies <code>autobot-implementing</code> on the task
+issue.</li>
+<li><strong>INV-12:</strong> Implementation rework runs must ingest PR
+requested-change feedback and task-issue follow-up comments as mandatory
+input context.</li>
+<li><strong>INV-13:</strong> Phase-start actions must remove stale
+Autobot state labels so only one active phase-state label remains.</li>
+<li><strong>INV-14:</strong> A task issue keeps one implementation PR
+and one implementation branch across rework cycles.</li>
+<li><strong>INV-15:</strong> Only spec phase publishes external
+artifacts in this increment, and only <code>design.md</code> and
+<code>design.html</code> are published.</li>
+<li><strong>INV-16:</strong> <code>latest.json</code> is scoped by
+<code>&lt;owner&gt;/&lt;repo&gt;/&lt;branch&gt;/issue-&lt;issue-number&gt;</code>
+and must not point across repositories or branches.</li>
+<li><strong>INV-17:</strong> Spec review comments must include canonical
+repo links even when external artifact links are present.</li>
+<li><strong>INV-18:</strong> External artifact publishing failure must
+not silently pass. It must produce an explicit warning and leave
+canonical repository artifacts as source of truth.</li>
+<li><strong>INV-19:</strong> External spec artifacts are stored only in
+Azure Blob Storage for this increment.</li>
+<li><strong>INV-20:</strong> Azure Blob publishing must use SAS-only
+access for this increment, with separate write and read SAS tokens
+scoped to the artifact container.</li>
+<li><strong>INV-21:</strong> When artifact publishing is enabled,
+missing required Azure config or SAS secrets must produce explicit
+warning output and fallback repository links.</li>
+<li><strong>INV-22:</strong> Reviewer-facing links must use read-only
+SAS only, and must never expose the write SAS token.</li>
+</ul>
+</div>
+<section id="security-and-operations" class="source-block"
+data-source-block="46"
+data-source-sha256="95a9d578893a4290a69b68c19a560aab6c1c04144f9d3a54489e97b346298f1e">
+<h3>Security and operations</h3>
+</section>
+<div class="source-block" data-source-block="47"
+data-source-sha256="3efe800fd59a82fb3cb31e027065b7b7e2b4595c4e928b77bdeac930b679bcf4">
+<p>Issue and PR text remain untrusted input; scripts continue to own all
+state transitions and secret-guard checks before posting generated
+content. Concurrency remains per issue to prevent duplicate runs.
+Planning reruns must be idempotent for both main feature creation and
+task creation to avoid duplicate trackers. For implementation rework,
+one label event may trigger one run only, and repeated human relabels
+queue deterministic reruns without spawning duplicate PRs. Timeouts and
+provider misconfiguration continue to end in
+<code>autobot-blocked</code> with run URL for operator recovery.</p>
+</div>
+<section id="4-acceptance-and-proof" class="source-block"
+data-source-block="48"
+data-source-sha256="372906f1cdb3dc83bd8f993088fcbd3655fee7cb46ed817e2c7c274f86dad817">
+<h2>4. Acceptance and proof</h2>
+</section>
+<div class="source-block table-wrap" data-source-block="49"
+data-source-sha256="6a110cbffc71a6b663fe3ead3af5f31a932c0e4cd3d5ad8c4d47ae3a1bc612b9">
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Done when</th>
+<th>How to check</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>AC-1</td>
+<td>Label <code>autobot-ready-for-spec</code> starts spec run and sets
+<code>autobot-creating-specification</code> while work is in
+progress</td>
+<td>Label a sandbox feature issue and inspect labels plus project
+stage</td>
+</tr>
+<tr>
+<td>AC-2</td>
+<td>Completed spec output moves issue to
+<code>autobot-review-specification</code> and <strong>Review
+specification</strong></td>
+<td>Complete a spec run (Codex and Copilot modes) and verify resulting
+labels/stage</td>
+</tr>
+<tr>
+<td>AC-3</td>
+<td>Reviewer rework loop works by commenting and reapplying
+<code>autobot-ready-for-spec</code></td>
+<td>Simulate review feedback and confirm retrigger behavior</td>
+</tr>
+<tr>
+<td>AC-4</td>
+<td>Label <code>autobot-ready-to-implement</code> creates a new main
+feature issue with short design summary, design link, source issue link,
+and task links</td>
+<td>Trigger plan and verify main feature issue body content and
+links</td>
+</tr>
+<tr>
+<td>AC-5</td>
+<td>Successful planning closes the original issue only after main
+feature and tasks exist</td>
+<td>Trigger plan and verify close event order in issue timeline</td>
+</tr>
+<tr>
+<td>AC-6</td>
+<td>Planning creates task issues with <code>autobot-task</code> in
+<strong>Ready to implement</strong> and links them from main feature
+issue</td>
+<td>Verify labels/stage for created tasks and backlink list in main
+feature</td>
+</tr>
+<tr>
+<td>AC-7</td>
+<td>Label <code>autobot-implementing</code> starts implementation and
+sets stage <strong>Implementing</strong></td>
+<td>Label a task issue and verify run start state</td>
+</tr>
+<tr>
+<td>AC-8</td>
+<td>Successful implementation changes label/state to
+<code>autobot-in-review</code> and stage <strong>In review</strong></td>
+<td>Complete implementation and verify issue label/stage</td>
+</tr>
+<tr>
+<td>AC-9</td>
+<td><code>autobot-in-review</code> does not trigger new implementation
+runs</td>
+<td>Apply <code>autobot-in-review</code> directly and verify no
+implementation workflow dispatch</td>
+</tr>
+<tr>
+<td>AC-10</td>
+<td>Closing approved task or main feature issue moves stage to
+<strong>Done</strong></td>
+<td>Close reviewed issue and verify stage update</td>
+</tr>
+<tr>
+<td>AC-11</td>
+<td>Codex and Copilot produce identical label/state transitions for same
+phase events</td>
+<td>Run one end-to-end sandbox flow per provider and diff resulting
+issue timelines</td>
+</tr>
+<tr>
+<td>AC-12</td>
+<td><code>autoboot*</code> alias labels are normalized to canonical
+labels without duplicate runs</td>
+<td>Apply alias labels in sandbox and verify canonical label replacement
+plus single run</td>
+</tr>
+<tr>
+<td>AC-13</td>
+<td>No automatic phase skipping occurs: workflows only perform one-step
+transitions and never cross human gates</td>
+<td>Attempt to force skipped transitions by labels/comments and verify
+workflow blocks or ignores them</td>
+</tr>
+<tr>
+<td>AC-14</td>
+<td>Rejected implementation PRs restart only from explicit human relabel
+(<code>autobot-implementing</code>)</td>
+<td>Submit PR review with requested changes and comment only, verify no
+run starts; then apply <code>autobot-implementing</code> and verify
+exactly one run starts</td>
+</tr>
+<tr>
+<td>AC-15</td>
+<td>Rework run context includes reviewer requested-change feedback and
+task issue follow-up comments</td>
+<td>Inspect run input artifact/log and verify review/comment excerpts
+are present</td>
+</tr>
+<tr>
+<td>AC-16</td>
+<td>Rework restart cleans stale labels and leaves one active
+implementation phase-state label</td>
+<td>During rerun start, verify label set removes conflicting
+implementation state labels before work proceeds</td>
+</tr>
+<tr>
+<td>AC-17</td>
+<td>Rework updates existing task PR/branch rather than creating
+duplicates</td>
+<td>Execute at least two reject/rework cycles and verify same PR number
+and branch are reused</td>
+</tr>
+<tr>
+<td>AC-18</td>
+<td>Completed spec publishes external <code>design.md</code> and
+<code>design.html</code> artifacts under the expected storage
+prefix</td>
+<td>Run spec in sandbox and verify objects exist at repo+branch+issue
+scoped paths</td>
+</tr>
+<tr>
+<td>AC-19</td>
+<td>Branch-scoped <code>latest.json</code> points to the newest run
+artifacts for that repository and branch only</td>
+<td>Run two spec completions on same issue/branch and verify pointer
+update without cross-branch contamination</td>
+</tr>
+<tr>
+<td>AC-20</td>
+<td>Spec review comment includes both canonical repo links and external
+artifact links</td>
+<td>Inspect resulting issue comment content after spec completion</td>
+</tr>
+<tr>
+<td>AC-21</td>
+<td>Planning and implementation phases do not publish external artifacts
+in this increment</td>
+<td>Run plan and implement phases and verify no external objects are
+written</td>
+</tr>
+<tr>
+<td>AC-22</td>
+<td>External artifact upload failure is visible and non-blocking</td>
+<td>Force storage write failure and verify spec still reaches review
+state with explicit warning comment</td>
+</tr>
+<tr>
+<td>AC-23</td>
+<td>Azure Blob publishing uses repo+branch+issue scoped paths and stores
+only <code>design.md</code> and <code>design.html</code></td>
+<td>Run spec with publishing enabled and verify object names and file
+types</td>
+</tr>
+<tr>
+<td>AC-24</td>
+<td><code>latest.json</code> remains branch-scoped and does not
+cross-reference another branch in same repo</td>
+<td>Publish spec from two branches and verify each branch pointer
+remains isolated</td>
+</tr>
+<tr>
+<td>AC-25</td>
+<td>SAS-only setup is sufficient for upload and review links without
+Azure login identity config</td>
+<td>Remove Azure login settings, run publish with SAS secrets, and
+verify upload plus read-link generation succeeds</td>
+</tr>
+<tr>
+<td>AC-26</td>
+<td>Missing Azure settings or SAS secrets in enabled mode produce
+fallback behavior without blocking phase completion</td>
+<td>Remove one required variable or SAS secret, run spec, and verify
+warning plus canonical repo links</td>
+</tr>
+<tr>
+<td>AC-27</td>
+<td>Review comments and logs expose read-only SAS links only, never
+write SAS tokens</td>
+<td>Inspect emitted comments/logs and verify write SAS token material is
+absent</td>
+</tr>
+</tbody>
+</table>
+</div>
+<section id="5-open-questions" class="source-block role-open-questions"
+data-source-block="50"
+data-source-sha256="028a19fde90928e0153ae234a6da431e92b57e965368d736138d6df706f01023">
+<h2>5. Open questions</h2>
+</section>
+<div class="source-block" data-source-block="51"
+data-source-sha256="4b6903c386a8d58de83e3bff0f3b2760692ebcc8c85458964fa29739d2a87b33">
+<ol type="1">
+<li><strong>Alias retirement timeline.</strong> Recommended: keep
+<code>autoboot*</code> normalization for two release tags, then remove
+once usage telemetry shows near-zero alias events.
+<strong>Non-blocking</strong>.</li>
+<li><strong>Task marker consolidation.</strong> Recommended: keep
+<code>autobot-task</code> as authoritative and optionally add
+<code>autoboot</code> as migration-only companion label, then deprecate
+companion label later. <strong>Non-blocking</strong>.</li>
+<li><strong>Main feature closure policy.</strong> Recommended: keep
+human-controlled closure for the main feature issue in v1, and evaluate
+auto-close only after reliable dependency completeness checks are
+available. <strong>Non-blocking</strong>.</li>
+<li><strong>Rework escalation threshold.</strong> Recommended: after
+three consecutive rejected implementation cycles on the same task, add
+<code>autobot-blocked</code> with a summary comment that asks for manual
+triage before another rerun. <strong>Non-blocking</strong>.</li>
+<li><strong>External artifact retention window.</strong> Recommended:
+expire spec mirror artifacts after 60 days, with optional extension for
+still-open review issues. <strong>Non-blocking</strong>.</li>
+<li><strong>SAS rotation cadence.</strong> Recommended: rotate read and
+write SAS policies every 30 days, with emergency revocation playbook and
+per-repository token isolation. <strong>Non-blocking</strong>.</li>
+</ol>
+</div>
+
+    </main>
+  </div>
+  <footer class="document-footer">Generated from docs\autobot-provider-agnostic-workflow-contract\design.md by blueprint/html-doc@1. Edit the Markdown source, then regenerate.</footer>
+</body>
+</html>
