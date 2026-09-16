@@ -64,6 +64,7 @@ The Codex and GitHub Copilot providers use the same lifecycle semantics:
 - `AUTOBOT_PROJECT_TOKEN` (required for organization-owned project boards such as `AutoplanAS#8`)
 - `AUTOBOT_SPEC_ARTIFACTS_WRITE_SAS` (optional; required only when `AUTOBOT_SPEC_ARTIFACTS_ENABLED=true`)
 - `AUTOBOT_SPEC_ARTIFACTS_READ_SAS` (optional; required only when `AUTOBOT_SPEC_ARTIFACTS_ENABLED=true`)
+- `AUTOBOT_COPILOT_TRIGGER_TOKEN` (optional; PAT used to post the spec handoff `@copilot` instruction as a human account when bot-originated mentions are ignored)
 
 When Codex is used, `CODEX_API_KEY` should be managed as an org-level secret and granted to each
 adopting repository.
@@ -164,6 +165,7 @@ Copilot handoff details:
   - `plan`: `autobot-plan/<issue>-<slug>`
 - Handoff PRs include a run token and initial phase artifact commit under `.autobot/output/` so a PR is openable immediately.
 - Spec handoff auto-posts a PR instruction comment that mentions `@copilot` (or `AUTOBOT_COPILOT_TRIGGER_HANDLE`) and requires creating `docs/<issue>-<slug>/design.md`.
+- When `AUTOBOT_COPILOT_TRIGGER_TOKEN` is set, that instruction comment is posted with the token owner identity (recommended when Copilot ignores bot-authored mentions).
 - Completion is event-driven: `autobot-copilot-complete.yml` runs on PR updates/comments, validates assignee + issue reference + run token, and applies workflow-owned side effects.
 - Spec completion requires a design document at `docs/<issue-number>-*/design.md` in the handoff PR branch.
 - With `AUTOBOT_COPILOT_STRICT_ARTIFACT=false`, spec/implement can be accepted without manually editing the artifact when required branch changes are present. Set strict mode to `true` to require explicit `status=completed` artifacts.

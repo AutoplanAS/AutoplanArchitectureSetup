@@ -519,6 +519,30 @@ copilot_trigger_handle() {
   printf '%s' "@copilot"
 }
 
+post_pr_comment() {
+  local repo="$1"
+  local pr_number="$2"
+  local body_file="$3"
+  local trigger_token="${AUTOBOT_COPILOT_TRIGGER_TOKEN:-}"
+  local previous_token="${GH_TOKEN:-}"
+
+  if [[ -n "$trigger_token" ]]; then
+    export GH_TOKEN="$trigger_token"
+  fi
+
+  local status=0
+  gh pr comment "$pr_number" --repo "$repo" --body-file "$body_file" >/dev/null 2>&1 || status=$?
+
+  if [[ -n "$trigger_token" ]]; then
+    if [[ -n "$previous_token" ]]; then
+      export GH_TOKEN="$previous_token"
+    else
+      unset GH_TOKEN
+    fi
+  fi
+  return $status
+}
+
 copilot_run_token() {
   local phase="$1"
   local issue_number="$2"
@@ -628,7 +652,7 @@ Required actions:
 After committing, leave a short summary comment.
 EOF
     guard_text_file .autobot/output/spec-copilot-instruction.md || blocked_and_exit "$repo" "$issue_number" "$trigger_label" "Copilot instruction comment was blocked by secret guard." "$run_url"
-    if ! gh pr comment "$pr_number" --repo "$repo" --body-file .autobot/output/spec-copilot-instruction.md >/dev/null 2>&1; then
+    if ! post_pr_comment "$repo" "$pr_number" .autobot/output/spec-copilot-instruction.md; then
       blocked_and_exit "$repo" "$issue_number" "$trigger_label" "Failed to post Copilot spec instruction comment to PR #${pr_number}." "$run_url"
     fi
   fi

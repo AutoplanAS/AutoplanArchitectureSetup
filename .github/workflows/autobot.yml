@@ -176,6 +176,7 @@ jobs:
       AUTOBOT_PROJECT_TOKEN: ${{ secrets.AUTOBOT_PROJECT_TOKEN }}
       AUTOBOT_SPEC_ARTIFACTS_WRITE_SAS: ${{ secrets.AUTOBOT_SPEC_ARTIFACTS_WRITE_SAS }}
       AUTOBOT_SPEC_ARTIFACTS_READ_SAS: ${{ secrets.AUTOBOT_SPEC_ARTIFACTS_READ_SAS }}
+      AUTOBOT_COPILOT_TRIGGER_TOKEN: ${{ secrets.AUTOBOT_COPILOT_TRIGGER_TOKEN }}
 
   plan:
     if: github.event_name == 'issues' && github.event.action == 'labeled' && github.event.issue.state == 'open' && github.event.label.name == 'autobot-ready-to-implement'
