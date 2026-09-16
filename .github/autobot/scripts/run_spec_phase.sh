@@ -99,10 +99,10 @@ EOF
     git fetch origin "$branch_name" >/dev/null 2>&1 || true
 
     design_ready="false"
-    if git show "origin/${branch_name}:${design_path}" > .autobot/output/spec-design-check.md 2>/dev/null; then
-      if grep -Fq "Autobot Copilot handoff placeholder." .autobot/output/spec-design-check.md 2>/dev/null; then
+    if design_content="$(git show "origin/${branch_name}:${design_path}" 2>/dev/null)"; then
+      if printf '%s' "$design_content" | grep -Fq "Autobot Copilot handoff placeholder."; then
         last_pending_reason="spec completion is waiting for non-placeholder design content in ${design_path}."
-      elif ! grep -q '[^[:space:]]' .autobot/output/spec-design-check.md 2>/dev/null; then
+      elif [[ -z "${design_content//[[:space:]]/}" ]]; then
         last_pending_reason="spec completion is waiting for non-empty design content in ${design_path}."
       else
         design_ready="true"
