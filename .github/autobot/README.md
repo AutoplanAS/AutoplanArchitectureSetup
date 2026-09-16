@@ -20,16 +20,18 @@ the agent work.
 
 | Label | Trigger | Outcome |
 |---|---|---|
-| `autobot-ready-for-spec` | Spec phase starts | Codex: direct design PR. Copilot: handoff PR + `autobot-creating-specification` |
-| `autobot-ready-to-implement` | Plan phase starts | Codex: create task issues. Copilot: handoff PR, then create task issues on completion |
-| `autobot-in-review` | Implement phase starts | Codex: direct task PR updates. Copilot: handoff PR, then completion comment/stage sync on PR updates |
+| `autobot-ready-for-spec` | Spec phase starts | Codex: direct design PR and move to `autobot-review-specification`. Copilot: handoff PR + `autobot-creating-specification`, then `autobot-review-specification` on completion |
+| `autobot-ready-to-implement` | Plan phase starts | Create or reuse main feature issue, create task issues, then close the original specification issue as superseded |
+| `autobot-implementing` | Implement phase starts | Codex: direct task PR updates. Copilot: handoff PR, then completion moves task to `autobot-in-review` |
 | `autobot-creating-specification` | No | Design waiting for human review |
 | `autobot-review-specification` | No | Human review/rework gate before planning |
 | `autobot-task` | No | Marks issue as implementation task |
+| `autoboot` | No | Compatibility task marker label for autobot-generated tasks |
+| `autobot-in-review` | No | Human PR review gate for completed implementation |
 | `autobot-blocked` | No | Phase needs human decision |
 
-When spec completes, the issue moves to `autobot-creating-specification` and Autobot posts both the
-design PR and design file link. Human approval is the PR merge: review and merge that PR, then add
+When spec completes, the issue moves to `autobot-review-specification` and Autobot posts the design
+PR and design file link. Human approval is the PR merge: review and merge that PR, then add
 `autobot-ready-to-implement` to the same feature issue to start plan generation.
 
 ## Required secrets
@@ -37,6 +39,8 @@ design PR and design file link. Human approval is the PR merge: review and merge
 - `CODEX_API_KEY` (required only for phases configured with provider `codex`)
 - `BASELINE_REPO_TOKEN` (optional; required only if this baseline repository is private)
 - `AUTOBOT_PROJECT_TOKEN` (required for organization-owned project boards such as `AutoplanAS#8`)
+- `AUTOBOT_SPEC_ARTIFACTS_WRITE_SAS` (optional; required only when `AUTOBOT_SPEC_ARTIFACTS_ENABLED=true`)
+- `AUTOBOT_SPEC_ARTIFACTS_READ_SAS` (optional; required only when `AUTOBOT_SPEC_ARTIFACTS_ENABLED=true`)
 
 When Codex is used, `CODEX_API_KEY` should be managed as an org-level secret and granted to each
 adopting repository.
@@ -74,6 +78,14 @@ Provider routing uses repository variables:
 - `AUTOBOT_COPILOT_TIMEOUT_MINUTES` (optional handoff SLA hint in comments, default `90`, max `360`)
 - `AUTOBOT_COPILOT_STRICT_ARTIFACT` (`true`/`false`, default `false`; strict mode requires explicit completed phase artifact payloads before acceptance)
 
+Spec artifact publishing uses repository variables:
+
+- `AUTOBOT_SPEC_ARTIFACTS_ENABLED` (`true`/`false`, default `false`)
+- `AUTOBOT_SPEC_ARTIFACTS_STORAGE_ACCOUNT` (required when enabled)
+- `AUTOBOT_SPEC_ARTIFACTS_CONTAINER` (required when enabled)
+- `AUTOBOT_SPEC_ARTIFACTS_PREFIX` (optional, defaults to `autobot-spec`)
+- `AUTOBOT_SPEC_ARTIFACTS_ENDPOINT_SUFFIX` (optional, defaults to `blob.core.windows.net`)
+
 Baseline source selection (optional) uses repository variables:
 
 - `AUTOBOT_BASELINE_REPOSITORY` (defaults to `AutoplanAS/AutoplanArchitectureSetup`)
@@ -89,6 +101,7 @@ Baseline source selection (optional) uses repository variables:
    - `CODEX_API_KEY` (only needed for phases that use provider `codex`)
    - `BASELINE_REPO_TOKEN` only if needed.
    - `AUTOBOT_PROJECT_TOKEN` when project scope permissions are required.
+   - `AUTOBOT_SPEC_ARTIFACTS_WRITE_SAS` and `AUTOBOT_SPEC_ARTIFACTS_READ_SAS` when spec artifact publishing is enabled.
 4. Configure provider routing variables for your preferred execution model.
 
 ## Invariants enforced by workflows
@@ -121,6 +134,7 @@ Project sync mapping handled by router and phase scripts:
 - `autobot-creating-specification` -> `Creating specification`
 - `autobot-review-specification` -> `Review specification`
 - `autobot-ready-to-implement` / `autobot-task` -> `Ready to implement`
+- `autobot-implementing` -> `Implementing`
 - `autobot-in-review` -> `In review`
 - `autobot-blocked` -> `Blocked`
 - issue closed -> `Done`

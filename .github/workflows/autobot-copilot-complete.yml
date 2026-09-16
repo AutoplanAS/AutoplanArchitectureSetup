@@ -57,6 +57,10 @@ on:
         required: false
       BASELINE_REPO_TOKEN:
         required: false
+      AUTOBOT_SPEC_ARTIFACTS_WRITE_SAS:
+        required: false
+      AUTOBOT_SPEC_ARTIFACTS_READ_SAS:
+        required: false
 
 permissions:
   contents: write
@@ -116,6 +120,13 @@ jobs:
           AUTOBOT_IMPLEMENT_PROVIDER: ${{ inputs.implement_provider }}
           AUTOBOT_COPILOT_ASSIGNEE: ${{ inputs.copilot_assignee }}
           AUTOBOT_COPILOT_STRICT_ARTIFACT: ${{ inputs.copilot_strict_artifact }}
+          AUTOBOT_SPEC_ARTIFACTS_ENABLED: ${{ vars.AUTOBOT_SPEC_ARTIFACTS_ENABLED != '' && vars.AUTOBOT_SPEC_ARTIFACTS_ENABLED || 'false' }}
+          AUTOBOT_SPEC_ARTIFACTS_STORAGE_ACCOUNT: ${{ vars.AUTOBOT_SPEC_ARTIFACTS_STORAGE_ACCOUNT }}
+          AUTOBOT_SPEC_ARTIFACTS_CONTAINER: ${{ vars.AUTOBOT_SPEC_ARTIFACTS_CONTAINER }}
+          AUTOBOT_SPEC_ARTIFACTS_PREFIX: ${{ vars.AUTOBOT_SPEC_ARTIFACTS_PREFIX != '' && vars.AUTOBOT_SPEC_ARTIFACTS_PREFIX || 'autobot-spec' }}
+          AUTOBOT_SPEC_ARTIFACTS_ENDPOINT_SUFFIX: ${{ vars.AUTOBOT_SPEC_ARTIFACTS_ENDPOINT_SUFFIX != '' && vars.AUTOBOT_SPEC_ARTIFACTS_ENDPOINT_SUFFIX || 'blob.core.windows.net' }}
+          AUTOBOT_SPEC_ARTIFACTS_WRITE_SAS: ${{ secrets.AUTOBOT_SPEC_ARTIFACTS_WRITE_SAS }}
+          AUTOBOT_SPEC_ARTIFACTS_READ_SAS: ${{ secrets.AUTOBOT_SPEC_ARTIFACTS_READ_SAS }}
           WORKFLOW_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
           set -euo pipefail

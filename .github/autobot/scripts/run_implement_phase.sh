@@ -37,8 +37,49 @@ fi
 title="$(issue_title_from_json .autobot/input/issue.json)"
 slug="$(slugify "$title")"
 branch_name="autobot/${ISSUE_NUMBER}-${slug}"
+existing_pr_number="$(gh pr list --repo "$REPOSITORY" --head "$branch_name" --state all --json number --jq '.[0].number' 2>/dev/null || true)"
 
 cat "$SCRIPT_DIR/../prompts/implement.md" > .autobot/input/implement-prompt.md
+cat > .autobot/input/rework-context.md <<EOF
+Implementation rework context:
+- Task issue: #${ISSUE_NUMBER}
+- Existing PR number: ${existing_pr_number:-none}
+EOF
+printf '%s\n' "No CHANGES_REQUESTED reviews were found." > .autobot/input/pr-requested-changes.md
+printf '%s\n' "No pull request comments were found." > .autobot/input/pr-comments.txt
+gh issue view "$ISSUE_NUMBER" --repo "$REPOSITORY" --comments > .autobot/input/task-issue-comments.txt 2>/dev/null || true
+if [[ -n "$existing_pr_number" ]]; then
+  gh pr view "$existing_pr_number" --repo "$REPOSITORY" --comments > .autobot/input/pr-comments.txt 2>/dev/null || true
+  gh api "repos/${REPOSITORY}/pulls/${existing_pr_number}/reviews" > .autobot/input/pr-reviews.json 2>/dev/null || true
+  python - <<'PY' > .autobot/input/pr-requested-changes.md
+import json
+from pathlib import Path
+
+path = Path(".autobot/input/pr-reviews.json")
+if not path.exists():
+    print("No pull request review data found.")
+    raise SystemExit(0)
+try:
+    reviews = json.loads(path.read_text(encoding="utf-8"))
+except Exception:
+    print("Pull request review data could not be parsed.")
+    raise SystemExit(0)
+if not isinstance(reviews, list):
+    print("Pull request review data is not a list.")
+    raise SystemExit(0)
+requested = [r for r in reviews if isinstance(r, dict) and str(r.get("state", "")).upper() == "CHANGES_REQUESTED"]
+if not requested:
+    print("No CHANGES_REQUESTED reviews were found.")
+    raise SystemExit(0)
+for review in requested:
+    user = (review.get("user") or {}).get("login", "unknown")
+    body = str(review.get("body") or "").strip() or "(empty review body)"
+    submitted = str(review.get("submitted_at") or "unknown time")
+    print(f"- Reviewer @{user} at {submitted}:")
+    print(body)
+    print("")
+PY
+fi
 cat >> .autobot/input/implement-prompt.md <<EOF
 
 Runtime context:
@@ -47,14 +88,24 @@ Runtime context:
 - Task issue: #${ISSUE_NUMBER}
 - Implementation branch: ${branch_name}
 - Issue context file: .autobot/input/issue.json
+- Rework context file: .autobot/input/rework-context.md
+- Task issue comments file: .autobot/input/task-issue-comments.txt
+- PR requested-changes summary file: .autobot/input/pr-requested-changes.md
+- PR comments file: .autobot/input/pr-comments.txt
 - Output JSON path: .autobot/output/implement.json
 EOF
 
 gh issue comment "$ISSUE_NUMBER" --repo "$REPOSITORY" --body "Autobot implementation run started on branch \`${branch_name}\`." >/dev/null
-sync_project_stage_with_warning "$REPOSITORY" "$ISSUE_NUMBER" "In review" || true
+gh issue edit "$ISSUE_NUMBER" --repo "$REPOSITORY" --remove-label autobot-in-review --remove-label autobot-blocked --add-label "$TRIGGER_LABEL" >/dev/null || true
+sync_project_stage_with_warning "$REPOSITORY" "$ISSUE_NUMBER" "Implementing" || true
 
 git fetch origin "$DEFAULT_BRANCH"
-git checkout -B "$branch_name" "origin/$DEFAULT_BRANCH"
+if git ls-remote --exit-code --heads origin "$branch_name" >/dev/null 2>&1; then
+  git fetch origin "$branch_name"
+  git checkout -B "$branch_name" "origin/$branch_name"
+else
+  git checkout -B "$branch_name" "origin/$DEFAULT_BRANCH"
+fi
 if [[ "$provider" == "github-copilot" ]]; then
   mkdir -p .autobot/output
   cat > .autobot/output/implement.json <<EOF
@@ -81,8 +132,8 @@ EOF
   if ! pr_url="$(start_copilot_handoff "implement" "$REPOSITORY" "$ISSUE_NUMBER" "$branch_name" ".autobot/output/implement.json" "${WORKFLOW_RUN_URL:-}" "$TRIGGER_LABEL")"; then
     blocked_and_exit "$REPOSITORY" "$ISSUE_NUMBER" "$TRIGGER_LABEL" "Failed to start Copilot implementation handoff." "${WORKFLOW_RUN_URL:-}"
   fi
-  gh issue edit "$ISSUE_NUMBER" --repo "$REPOSITORY" --remove-label autobot-blocked --add-label "$TRIGGER_LABEL" >/dev/null || true
-  sync_project_stage_with_warning "$REPOSITORY" "$ISSUE_NUMBER" "In review" || true
+  gh issue edit "$ISSUE_NUMBER" --repo "$REPOSITORY" --remove-label autobot-in-review --remove-label autobot-blocked --add-label "$TRIGGER_LABEL" >/dev/null || true
+  sync_project_stage_with_warning "$REPOSITORY" "$ISSUE_NUMBER" "Implementing" || true
   printf 'Copilot implementation handoff started with PR: %s\n' "$pr_url"
   rm -rf .autobot
   exit 0
@@ -144,7 +195,7 @@ printf '%s\n\nPull request: %s\n' "$issue_comment" "$pr_url" > .autobot/output/f
 guard_text_file .autobot/output/final-comment.txt || blocked_and_exit "$REPOSITORY" "$ISSUE_NUMBER" "$TRIGGER_LABEL" "Final implementation comment was blocked by secret guard." "${WORKFLOW_RUN_URL:-}"
 
 gh issue comment "$ISSUE_NUMBER" --repo "$REPOSITORY" --body-file .autobot/output/final-comment.txt >/dev/null
-gh issue edit "$ISSUE_NUMBER" --repo "$REPOSITORY" --remove-label autobot-blocked --add-label "$TRIGGER_LABEL" >/dev/null || true
+gh issue edit "$ISSUE_NUMBER" --repo "$REPOSITORY" --remove-label "$TRIGGER_LABEL" --remove-label autobot-blocked --add-label autobot-in-review >/dev/null || true
 sync_project_stage_with_warning "$REPOSITORY" "$ISSUE_NUMBER" "In review" || true
 
 rm -rf .autobot
