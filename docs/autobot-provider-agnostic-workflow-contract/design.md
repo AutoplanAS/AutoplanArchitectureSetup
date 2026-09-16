@@ -11,6 +11,7 @@ The required outcome is one provider-agnostic phase contract where Codex and Cop
 - `autobot-ready-for-spec` starts specification work.
 - `autobot-creating-specification` means Autobot is producing the design artifact.
 - `autobot-review-specification` is the explicit human gate for design acceptance or rework.
+- Spec output must be readable outside branch context by publishing temporary Azure Blob artifacts for the generated design (`.md` and `.html`).
 - `autobot-ready-to-implement` starts planning from approved design on the original issue, then closes that original issue as superseded.
 - Planning creates a new main feature issue that contains a short human-readable design summary and links to full design and implementation tasks.
 - Planned task issues are created in **Ready to implement**, are explicitly marked as Autobot tasks, and are linked from the new main feature issue.
@@ -21,6 +22,9 @@ The required outcome is one provider-agnostic phase contract where Codex and Cop
 Constraints:
 
 - No automatic phase skipping, regardless of provider. In this contract that means Autobot can only do immediate next-step transitions for the active phase, and must never jump across a human gate. Examples: it may move `autobot-ready-for-spec` to `autobot-creating-specification`, but it must not jump directly to `autobot-ready-to-implement`; it may complete `autobot-implementing` to `autobot-in-review`, but it must not auto-close the issue as approved. For rejected implementation PRs, reviewer comments alone must not restart implementation. A human must explicitly reapply `autobot-implementing` on the task issue.
+- External artifact scope starts with spec phase only. Only `design.md` and `design.html` are published externally in this increment.
+- Any `latest.json` pointer used for external artifact discovery must be namespaced by repository and branch, not globally shared.
+- External artifact backend for this increment is Azure Blob Storage only.
 - Workflow-owned label and project-stage side effects remain deterministic.
 - Existing repositories must have a migration path from typo-prone `autoboot*` labels without breaking active queues.
 
@@ -39,6 +43,7 @@ Main flow:
 1. A feature issue is moved to **Ready for spec** and labelled `autobot-ready-for-spec`.
 2. Autobot starts specification (`design` skill), removes trigger label, applies `autobot-creating-specification`, and keeps the issue in **Creating specification** while producing or updating the design PR/artifact.
 3. When design output is ready, Autobot applies `autobot-review-specification` and removes `autobot-creating-specification`.
+   - In the same step, Autobot publishes temporary spec artifacts (`design.md`, `design.html`) to Azure Blob Storage and comments links for branch-independent reading.
 4. Human review happens in **Review specification**:
    - If changes are needed, the reviewer comments, moves back to **Ready for spec**, and reapplies `autobot-ready-for-spec`.
    - If approved, the reviewer applies `autobot-ready-to-implement`.
@@ -59,6 +64,7 @@ Failure outcomes:
 
 - Missing configuration, invalid provider, or artifact contract failure applies `autobot-blocked` with a single actionable comment.
 - Retries always require explicit human re-labelling.
+- If external spec artifact publishing fails, Autobot keeps the normal repository and PR flow as source of truth, and adds a warning comment with the run link and failure reason.
 
 ## 3. Technical design and choices
 
@@ -92,6 +98,65 @@ Required script and workflow changes:
 - Every implementation rework run must include reviewer requested-change feedback from the linked PR review/comments plus any new task-issue comments.
 - Entering a new phase must remove stale Autobot phase-state labels from earlier phases so the issue has one active phase state.
 - Rework cycles must reuse the same deterministic implementation branch and PR for the task issue instead of creating new PR chains.
+- Spec completion path mirrors `docs/<issue>-<slug>/design.md` and generated `design.html` to external temporary storage.
+- Spec completion writes a `latest.json` pointer under a repo-and-branch-scoped prefix so links are isolated per repository and source branch.
+
+### Spec external artifact mirror on Azure Blob (pilot)
+
+**Decision:** publish only spec artifacts (`design.md` and `design.html`) to temporary Azure Blob Storage in this increment.  
+**Why:** it solves the immediate readability problem for reviewers who should not need branch checkout context, while keeping rollout risk low.  
+**Tradeoff:** planning and implementation artifacts remain branch-bound until later increments.
+
+Storage contract:
+
+- Prefix: `autobot-spec/<owner>/<repo>/<branch>/issue-<issue-number>/`.
+- Immutable run artifacts:
+  - `runs/<run-id>/design.md`
+  - `runs/<run-id>/design.html`
+- Branch-scoped pointer:
+  - `latest.json` (same prefix), containing latest run id, source commit SHA, and artifact object paths.
+
+Azure setup contract:
+
+- One Azure Storage account dedicated to Autobot transient review artifacts.
+- One private blob container, for example `autobot-spec-artifacts`.
+- GitHub Actions uses OIDC federation with Azure AD. No storage account key is stored in GitHub.
+- Workflow identity needs:
+  - `Storage Blob Data Contributor` on the target container or storage account scope.
+  - Azure login rights to the configured subscription and tenant.
+
+Publishing behavior:
+
+- Triggered only when spec output reaches completed state and before final review comment is posted.
+- Review comment includes both:
+  - canonical repository links (design file and PR),
+  - external temporary artifact links.
+- External artifact upload failure does not roll back phase completion. It emits warning telemetry/comment and keeps repository artifacts as authoritative.
+
+### Required repository variables and secrets for Azure Blob publishing
+
+**Decision:** use explicit repository-level configuration so each repo can route artifacts to its own storage account and branch namespace.  
+**Why:** repositories can have different tenants, subscriptions, and retention policies while using the same reusable workflows.  
+**Tradeoff:** setup requires more initial configuration and validation checks.
+
+Required configuration:
+
+- Repository variables:
+  - `AUTOBOT_SPEC_ARTIFACTS_ENABLED` (`true` or `false`, default `false`).
+  - `AUTOBOT_SPEC_ARTIFACTS_STORAGE_ACCOUNT` (Azure Storage account name).
+  - `AUTOBOT_SPEC_ARTIFACTS_CONTAINER` (blob container name).
+  - `AUTOBOT_SPEC_ARTIFACTS_PREFIX` (optional static prefix root, default `autobot-spec`).
+  - `AUTOBOT_SPEC_ARTIFACTS_SAS_TTL_MINUTES` (optional read-link TTL, default `1440`, max `10080`).
+- Repository or environment secrets/variables used by `azure/login`:
+  - `AZURE_CLIENT_ID` (federated credential application client id).
+  - `AZURE_TENANT_ID`.
+  - `AZURE_SUBSCRIPTION_ID`.
+
+Runtime behavior:
+
+- If `AUTOBOT_SPEC_ARTIFACTS_ENABLED` is `false`, workflows skip external upload and keep repository-only links.
+- If enabled and any required Azure setting is missing, spec phase continues but posts a warning and fallback repository links.
+- Workflows upload with Azure AD login auth mode, then create short-lived read-only URLs for issue comments.
 
 ### Main feature issue contract
 
@@ -123,6 +188,13 @@ Main feature issue content:
 - **INV-12:** Implementation rework runs must ingest PR requested-change feedback and task-issue follow-up comments as mandatory input context.
 - **INV-13:** Phase-start actions must remove stale Autobot state labels so only one active phase-state label remains.
 - **INV-14:** A task issue keeps one implementation PR and one implementation branch across rework cycles.
+- **INV-15:** Only spec phase publishes external artifacts in this increment, and only `design.md` and `design.html` are published.
+- **INV-16:** `latest.json` is scoped by `<owner>/<repo>/<branch>/issue-<issue-number>` and must not point across repositories or branches.
+- **INV-17:** Spec review comments must include canonical repo links even when external artifact links are present.
+- **INV-18:** External artifact publishing failure must not silently pass. It must produce an explicit warning and leave canonical repository artifacts as source of truth.
+- **INV-19:** External spec artifacts are stored only in Azure Blob Storage for this increment.
+- **INV-20:** Azure Blob publishing must use federated identity and RBAC, not storage account keys or connection strings in workflow secrets.
+- **INV-21:** When artifact publishing is enabled, missing required Azure config must produce explicit warning output and fallback repository links.
 
 ### Security and operations
 
@@ -149,6 +221,15 @@ Issue and PR text remain untrusted input; scripts continue to own all state tran
 | AC-15 | Rework run context includes reviewer requested-change feedback and task issue follow-up comments | Inspect run input artifact/log and verify review/comment excerpts are present |
 | AC-16 | Rework restart cleans stale labels and leaves one active implementation phase-state label | During rerun start, verify label set removes conflicting implementation state labels before work proceeds |
 | AC-17 | Rework updates existing task PR/branch rather than creating duplicates | Execute at least two reject/rework cycles and verify same PR number and branch are reused |
+| AC-18 | Completed spec publishes external `design.md` and `design.html` artifacts under the expected storage prefix | Run spec in sandbox and verify objects exist at repo+branch+issue scoped paths |
+| AC-19 | Branch-scoped `latest.json` points to the newest run artifacts for that repository and branch only | Run two spec completions on same issue/branch and verify pointer update without cross-branch contamination |
+| AC-20 | Spec review comment includes both canonical repo links and external artifact links | Inspect resulting issue comment content after spec completion |
+| AC-21 | Planning and implementation phases do not publish external artifacts in this increment | Run plan and implement phases and verify no external objects are written |
+| AC-22 | External artifact upload failure is visible and non-blocking | Force storage write failure and verify spec still reaches review state with explicit warning comment |
+| AC-23 | Azure Blob publishing uses repo+branch+issue scoped paths and stores only `design.md` and `design.html` | Run spec with publishing enabled and verify object names and file types |
+| AC-24 | `latest.json` remains branch-scoped and does not cross-reference another branch in same repo | Publish spec from two branches and verify each branch pointer remains isolated |
+| AC-25 | OIDC and RBAC setup is sufficient without storage account keys | Disable any key-based config, run publish, and verify upload succeeds with `azure/login` identity |
+| AC-26 | Missing Azure settings in enabled mode produce fallback behavior without blocking phase completion | Remove one required variable, run spec, and verify warning plus canonical repo links |
 
 ## 5. Open questions
 
@@ -156,3 +237,5 @@ Issue and PR text remain untrusted input; scripts continue to own all state tran
 2. **Task marker consolidation.** Recommended: keep `autobot-task` as authoritative and optionally add `autoboot` as migration-only companion label, then deprecate companion label later. **Non-blocking**.
 3. **Main feature closure policy.** Recommended: keep human-controlled closure for the main feature issue in v1, and evaluate auto-close only after reliable dependency completeness checks are available. **Non-blocking**.
 4. **Rework escalation threshold.** Recommended: after three consecutive rejected implementation cycles on the same task, add `autobot-blocked` with a summary comment that asks for manual triage before another rerun. **Non-blocking**.
+5. **External artifact retention window.** Recommended: expire spec mirror artifacts after 60 days, with optional extension for still-open review issues. **Non-blocking**.
+6. **Blob access model for reviewers.** Recommended: private container with short-lived read-only links in issue comments, instead of public container access. **Non-blocking**.

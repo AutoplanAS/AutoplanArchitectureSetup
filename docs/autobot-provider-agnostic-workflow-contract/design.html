@@ -6,7 +6,7 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data:; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'">
   <meta name="document-kind" content="design">
   <meta name="source-path" content="docs\autobot-provider-agnostic-workflow-contract\design.md">
-  <meta name="source-sha256" content="9627c3f3c9938065cb4ebf091affa03321a7ff22023e87f323b586a224aabb38">
+  <meta name="source-sha256" content="0e845e94f6267aeb991c1ba172715b43e7ebaa67069a8f21be4daad4f132f668">
   <meta name="generator" content="blueprint/html-doc@1">
   <title>Autobot provider-agnostic workflow contract alignment</title>
   <style>:root {
@@ -225,13 +225,13 @@ tbody tr:nth-child(even) { background: #f9fbfc; }
       <dl class="metadata">
         <div class="metadata__item"><dt>Status</dt><dd>Proposed for review</dd></div>
         <div class="metadata__item"><dt>Source</dt><dd>docs\autobot-provider-agnostic-workflow-contract\design.md</dd></div>
-        <div class="metadata__item"><dt>SHA-256</dt><dd><code>9627c3f3c9938065cb4ebf091affa03321a7ff22023e87f323b586a224aabb38</code></dd></div>
+        <div class="metadata__item"><dt>SHA-256</dt><dd><code>0e845e94f6267aeb991c1ba172715b43e7ebaa67069a8f21be4daad4f132f668</code></dd></div>
       </dl>
     </div>
   </header>
   <div class="page-shell">
-    <nav class="toc" aria-label="Document contents"><p class="toc-title">Contents</p><ol><li data-level="2"><a href="#1-requirements-what-and-why">1. Requirements: what and why</a></li><li data-level="2"><a href="#2-user-experience">2. User experience</a></li><li data-level="2"><a href="#3-technical-design-and-choices">3. Technical design and choices</a></li><li data-level="3"><a href="#label-contract-normalization">Label contract normalization</a></li><li data-level="3"><a href="#provider-independent-phase-engine">Provider-independent phase engine</a></li><li data-level="3"><a href="#main-feature-issue-contract">Main feature issue contract</a></li><li data-level="3"><a href="#invariants">Invariants</a></li><li data-level="3"><a href="#security-and-operations">Security and operations</a></li><li data-level="2"><a href="#4-acceptance-and-proof">4. Acceptance and proof</a></li><li data-level="2"><a href="#5-open-questions">5. Open questions</a></li></ol></nav>
-    <main id="document-content" class="document-content" data-source-block-count="37">
+    <nav class="toc" aria-label="Document contents"><p class="toc-title">Contents</p><ol><li data-level="2"><a href="#1-requirements-what-and-why">1. Requirements: what and why</a></li><li data-level="2"><a href="#2-user-experience">2. User experience</a></li><li data-level="2"><a href="#3-technical-design-and-choices">3. Technical design and choices</a></li><li data-level="3"><a href="#label-contract-normalization">Label contract normalization</a></li><li data-level="3"><a href="#provider-independent-phase-engine">Provider-independent phase engine</a></li><li data-level="3"><a href="#spec-external-artifact-mirror-on-azure-blob-pilot">Spec external artifact mirror on Azure Blob (pilot)</a></li><li data-level="3"><a href="#required-repository-variables-and-secrets-for-azure-blob-publishing">Required repository variables and secrets for Azure Blob publishing</a></li><li data-level="3"><a href="#main-feature-issue-contract">Main feature issue contract</a></li><li data-level="3"><a href="#invariants">Invariants</a></li><li data-level="3"><a href="#security-and-operations">Security and operations</a></li><li data-level="2"><a href="#4-acceptance-and-proof">4. Acceptance and proof</a></li><li data-level="2"><a href="#5-open-questions">5. Open questions</a></li></ol></nav>
+    <main id="document-content" class="document-content" data-source-block-count="51">
 <section id="autobot-provider-agnostic-workflow-contract-alignment"
 class="source-block" data-source-block="1"
 data-source-sha256="0a1e7afd69ac8565fb24e5f337a2c6ceddf28c85d6f58a965bf076965347032e">
@@ -265,13 +265,16 @@ Codex and Copilot runs must follow the same issue lifecycle and
 project-stage mapping:</p>
 </div>
 <div class="source-block" data-source-block="6"
-data-source-sha256="bfd4d5c56da68de5930304728f9e63f0e8d694c6d82f566d110ac6bfc01c99aa">
+data-source-sha256="927ecd0efe2f924d9a85931d465e9d8a4d4da81a75aa85d1657094babf6ac6ec">
 <ul>
 <li><code>autobot-ready-for-spec</code> starts specification work.</li>
 <li><code>autobot-creating-specification</code> means Autobot is
 producing the design artifact.</li>
 <li><code>autobot-review-specification</code> is the explicit human gate
 for design acceptance or rework.</li>
+<li>Spec output must be readable outside branch context by publishing
+temporary Azure Blob artifacts for the generated design
+(<code>.md</code> and <code>.html</code>).</li>
 <li><code>autobot-ready-to-implement</code> starts planning from
 approved design on the original issue, then closes that original issue
 as superseded.</li>
@@ -294,7 +297,7 @@ data-source-sha256="b6e1a17f7fd1219d9597f5a57343e336542eb28d4631c66a5612b1580bfb
 <p>Constraints:</p>
 </div>
 <div class="source-block" data-source-block="8"
-data-source-sha256="ff0ae8da9bbe4b3125f2eac7526f4652410a646e55d58c2efb9c4942133bc47e">
+data-source-sha256="b68886fb0bbf4d8fa0b5a71fea70d1a39daa8fc9050327eff5b4b5e0ae9da39e">
 <ul>
 <li>No automatic phase skipping, regardless of provider. In this
 contract that means Autobot can only do immediate next-step transitions
@@ -307,6 +310,14 @@ it must not auto-close the issue as approved. For rejected
 implementation PRs, reviewer comments alone must not restart
 implementation. A human must explicitly reapply
 <code>autobot-implementing</code> on the task issue.</li>
+<li>External artifact scope starts with spec phase only. Only
+<code>design.md</code> and <code>design.html</code> are published
+externally in this increment.</li>
+<li>Any <code>latest.json</code> pointer used for external artifact
+discovery must be namespaced by repository and branch, not globally
+shared.</li>
+<li>External artifact backend for this increment is Azure Blob Storage
+only.</li>
 <li>Workflow-owned label and project-stage side effects remain
 deterministic.</li>
 <li>Existing repositories must have a migration path from typo-prone
@@ -340,7 +351,7 @@ data-source-sha256="5e0028e433aa5a62cb090b7c8c1865d93c2386db8ce60540241301ad9cb0
 <p>Main flow:</p>
 </div>
 <div class="source-block" data-source-block="14"
-data-source-sha256="79a0e9c2b1f97039a9cebf37cc537908f1c16bace183d0833f6e0c12392fa740">
+data-source-sha256="bed82abdbaa2272b483c9d9c4e1aa5589b5b52036c3e77ad149e3e996e125b8d">
 <ol type="1">
 <li>A feature issue is moved to <strong>Ready for spec</strong> and
 labelled <code>autobot-ready-for-spec</code>.</li>
@@ -350,7 +361,12 @@ keeps the issue in <strong>Creating specification</strong> while
 producing or updating the design PR/artifact.</li>
 <li>When design output is ready, Autobot applies
 <code>autobot-review-specification</code> and removes
-<code>autobot-creating-specification</code>.</li>
+<code>autobot-creating-specification</code>.
+<ul>
+<li>In the same step, Autobot publishes temporary spec artifacts
+(<code>design.md</code>, <code>design.html</code>) to Azure Blob Storage
+and comments links for branch-independent reading.</li>
+</ul></li>
 <li>Human review happens in <strong>Review specification</strong>:
 <ul>
 <li>If changes are needed, the reviewer comments, moves back to
@@ -392,12 +408,15 @@ data-source-sha256="e36f3a1f8b9cc41e0baf87cbcf4c13e2afa5d0128472eb3c68f4c98248f4
 <p>Failure outcomes:</p>
 </div>
 <div class="source-block" data-source-block="16"
-data-source-sha256="ab56532c19090de17485e878cc635d68c89393cabe12d1affd8b869fd6ae2d41">
+data-source-sha256="d184c7c735455012010171c458f08c306028be9630329afe45b3345fda590c91">
 <ul>
 <li>Missing configuration, invalid provider, or artifact contract
 failure applies <code>autobot-blocked</code> with a single actionable
 comment.</li>
 <li>Retries always require explicit human re-labelling.</li>
+<li>If external spec artifact publishing fails, Autobot keeps the normal
+repository and PR flow as source of truth, and adds a warning comment
+with the run link and failure reason.</li>
 </ul>
 </div>
 <section id="3-technical-design-and-choices" class="source-block"
@@ -457,7 +476,7 @@ data-source-sha256="223a75e3996b7e4180c421b279bc632eddb046ea41158e9ce6d77f9c589e
 <p>Required script and workflow changes:</p>
 </div>
 <div class="source-block" data-source-block="25"
-data-source-sha256="c2ed7e37ddf0ab4c05409c3b1294c44e60fcc22ad85d202d3491cad23c700c60">
+data-source-sha256="1bb17231c425b92bf4771951905c1ad3e3f46f23ea6d5eeeb448be8b879452f9">
 <ul>
 <li>Router triggers implement phase on <code>autobot-implementing</code>
 (not <code>autobot-in-review</code>).</li>
@@ -486,14 +505,161 @@ new task-issue comments.</li>
 from earlier phases so the issue has one active phase state.</li>
 <li>Rework cycles must reuse the same deterministic implementation
 branch and PR for the task issue instead of creating new PR chains.</li>
+<li>Spec completion path mirrors
+<code>docs/&lt;issue&gt;-&lt;slug&gt;/design.md</code> and generated
+<code>design.html</code> to external temporary storage.</li>
+<li>Spec completion writes a <code>latest.json</code> pointer under a
+repo-and-branch-scoped prefix so links are isolated per repository and
+source branch.</li>
+</ul>
+</div>
+<section id="spec-external-artifact-mirror-on-azure-blob-pilot"
+class="source-block" data-source-block="26"
+data-source-sha256="0ce76f78225e165e73e9aa5aae660c6bd6435e3514dcd78d935487400ba7c215">
+<h3>Spec external artifact mirror on Azure Blob (pilot)</h3>
+</section>
+<div class="source-block" data-source-block="27"
+data-source-sha256="0f0b928152679152202d49d5c372487b0c60c838322b10d1596ab97f0ea847d1">
+<p><strong>Decision:</strong> publish only spec artifacts
+(<code>design.md</code> and <code>design.html</code>) to temporary Azure
+Blob Storage in this increment.<br />
+<strong>Why:</strong> it solves the immediate readability problem for
+reviewers who should not need branch checkout context, while keeping
+rollout risk low.<br />
+<strong>Tradeoff:</strong> planning and implementation artifacts remain
+branch-bound until later increments.</p>
+</div>
+<div class="source-block" data-source-block="28"
+data-source-sha256="8c104d923ef69f584b38bc23fe8e3d0b94fc87c1684b091ca9ac6fd277fa6da5">
+<p>Storage contract:</p>
+</div>
+<div class="source-block" data-source-block="29"
+data-source-sha256="407b933a26728ca114c8d538ff758f560203cc5a0600736d090247841463523b">
+<ul>
+<li>Prefix:
+<code>autobot-spec/&lt;owner&gt;/&lt;repo&gt;/&lt;branch&gt;/issue-&lt;issue-number&gt;/</code>.</li>
+<li>Immutable run artifacts:
+<ul>
+<li><code>runs/&lt;run-id&gt;/design.md</code></li>
+<li><code>runs/&lt;run-id&gt;/design.html</code></li>
+</ul></li>
+<li>Branch-scoped pointer:
+<ul>
+<li><code>latest.json</code> (same prefix), containing latest run id,
+source commit SHA, and artifact object paths.</li>
+</ul></li>
+</ul>
+</div>
+<div class="source-block" data-source-block="30"
+data-source-sha256="61d1f6b50f0c168f6e0856366bb1d540e916f7c2399c03eeb2aebb3d15d590eb">
+<p>Azure setup contract:</p>
+</div>
+<div class="source-block" data-source-block="31"
+data-source-sha256="8708a646637402d8f7e3e96a117991a9569f8611ae57d0627880ead72a1094dd">
+<ul>
+<li>One Azure Storage account dedicated to Autobot transient review
+artifacts.</li>
+<li>One private blob container, for example
+<code>autobot-spec-artifacts</code>.</li>
+<li>GitHub Actions uses OIDC federation with Azure AD. No storage
+account key is stored in GitHub.</li>
+<li>Workflow identity needs:
+<ul>
+<li><code>Storage Blob Data Contributor</code> on the target container
+or storage account scope.</li>
+<li>Azure login rights to the configured subscription and tenant.</li>
+</ul></li>
+</ul>
+</div>
+<div class="source-block" data-source-block="32"
+data-source-sha256="03bb5f8c585ede5e6abb120ffc48d766e18280120d8265110dc4290084114df7">
+<p>Publishing behavior:</p>
+</div>
+<div class="source-block" data-source-block="33"
+data-source-sha256="fa67deea0ee75e86cbb17477fa0026f305144ccc67803d495a1806abea23e368">
+<ul>
+<li>Triggered only when spec output reaches completed state and before
+final review comment is posted.</li>
+<li>Review comment includes both:
+<ul>
+<li>canonical repository links (design file and PR),</li>
+<li>external temporary artifact links.</li>
+</ul></li>
+<li>External artifact upload failure does not roll back phase
+completion. It emits warning telemetry/comment and keeps repository
+artifacts as authoritative.</li>
+</ul>
+</div>
+<section
+id="required-repository-variables-and-secrets-for-azure-blob-publishing"
+class="source-block" data-source-block="34"
+data-source-sha256="0f45ad761d30112cb7c7a0412154f7ddf9d07e46e820e1d6646e7281fcf7e776">
+<h3>Required repository variables and secrets for Azure Blob
+publishing</h3>
+</section>
+<div class="source-block" data-source-block="35"
+data-source-sha256="d9b1d33f9443f6e37f6a4fc35952e441f728c8a2674a90b72edce3c1243f531f">
+<p><strong>Decision:</strong> use explicit repository-level
+configuration so each repo can route artifacts to its own storage
+account and branch namespace.<br />
+<strong>Why:</strong> repositories can have different tenants,
+subscriptions, and retention policies while using the same reusable
+workflows.<br />
+<strong>Tradeoff:</strong> setup requires more initial configuration and
+validation checks.</p>
+</div>
+<div class="source-block" data-source-block="36"
+data-source-sha256="4f21071b0b2a06ca4a09983816c7fffabe58709c06b9498e99846f3f595165ae">
+<p>Required configuration:</p>
+</div>
+<div class="source-block" data-source-block="37"
+data-source-sha256="9cb4f613057ee288d99dfe158a290e2b3edc6d8a6f9e0dfa0797831b673dc945">
+<ul>
+<li>Repository variables:
+<ul>
+<li><code>AUTOBOT_SPEC_ARTIFACTS_ENABLED</code> (<code>true</code> or
+<code>false</code>, default <code>false</code>).</li>
+<li><code>AUTOBOT_SPEC_ARTIFACTS_STORAGE_ACCOUNT</code> (Azure Storage
+account name).</li>
+<li><code>AUTOBOT_SPEC_ARTIFACTS_CONTAINER</code> (blob container
+name).</li>
+<li><code>AUTOBOT_SPEC_ARTIFACTS_PREFIX</code> (optional static prefix
+root, default <code>autobot-spec</code>).</li>
+<li><code>AUTOBOT_SPEC_ARTIFACTS_SAS_TTL_MINUTES</code> (optional
+read-link TTL, default <code>1440</code>, max <code>10080</code>).</li>
+</ul></li>
+<li>Repository or environment secrets/variables used by
+<code>azure/login</code>:
+<ul>
+<li><code>AZURE_CLIENT_ID</code> (federated credential application
+client id).</li>
+<li><code>AZURE_TENANT_ID</code>.</li>
+<li><code>AZURE_SUBSCRIPTION_ID</code>.</li>
+</ul></li>
+</ul>
+</div>
+<div class="source-block" data-source-block="38"
+data-source-sha256="4588487eee5cd9383c679c36d1f5daee6654a0c2a22507fc125ef3891087a07d">
+<p>Runtime behavior:</p>
+</div>
+<div class="source-block" data-source-block="39"
+data-source-sha256="f4ad8ac36f5e7378976b0909428cd38051ab4defb02c38663a55eda33ed7b10e">
+<ul>
+<li>If <code>AUTOBOT_SPEC_ARTIFACTS_ENABLED</code> is
+<code>false</code>, workflows skip external upload and keep
+repository-only links.</li>
+<li>If enabled and any required Azure setting is missing, spec phase
+continues but posts a warning and fallback repository links.</li>
+<li>Workflows upload with Azure AD login auth mode, then create
+short-lived read-only URLs for issue comments.</li>
 </ul>
 </div>
 <section id="main-feature-issue-contract" class="source-block"
-data-source-block="26"
+data-source-block="40"
 data-source-sha256="d496ceff0472207709e0f6bcef22596e6d7062a8224a08c6444065a27500d256">
 <h3>Main feature issue contract</h3>
 </section>
-<div class="source-block" data-source-block="27"
+<div class="source-block" data-source-block="41"
 data-source-sha256="e4325d9d522038f84931ac5df603647ae562749a653e678fc43477014b43f065">
 <p><strong>Decision:</strong> planning rolls work over from original
 issue to a new main feature issue instead of keeping the original
@@ -504,11 +670,11 @@ links.<br />
 <strong>Tradeoff:</strong> one additional issue object per feature and
 stricter idempotency requirements.</p>
 </div>
-<div class="source-block" data-source-block="28"
+<div class="source-block" data-source-block="42"
 data-source-sha256="aca7226d97b8608862a7c5a4589c4552d4e1e0e47a6575660777a683290e4994">
 <p>Main feature issue content:</p>
 </div>
-<div class="source-block" data-source-block="29"
+<div class="source-block" data-source-block="43"
 data-source-sha256="45bb5d6be763eff8ef233169b4e9e7f735dd29b9d621bf1d00c1623080d1a77a">
 <ul>
 <li>Short summary section generated from approved design intent and
@@ -522,12 +688,12 @@ lifecycle decisions, formatted for quick human reading.</li>
 </ul>
 </div>
 <section id="invariants" class="source-block role-invariants"
-data-source-block="30"
+data-source-block="44"
 data-source-sha256="41701f368993e3f63ab599cb3ebcf32756d56c298bf06612195e918bf86cd6b4">
 <h3>Invariants</h3>
 </section>
-<div class="source-block" data-source-block="31"
-data-source-sha256="970012b03d195318bb7ef6b2ae4370465853178e5f445105c233c22dc63db2c4">
+<div class="source-block" data-source-block="45"
+data-source-sha256="ae45b5016314e053eb3fcfc9dea3e944a723b014289fef897fd4217d256988a0">
 <ul>
 <li><strong>INV-1:</strong> Provider selection must never change label
 transition semantics.</li>
@@ -561,14 +727,33 @@ input context.</li>
 Autobot state labels so only one active phase-state label remains.</li>
 <li><strong>INV-14:</strong> A task issue keeps one implementation PR
 and one implementation branch across rework cycles.</li>
+<li><strong>INV-15:</strong> Only spec phase publishes external
+artifacts in this increment, and only <code>design.md</code> and
+<code>design.html</code> are published.</li>
+<li><strong>INV-16:</strong> <code>latest.json</code> is scoped by
+<code>&lt;owner&gt;/&lt;repo&gt;/&lt;branch&gt;/issue-&lt;issue-number&gt;</code>
+and must not point across repositories or branches.</li>
+<li><strong>INV-17:</strong> Spec review comments must include canonical
+repo links even when external artifact links are present.</li>
+<li><strong>INV-18:</strong> External artifact publishing failure must
+not silently pass. It must produce an explicit warning and leave
+canonical repository artifacts as source of truth.</li>
+<li><strong>INV-19:</strong> External spec artifacts are stored only in
+Azure Blob Storage for this increment.</li>
+<li><strong>INV-20:</strong> Azure Blob publishing must use federated
+identity and RBAC, not storage account keys or connection strings in
+workflow secrets.</li>
+<li><strong>INV-21:</strong> When artifact publishing is enabled,
+missing required Azure config must produce explicit warning output and
+fallback repository links.</li>
 </ul>
 </div>
 <section id="security-and-operations" class="source-block"
-data-source-block="32"
+data-source-block="46"
 data-source-sha256="95a9d578893a4290a69b68c19a560aab6c1c04144f9d3a54489e97b346298f1e">
 <h3>Security and operations</h3>
 </section>
-<div class="source-block" data-source-block="33"
+<div class="source-block" data-source-block="47"
 data-source-sha256="3efe800fd59a82fb3cb31e027065b7b7e2b4595c4e928b77bdeac930b679bcf4">
 <p>Issue and PR text remain untrusted input; scripts continue to own all
 state transitions and secret-guard checks before posting generated
@@ -581,12 +766,12 @@ provider misconfiguration continue to end in
 <code>autobot-blocked</code> with run URL for operator recovery.</p>
 </div>
 <section id="4-acceptance-and-proof" class="source-block"
-data-source-block="34"
+data-source-block="48"
 data-source-sha256="372906f1cdb3dc83bd8f993088fcbd3655fee7cb46ed817e2c7c274f86dad817">
 <h2>4. Acceptance and proof</h2>
 </section>
-<div class="source-block table-wrap" data-source-block="35"
-data-source-sha256="674e6eb02395ecdd8868971a2010c1625b01d37418d557cfcb3de522152e25a5">
+<div class="source-block table-wrap" data-source-block="49"
+data-source-sha256="4ba2a2e65e8d7b112d7bcbc49d030d3bda5af21be8a671491c68059ef62be187">
 <table>
 <thead>
 <tr>
@@ -715,16 +900,77 @@ duplicates</td>
 <td>Execute at least two reject/rework cycles and verify same PR number
 and branch are reused</td>
 </tr>
+<tr>
+<td>AC-18</td>
+<td>Completed spec publishes external <code>design.md</code> and
+<code>design.html</code> artifacts under the expected storage
+prefix</td>
+<td>Run spec in sandbox and verify objects exist at repo+branch+issue
+scoped paths</td>
+</tr>
+<tr>
+<td>AC-19</td>
+<td>Branch-scoped <code>latest.json</code> points to the newest run
+artifacts for that repository and branch only</td>
+<td>Run two spec completions on same issue/branch and verify pointer
+update without cross-branch contamination</td>
+</tr>
+<tr>
+<td>AC-20</td>
+<td>Spec review comment includes both canonical repo links and external
+artifact links</td>
+<td>Inspect resulting issue comment content after spec completion</td>
+</tr>
+<tr>
+<td>AC-21</td>
+<td>Planning and implementation phases do not publish external artifacts
+in this increment</td>
+<td>Run plan and implement phases and verify no external objects are
+written</td>
+</tr>
+<tr>
+<td>AC-22</td>
+<td>External artifact upload failure is visible and non-blocking</td>
+<td>Force storage write failure and verify spec still reaches review
+state with explicit warning comment</td>
+</tr>
+<tr>
+<td>AC-23</td>
+<td>Azure Blob publishing uses repo+branch+issue scoped paths and stores
+only <code>design.md</code> and <code>design.html</code></td>
+<td>Run spec with publishing enabled and verify object names and file
+types</td>
+</tr>
+<tr>
+<td>AC-24</td>
+<td><code>latest.json</code> remains branch-scoped and does not
+cross-reference another branch in same repo</td>
+<td>Publish spec from two branches and verify each branch pointer
+remains isolated</td>
+</tr>
+<tr>
+<td>AC-25</td>
+<td>OIDC and RBAC setup is sufficient without storage account keys</td>
+<td>Disable any key-based config, run publish, and verify upload
+succeeds with <code>azure/login</code> identity</td>
+</tr>
+<tr>
+<td>AC-26</td>
+<td>Missing Azure settings in enabled mode produce fallback behavior
+without blocking phase completion</td>
+<td>Remove one required variable, run spec, and verify warning plus
+canonical repo links</td>
+</tr>
 </tbody>
 </table>
 </div>
 <section id="5-open-questions" class="source-block role-open-questions"
-data-source-block="36"
+data-source-block="50"
 data-source-sha256="028a19fde90928e0153ae234a6da431e92b57e965368d736138d6df706f01023">
 <h2>5. Open questions</h2>
 </section>
-<div class="source-block" data-source-block="37"
-data-source-sha256="83ed98aa5eea776fc2ea1ff258f2328ea81d77c42fdd96da2d9341e3229a0ee7">
+<div class="source-block" data-source-block="51"
+data-source-sha256="ddbf14b84eb91174a697851550358864cdd19fcfe08fabf9419561ebbfc5ed53">
 <ol type="1">
 <li><strong>Alias retirement timeline.</strong> Recommended: keep
 <code>autoboot*</code> normalization for two release tags, then remove
@@ -742,6 +988,12 @@ available. <strong>Non-blocking</strong>.</li>
 three consecutive rejected implementation cycles on the same task, add
 <code>autobot-blocked</code> with a summary comment that asks for manual
 triage before another rerun. <strong>Non-blocking</strong>.</li>
+<li><strong>External artifact retention window.</strong> Recommended:
+expire spec mirror artifacts after 60 days, with optional extension for
+still-open review issues. <strong>Non-blocking</strong>.</li>
+<li><strong>Blob access model for reviewers.</strong> Recommended:
+private container with short-lived read-only links in issue comments,
+instead of public container access. <strong>Non-blocking</strong>.</li>
 </ol>
 </div>
 
