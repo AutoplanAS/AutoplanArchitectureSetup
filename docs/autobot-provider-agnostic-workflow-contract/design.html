@@ -6,7 +6,7 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data:; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'">
   <meta name="document-kind" content="design">
   <meta name="source-path" content="docs\autobot-provider-agnostic-workflow-contract\design.md">
-  <meta name="source-sha256" content="b1ce5af407e9d5907ca0d526761882c4b7df56e80c7e15fabe205e4cc83243b9">
+  <meta name="source-sha256" content="9627c3f3c9938065cb4ebf091affa03321a7ff22023e87f323b586a224aabb38">
   <meta name="generator" content="blueprint/html-doc@1">
   <title>Autobot provider-agnostic workflow contract alignment</title>
   <style>:root {
@@ -225,7 +225,7 @@ tbody tr:nth-child(even) { background: #f9fbfc; }
       <dl class="metadata">
         <div class="metadata__item"><dt>Status</dt><dd>Proposed for review</dd></div>
         <div class="metadata__item"><dt>Source</dt><dd>docs\autobot-provider-agnostic-workflow-contract\design.md</dd></div>
-        <div class="metadata__item"><dt>SHA-256</dt><dd><code>b1ce5af407e9d5907ca0d526761882c4b7df56e80c7e15fabe205e4cc83243b9</code></dd></div>
+        <div class="metadata__item"><dt>SHA-256</dt><dd><code>9627c3f3c9938065cb4ebf091affa03321a7ff22023e87f323b586a224aabb38</code></dd></div>
       </dl>
     </div>
   </header>
@@ -294,7 +294,7 @@ data-source-sha256="b6e1a17f7fd1219d9597f5a57343e336542eb28d4631c66a5612b1580bfb
 <p>Constraints:</p>
 </div>
 <div class="source-block" data-source-block="8"
-data-source-sha256="12b99f70602ebd5f468c6ff7a645594b77dadff3f70194749d28bafdfa7dd293">
+data-source-sha256="ff0ae8da9bbe4b3125f2eac7526f4652410a646e55d58c2efb9c4942133bc47e">
 <ul>
 <li>No automatic phase skipping, regardless of provider. In this
 contract that means Autobot can only do immediate next-step transitions
@@ -303,7 +303,10 @@ it may move <code>autobot-ready-for-spec</code> to
 <code>autobot-creating-specification</code>, but it must not jump
 directly to <code>autobot-ready-to-implement</code>; it may complete
 <code>autobot-implementing</code> to <code>autobot-in-review</code>, but
-it must not auto-close the issue as approved.</li>
+it must not auto-close the issue as approved. For rejected
+implementation PRs, reviewer comments alone must not restart
+implementation. A human must explicitly reapply
+<code>autobot-implementing</code> on the task issue.</li>
 <li>Workflow-owned label and project-stage side effects remain
 deterministic.</li>
 <li>Existing repositories must have a migration path from typo-prone
@@ -337,7 +340,7 @@ data-source-sha256="5e0028e433aa5a62cb090b7c8c1865d93c2386db8ce60540241301ad9cb0
 <p>Main flow:</p>
 </div>
 <div class="source-block" data-source-block="14"
-data-source-sha256="5ef0e09ff4e0f21ef66409d836a0991219867f6b19d8a5e5f71708c3a2dc81d9">
+data-source-sha256="79a0e9c2b1f97039a9cebf37cc537908f1c16bace183d0833f6e0c12392fa740">
 <ol type="1">
 <li>A feature issue is moved to <strong>Ready for spec</strong> and
 labelled <code>autobot-ready-for-spec</code>.</li>
@@ -374,8 +377,9 @@ task, moves issue to <strong>Implementing</strong> during active work,
 then sets <code>autobot-in-review</code> when the PR is ready.</li>
 <li>Human reviews the PR:
 <ul>
-<li>If changes are needed, reviewer comments and the task returns to
-implementation flow (<code>autobot-implementing</code>).</li>
+<li>If changes are needed, reviewer requests changes or comments on the
+PR, then explicitly reapplies <code>autobot-implementing</code> on the
+task issue to restart implementation.</li>
 <li>If approved and completed, issue is closed and stage becomes
 <strong>Done</strong>.</li>
 </ul></li>
@@ -453,7 +457,7 @@ data-source-sha256="223a75e3996b7e4180c421b279bc632eddb046ea41158e9ce6d77f9c589e
 <p>Required script and workflow changes:</p>
 </div>
 <div class="source-block" data-source-block="25"
-data-source-sha256="31e8d2280bfbe459fc327e13855f4e9e9c9a637bafddefa08689d0be4f571814">
+data-source-sha256="c2ed7e37ddf0ab4c05409c3b1294c44e60fcc22ad85d202d3491cad23c700c60">
 <ul>
 <li>Router triggers implement phase on <code>autobot-implementing</code>
 (not <code>autobot-in-review</code>).</li>
@@ -472,6 +476,16 @@ main feature and sub-issue creation, with a comment linking to the new
 main feature issue.</li>
 <li>Copilot completion script applies the same terminal labels/stages as
 Codex scripts for each phase.</li>
+<li>Implementation rework restart is label-driven only.
+<code>pull_request_review</code> or PR comments by themselves do not
+restart implementation.</li>
+<li>Every implementation rework run must include reviewer
+requested-change feedback from the linked PR review/comments plus any
+new task-issue comments.</li>
+<li>Entering a new phase must remove stale Autobot phase-state labels
+from earlier phases so the issue has one active phase state.</li>
+<li>Rework cycles must reuse the same deterministic implementation
+branch and PR for the task issue instead of creating new PR chains.</li>
 </ul>
 </div>
 <section id="main-feature-issue-contract" class="source-block"
@@ -513,7 +527,7 @@ data-source-sha256="41701f368993e3f63ab599cb3ebcf32756d56c298bf06612195e918bf86c
 <h3>Invariants</h3>
 </section>
 <div class="source-block" data-source-block="31"
-data-source-sha256="92c6910a64113008cb2c1cf12dfc9b417867b11a33330e22857245ad8c03e939">
+data-source-sha256="970012b03d195318bb7ef6b2ae4370465853178e5f445105c233c22dc63db2c4">
 <ul>
 <li><strong>INV-1:</strong> Provider selection must never change label
 transition semantics.</li>
@@ -537,6 +551,16 @@ links to every planned implementation task issue.</li>
 <li><strong>INV-10:</strong> "No automatic phase skipping" means
 transitions are limited to one phase step and can never cross a human
 review gate.</li>
+<li><strong>INV-11:</strong> Rejected implementation PRs restart only
+when a human reapplies <code>autobot-implementing</code> on the task
+issue.</li>
+<li><strong>INV-12:</strong> Implementation rework runs must ingest PR
+requested-change feedback and task-issue follow-up comments as mandatory
+input context.</li>
+<li><strong>INV-13:</strong> Phase-start actions must remove stale
+Autobot state labels so only one active phase-state label remains.</li>
+<li><strong>INV-14:</strong> A task issue keeps one implementation PR
+and one implementation branch across rework cycles.</li>
 </ul>
 </div>
 <section id="security-and-operations" class="source-block"
@@ -545,14 +569,16 @@ data-source-sha256="95a9d578893a4290a69b68c19a560aab6c1c04144f9d3a54489e97b34629
 <h3>Security and operations</h3>
 </section>
 <div class="source-block" data-source-block="33"
-data-source-sha256="45a4fd3017f2ea7ab732f07281a3daeb60f787fe70a69c8b698d0d07417e6507">
+data-source-sha256="3efe800fd59a82fb3cb31e027065b7b7e2b4595c4e928b77bdeac930b679bcf4">
 <p>Issue and PR text remain untrusted input; scripts continue to own all
 state transitions and secret-guard checks before posting generated
 content. Concurrency remains per issue to prevent duplicate runs.
 Planning reruns must be idempotent for both main feature creation and
-task creation to avoid duplicate trackers. Timeouts and provider
-misconfiguration continue to end in <code>autobot-blocked</code> with
-run URL for operator recovery.</p>
+task creation to avoid duplicate trackers. For implementation rework,
+one label event may trigger one run only, and repeated human relabels
+queue deterministic reruns without spawning duplicate PRs. Timeouts and
+provider misconfiguration continue to end in
+<code>autobot-blocked</code> with run URL for operator recovery.</p>
 </div>
 <section id="4-acceptance-and-proof" class="source-block"
 data-source-block="34"
@@ -560,7 +586,7 @@ data-source-sha256="372906f1cdb3dc83bd8f993088fcbd3655fee7cb46ed817e2c7c274f86da
 <h2>4. Acceptance and proof</h2>
 </section>
 <div class="source-block table-wrap" data-source-block="35"
-data-source-sha256="b71412904f97b51bcbad3fc246822942e223797188221aaaf19eb62e84d38396">
+data-source-sha256="674e6eb02395ecdd8868971a2010c1625b01d37418d557cfcb3de522152e25a5">
 <table>
 <thead>
 <tr>
@@ -660,6 +686,35 @@ transitions and never cross human gates</td>
 <td>Attempt to force skipped transitions by labels/comments and verify
 workflow blocks or ignores them</td>
 </tr>
+<tr>
+<td>AC-14</td>
+<td>Rejected implementation PRs restart only from explicit human relabel
+(<code>autobot-implementing</code>)</td>
+<td>Submit PR review with requested changes and comment only, verify no
+run starts; then apply <code>autobot-implementing</code> and verify
+exactly one run starts</td>
+</tr>
+<tr>
+<td>AC-15</td>
+<td>Rework run context includes reviewer requested-change feedback and
+task issue follow-up comments</td>
+<td>Inspect run input artifact/log and verify review/comment excerpts
+are present</td>
+</tr>
+<tr>
+<td>AC-16</td>
+<td>Rework restart cleans stale labels and leaves one active
+implementation phase-state label</td>
+<td>During rerun start, verify label set removes conflicting
+implementation state labels before work proceeds</td>
+</tr>
+<tr>
+<td>AC-17</td>
+<td>Rework updates existing task PR/branch rather than creating
+duplicates</td>
+<td>Execute at least two reject/rework cycles and verify same PR number
+and branch are reused</td>
+</tr>
 </tbody>
 </table>
 </div>
@@ -669,7 +724,7 @@ data-source-sha256="028a19fde90928e0153ae234a6da431e92b57e965368d736138d6df706f0
 <h2>5. Open questions</h2>
 </section>
 <div class="source-block" data-source-block="37"
-data-source-sha256="bfec859e4f8619786c8dddd89ec945fa64a28eb0656bde0cab0dbd876a112416">
+data-source-sha256="83ed98aa5eea776fc2ea1ff258f2328ea81d77c42fdd96da2d9341e3229a0ee7">
 <ol type="1">
 <li><strong>Alias retirement timeline.</strong> Recommended: keep
 <code>autoboot*</code> normalization for two release tags, then remove
@@ -683,6 +738,10 @@ companion label later. <strong>Non-blocking</strong>.</li>
 human-controlled closure for the main feature issue in v1, and evaluate
 auto-close only after reliable dependency completeness checks are
 available. <strong>Non-blocking</strong>.</li>
+<li><strong>Rework escalation threshold.</strong> Recommended: after
+three consecutive rejected implementation cycles on the same task, add
+<code>autobot-blocked</code> with a summary comment that asks for manual
+triage before another rerun. <strong>Non-blocking</strong>.</li>
 </ol>
 </div>
 

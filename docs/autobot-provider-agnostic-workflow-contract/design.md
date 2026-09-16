@@ -20,7 +20,7 @@ The required outcome is one provider-agnostic phase contract where Codex and Cop
 
 Constraints:
 
-- No automatic phase skipping, regardless of provider. In this contract that means Autobot can only do immediate next-step transitions for the active phase, and must never jump across a human gate. Examples: it may move `autobot-ready-for-spec` to `autobot-creating-specification`, but it must not jump directly to `autobot-ready-to-implement`; it may complete `autobot-implementing` to `autobot-in-review`, but it must not auto-close the issue as approved.
+- No automatic phase skipping, regardless of provider. In this contract that means Autobot can only do immediate next-step transitions for the active phase, and must never jump across a human gate. Examples: it may move `autobot-ready-for-spec` to `autobot-creating-specification`, but it must not jump directly to `autobot-ready-to-implement`; it may complete `autobot-implementing` to `autobot-in-review`, but it must not auto-close the issue as approved. For rejected implementation PRs, reviewer comments alone must not restart implementation. A human must explicitly reapply `autobot-implementing` on the task issue.
 - Workflow-owned label and project-stage side effects remain deterministic.
 - Existing repositories must have a migration path from typo-prone `autoboot*` labels without breaking active queues.
 
@@ -51,7 +51,7 @@ Main flow:
 7. A human approves a task for coding by adding `autobot-implementing` on a task issue.
 8. Autobot implementation (`task-to-pr` skill) runs for that task, moves issue to **Implementing** during active work, then sets `autobot-in-review` when the PR is ready.
 9. Human reviews the PR:
-   - If changes are needed, reviewer comments and the task returns to implementation flow (`autobot-implementing`).
+   - If changes are needed, reviewer requests changes or comments on the PR, then explicitly reapplies `autobot-implementing` on the task issue to restart implementation.
    - If approved and completed, issue is closed and stage becomes **Done**.
 10. The main feature issue stays as the execution summary issue. Humans close it when its linked implementation tasks are done.
 
@@ -88,6 +88,10 @@ Required script and workflow changes:
 - Plan script creates or reuses a deterministic main feature issue keyed to the original issue, writes a short design summary in that issue, creates linked `autobot-task` sub-issues, and places both main feature and tasks in **Ready to implement**.
 - Plan script closes the original approved-spec issue after successful main feature and sub-issue creation, with a comment linking to the new main feature issue.
 - Copilot completion script applies the same terminal labels/stages as Codex scripts for each phase.
+- Implementation rework restart is label-driven only. `pull_request_review` or PR comments by themselves do not restart implementation.
+- Every implementation rework run must include reviewer requested-change feedback from the linked PR review/comments plus any new task-issue comments.
+- Entering a new phase must remove stale Autobot phase-state labels from earlier phases so the issue has one active phase state.
+- Rework cycles must reuse the same deterministic implementation branch and PR for the task issue instead of creating new PR chains.
 
 ### Main feature issue contract
 
@@ -115,10 +119,14 @@ Main feature issue content:
 - **INV-8:** `autobot-ready-to-implement` must close the original issue only after a main feature issue and all planned tasks are successfully materialized.
 - **INV-9:** The main feature issue must always contain links to every planned implementation task issue.
 - **INV-10:** "No automatic phase skipping" means transitions are limited to one phase step and can never cross a human review gate.
+- **INV-11:** Rejected implementation PRs restart only when a human reapplies `autobot-implementing` on the task issue.
+- **INV-12:** Implementation rework runs must ingest PR requested-change feedback and task-issue follow-up comments as mandatory input context.
+- **INV-13:** Phase-start actions must remove stale Autobot state labels so only one active phase-state label remains.
+- **INV-14:** A task issue keeps one implementation PR and one implementation branch across rework cycles.
 
 ### Security and operations
 
-Issue and PR text remain untrusted input; scripts continue to own all state transitions and secret-guard checks before posting generated content. Concurrency remains per issue to prevent duplicate runs. Planning reruns must be idempotent for both main feature creation and task creation to avoid duplicate trackers. Timeouts and provider misconfiguration continue to end in `autobot-blocked` with run URL for operator recovery.
+Issue and PR text remain untrusted input; scripts continue to own all state transitions and secret-guard checks before posting generated content. Concurrency remains per issue to prevent duplicate runs. Planning reruns must be idempotent for both main feature creation and task creation to avoid duplicate trackers. For implementation rework, one label event may trigger one run only, and repeated human relabels queue deterministic reruns without spawning duplicate PRs. Timeouts and provider misconfiguration continue to end in `autobot-blocked` with run URL for operator recovery.
 
 ## 4. Acceptance and proof
 
@@ -137,9 +145,14 @@ Issue and PR text remain untrusted input; scripts continue to own all state tran
 | AC-11 | Codex and Copilot produce identical label/state transitions for same phase events | Run one end-to-end sandbox flow per provider and diff resulting issue timelines |
 | AC-12 | `autoboot*` alias labels are normalized to canonical labels without duplicate runs | Apply alias labels in sandbox and verify canonical label replacement plus single run |
 | AC-13 | No automatic phase skipping occurs: workflows only perform one-step transitions and never cross human gates | Attempt to force skipped transitions by labels/comments and verify workflow blocks or ignores them |
+| AC-14 | Rejected implementation PRs restart only from explicit human relabel (`autobot-implementing`) | Submit PR review with requested changes and comment only, verify no run starts; then apply `autobot-implementing` and verify exactly one run starts |
+| AC-15 | Rework run context includes reviewer requested-change feedback and task issue follow-up comments | Inspect run input artifact/log and verify review/comment excerpts are present |
+| AC-16 | Rework restart cleans stale labels and leaves one active implementation phase-state label | During rerun start, verify label set removes conflicting implementation state labels before work proceeds |
+| AC-17 | Rework updates existing task PR/branch rather than creating duplicates | Execute at least two reject/rework cycles and verify same PR number and branch are reused |
 
 ## 5. Open questions
 
 1. **Alias retirement timeline.** Recommended: keep `autoboot*` normalization for two release tags, then remove once usage telemetry shows near-zero alias events. **Non-blocking**.
 2. **Task marker consolidation.** Recommended: keep `autobot-task` as authoritative and optionally add `autoboot` as migration-only companion label, then deprecate companion label later. **Non-blocking**.
 3. **Main feature closure policy.** Recommended: keep human-controlled closure for the main feature issue in v1, and evaluate auto-close only after reliable dependency completeness checks are available. **Non-blocking**.
+4. **Rework escalation threshold.** Recommended: after three consecutive rejected implementation cycles on the same task, add `autobot-blocked` with a summary comment that asks for manual triage before another rerun. **Non-blocking**.
