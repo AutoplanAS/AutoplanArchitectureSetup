@@ -1,0 +1,598 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data:; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'">
+  <meta name="document-kind" content="design">
+  <meta name="source-path" content="docs\autobot-provider-agnostic-workflow-contract\design.md">
+  <meta name="source-sha256" content="5e9b273005d92d9d2985af351fc275644d2f6330c8037f1615291167fe223f9f">
+  <meta name="generator" content="blueprint/html-doc@1">
+  <title>Autobot provider-agnostic workflow contract alignment</title>
+  <style>:root {
+  color-scheme: light;
+  --paper: #f7f9fb;
+  --surface: #ffffff;
+  --surface-soft: #edf2f5;
+  --ink: #172630;
+  --muted: #526773;
+  --line: #ccd8df;
+  --line-strong: #8fa5b3;
+  --accent: #385e75;
+  --accent-soft: #dbe5ec;
+  --focus: #176b93;
+  --risk: #6b4f28;
+  --risk-soft: #f3ecdf;
+  --radius: 12px;
+  --shadow: 0 16px 42px rgb(31 54 68 / 10%);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 16px;
+  line-height: 1.65;
+  background: var(--paper);
+  color: var(--ink);
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { margin: 0; background: var(--paper); }
+a { color: var(--accent); text-underline-offset: 0.16em; }
+a:hover { text-decoration-thickness: 2px; }
+a:focus-visible, summary:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 3px;
+  border-radius: 3px;
+}
+
+.skip-link {
+  position: fixed;
+  z-index: 10;
+  left: 1rem;
+  top: 1rem;
+  padding: .65rem .9rem;
+  background: var(--ink);
+  color: white;
+  transform: translateY(-180%);
+}
+.skip-link:focus { transform: translateY(0); }
+
+.document-header {
+  border-bottom: 1px solid var(--line);
+  background: linear-gradient(145deg, #e5edf2 0%, #f7f9fb 70%);
+}
+.document-header__inner,
+.page-shell,
+.document-footer {
+  width: min(1180px, calc(100% - 2rem));
+  margin-inline: auto;
+}
+.document-header__inner { padding: 3.8rem 0 3rem; }
+.eyebrow {
+  margin: 0 0 .8rem;
+  color: var(--accent);
+  font-size: .78rem;
+  font-weight: 750;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+.document-title {
+  max-width: 900px;
+  margin: 0;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(2.25rem, 5vw, 4.6rem);
+  font-weight: 500;
+  line-height: 1.05;
+  letter-spacing: -.035em;
+}
+.metadata {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .55rem 1.25rem;
+  margin: 1.6rem 0 0;
+  color: var(--muted);
+  font-size: .88rem;
+}
+.metadata dt { font-weight: 700; color: var(--ink); }
+.metadata dd { margin: 0; overflow-wrap: anywhere; }
+.metadata__item { display: grid; grid-template-columns: auto 1fr; gap: .35rem; }
+
+.page-shell {
+  display: grid;
+  grid-template-columns: minmax(190px, 250px) minmax(0, 1fr);
+  gap: clamp(2rem, 5vw, 5rem);
+  align-items: start;
+  padding-block: 3rem 5rem;
+}
+.toc {
+  position: sticky;
+  top: 1rem;
+  max-height: calc(100vh - 2rem);
+  overflow: auto;
+  padding: 1.1rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: rgb(255 255 255 / 78%);
+}
+.toc-title { margin: 0 0 .75rem; font: 750 .78rem/1.2 Inter, sans-serif; letter-spacing: .09em; text-transform: uppercase; }
+.toc ol { list-style: none; padding: 0; margin: 0; }
+.toc li + li { margin-top: .34rem; }
+.toc li[data-level="3"] { padding-left: .8rem; font-size: .88rem; }
+.toc a { display: block; color: var(--muted); text-decoration: none; line-height: 1.35; }
+.toc a:hover { color: var(--ink); }
+
+.document-content {
+  min-width: 0;
+  padding: clamp(1.4rem, 4vw, 3.8rem);
+  border: 1px solid var(--line);
+  border-radius: calc(var(--radius) + 4px);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+.source-block { min-width: 0; }
+.source-block > :first-child { margin-top: 0; }
+.source-block > :last-child { margin-bottom: 0; }
+.source-block + .source-block { margin-top: 1rem; }
+.source-block:has(> h1), .source-block:has(> h2) { margin-top: 3.7rem; }
+.source-block:first-child { margin-top: 0; }
+h1, h2, h3, h4 { color: var(--ink); line-height: 1.2; scroll-margin-top: 1.5rem; }
+.document-content h1 { font: 500 clamp(2rem, 5vw, 3.2rem)/1.08 Georgia, serif; letter-spacing: -.025em; }
+.document-content h2 { padding-top: .4rem; font: 500 clamp(1.7rem, 3vw, 2.3rem)/1.15 Georgia, serif; letter-spacing: -.018em; }
+.document-content h3 { font-size: 1.12rem; }
+.document-content h4 { font-size: 1rem; }
+p, ul, ol, blockquote, pre, table, figure { margin-block: 1rem; }
+blockquote {
+  margin-inline: 0;
+  padding: .8rem 1rem;
+  border-left: 4px solid var(--line-strong);
+  background: var(--surface-soft);
+  color: #314854;
+}
+blockquote > :first-child { margin-top: 0; }
+blockquote > :last-child { margin-bottom: 0; }
+.role-requirements, .role-acceptance-criteria, .role-invariants,
+.role-decisions, .role-risks, .role-open-questions {
+  margin-top: 1.25rem;
+  padding: 1rem 1.2rem;
+  border-left: 4px solid var(--line-strong);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  background: var(--surface-soft);
+}
+.role-risks, .role-open-questions { border-left-color: var(--risk); background: var(--risk-soft); }
+code, pre { font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace; }
+code { padding: .12em .32em; border-radius: 4px; background: var(--surface-soft); font-size: .9em; }
+code { overflow-wrap: anywhere; word-break: break-word; }
+pre {
+  max-width: 100%;
+  overflow: auto;
+  padding: 1rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #132630;
+  color: #edf4f7;
+  line-height: 1.48;
+}
+pre code { padding: 0; background: transparent; color: inherit; }
+.table-wrap { max-width: 100%; overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: .93rem; }
+th, td { padding: .68rem .75rem; border: 1px solid var(--line); text-align: left; vertical-align: top; }
+th, td { overflow-wrap: anywhere; word-break: break-word; }
+th { background: var(--surface-soft); font-weight: 720; }
+tbody tr:nth-child(even) { background: #f9fbfc; }
+.diagram {
+  padding: 1rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: #fbfcfd;
+}
+.diagram img { display: block; width: 100%; height: auto; max-height: 650px; object-fit: contain; }
+.diagram figcaption { margin-top: .75rem; color: var(--muted); font-size: .86rem; }
+.diagram details { margin-top: .8rem; }
+.diagram summary { cursor: pointer; color: var(--accent); font-weight: 650; }
+.diagram details pre { max-height: 18rem; }
+.document-footer { padding: 0 0 3rem; color: var(--muted); font-size: .82rem; }
+
+@media (max-width: 760px) {
+  .document-header__inner { padding: 2.7rem 0 2.2rem; }
+  .page-shell { grid-template-columns: 1fr; gap: 1.2rem; padding-top: 1.25rem; }
+  .toc { position: static; max-height: none; }
+  .document-content { padding: 1.25rem; border-radius: var(--radius); }
+  .source-block:has(> h1), .source-block:has(> h2) { margin-top: 2.7rem; }
+}
+
+@media print {
+  :root { background: white; font-size: 10.5pt; }
+  @page { size: auto; margin: 16mm; }
+  .skip-link, .toc { display: none; }
+  .document-header { background: white; }
+  .document-header__inner, .page-shell, .document-footer { width: 100%; }
+  .document-header__inner { padding: 0 0 12mm; }
+  .document-title { font-size: 28pt; }
+  .page-shell { display: block; padding: 0; }
+  .document-content { padding: 0; border: 0; box-shadow: none; }
+  h1, h2, h3, h4 { break-after: avoid-page; }
+  table, figure, pre, blockquote { break-inside: avoid; }
+  thead { display: table-header-group; }
+  pre { white-space: pre-wrap; overflow-wrap: anywhere; }
+  .document-footer { padding: 10mm 0 0; }
+}
+</style>
+</head>
+<body>
+  <a class="skip-link" href="#document-content">Skip to document</a>
+  <header class="document-header">
+    <div class="document-header__inner">
+      <p class="eyebrow">Technical design</p>
+      <p class="document-title">Autobot provider-agnostic workflow contract alignment</p>
+      <dl class="metadata">
+        <div class="metadata__item"><dt>Status</dt><dd>Proposed for review</dd></div>
+        <div class="metadata__item"><dt>Source</dt><dd>docs\autobot-provider-agnostic-workflow-contract\design.md</dd></div>
+        <div class="metadata__item"><dt>SHA-256</dt><dd><code>5e9b273005d92d9d2985af351fc275644d2f6330c8037f1615291167fe223f9f</code></dd></div>
+      </dl>
+    </div>
+  </header>
+  <div class="page-shell">
+    <nav class="toc" aria-label="Document contents"><p class="toc-title">Contents</p><ol><li data-level="2"><a href="#1-requirements-what-and-why">1. Requirements: what and why</a></li><li data-level="2"><a href="#2-user-experience">2. User experience</a></li><li data-level="2"><a href="#3-technical-design-and-choices">3. Technical design and choices</a></li><li data-level="3"><a href="#label-contract-normalization">Label contract normalization</a></li><li data-level="3"><a href="#provider-independent-phase-engine">Provider-independent phase engine</a></li><li data-level="3"><a href="#invariants">Invariants</a></li><li data-level="3"><a href="#security-and-operations">Security and operations</a></li><li data-level="2"><a href="#4-acceptance-and-proof">4. Acceptance and proof</a></li><li data-level="2"><a href="#5-open-questions">5. Open questions</a></li></ol></nav>
+    <main id="document-content" class="document-content" data-source-block-count="33">
+<section id="autobot-provider-agnostic-workflow-contract-alignment"
+class="source-block" data-source-block="1"
+data-source-sha256="0a1e7afd69ac8565fb24e5f337a2c6ceddf28c85d6f58a965bf076965347032e">
+<h1>Autobot provider-agnostic workflow contract alignment</h1>
+</section>
+<div class="source-block" data-source-block="2"
+data-source-sha256="f3cfda141bb0d969e973d91600064c759ac4c936fa82e9f2c3f6bb2a60fbb270">
+<blockquote>
+<p><strong>Status:</strong> Proposed for review</p>
+</blockquote>
+</div>
+<section id="1-requirements-what-and-why" class="source-block"
+data-source-block="3"
+data-source-sha256="97c886c1e41bd4a5bb4fe29a0dbfa859d88226e2df3d51627c0eea774bb6a981">
+<h2>1. Requirements: what and why</h2>
+</section>
+<div class="source-block" data-source-block="4"
+data-source-sha256="c6cf191d102b028b0f831fe9f759429356f34117fa286434eb53b5e7fd0f468e">
+<p>Autobot already supports both Codex and GitHub Copilot execution
+paths, but the current workflow state machine does not fully match the
+intended human-gated delivery process. In particular, implementation
+currently starts from <code>autobot-in-review</code>, which conflates
+"start coding" and "human PR review", and the handoff between approved
+specification and implementation-ready tasks is underspecified for
+cross-provider consistency.</p>
+</div>
+<div class="source-block" data-source-block="5"
+data-source-sha256="0b97176bfd77424a67dc92b6657ec9562df5bfce3da396d9615863a21d600cd6">
+<p>The required outcome is one provider-agnostic phase contract where
+Codex and Copilot runs must follow the same issue lifecycle and
+project-stage mapping:</p>
+</div>
+<div class="source-block" data-source-block="6"
+data-source-sha256="1be62c6c65bd30fbceaae7e7ca399e4b44bca022da72e78619a83caaa62944a0">
+<ul>
+<li><code>autobot-ready-for-spec</code> starts specification work.</li>
+<li><code>autobot-creating-specification</code> means Autobot is
+producing the design artifact.</li>
+<li><code>autobot-review-specification</code> is the explicit human gate
+for design acceptance or rework.</li>
+<li><code>autobot-ready-to-implement</code> starts planning from
+approved design.</li>
+<li>Planned task issues are created in <strong>Ready to
+implement</strong> and are explicitly marked as Autobot tasks.</li>
+<li><code>autobot-implementing</code> starts implementation for one
+approved task.</li>
+<li><code>autobot-in-review</code> means implementation is complete and
+awaiting human PR review.</li>
+<li>Closing an approved issue moves it to <strong>Done</strong>.</li>
+</ul>
+</div>
+<div class="source-block" data-source-block="7"
+data-source-sha256="b6e1a17f7fd1219d9597f5a57343e336542eb28d4631c66a5612b1580bfb2fc7">
+<p>Constraints:</p>
+</div>
+<div class="source-block" data-source-block="8"
+data-source-sha256="d3ddfd3946648031866c1b8db705400cf383bb2f88c3ddfecb6d75dc9a28a200">
+<ul>
+<li>No automatic phase skipping, regardless of provider.</li>
+<li>Workflow-owned label and project-stage side effects remain
+deterministic.</li>
+<li>Existing repositories must have a migration path from typo-prone
+<code>autoboot*</code> labels without breaking active queues.</li>
+</ul>
+</div>
+<div class="source-block" data-source-block="9"
+data-source-sha256="1dc137df84b6cfda067cd437d01723b6dd342a91a0fb96402cf1d43600695235">
+<p>Out of scope:</p>
+</div>
+<div class="source-block" data-source-block="10"
+data-source-sha256="16fb05523e4c5f64bfc45cf94216cbe79c31ccb84a51ee9c793cb41cf2889b21">
+<ul>
+<li>Automatic PR merge or deployment orchestration.</li>
+<li>Multi-branch release flow beyond current main-branch process.</li>
+<li>Adding new AI providers beyond Codex and GitHub Copilot.</li>
+</ul>
+</div>
+<section id="2-user-experience" class="source-block"
+data-source-block="11"
+data-source-sha256="46fbd79d74f3e09c7eeb160eb90581b4f56dc2e628ec4f9f1910935bd1d5630e">
+<h2>2. User experience</h2>
+</section>
+<div class="source-block" data-source-block="12"
+data-source-sha256="da905258a39de7c62760cc852e20959030dd144df0be801a137c581e6fc75324">
+<p>A human drives lifecycle intent with labels, and Autobot executes
+only the phase requested by that label.</p>
+</div>
+<div class="source-block" data-source-block="13"
+data-source-sha256="5e0028e433aa5a62cb090b7c8c1865d93c2386db8ce60540241301ad9cb021f9">
+<p>Main flow:</p>
+</div>
+<div class="source-block" data-source-block="14"
+data-source-sha256="067185ee359b776783aff5a3b1ae7361dbc0bfddc3442035e64c4b1fb728e750">
+<ol type="1">
+<li>A feature issue is moved to <strong>Ready for spec</strong> and
+labelled <code>autobot-ready-for-spec</code>.</li>
+<li>Autobot starts specification (<code>design</code> skill), removes
+trigger label, applies <code>autobot-creating-specification</code>, and
+keeps the issue in <strong>Creating specification</strong> while
+producing or updating the design PR/artifact.</li>
+<li>When design output is ready, Autobot applies
+<code>autobot-review-specification</code> and removes
+<code>autobot-creating-specification</code>.</li>
+<li>Human review happens in <strong>Review specification</strong>:
+<ul>
+<li>If changes are needed, the reviewer comments, moves back to
+<strong>Ready for spec</strong>, and reapplies
+<code>autobot-ready-for-spec</code>.</li>
+<li>If approved, the reviewer applies
+<code>autobot-ready-to-implement</code>.</li>
+</ul></li>
+<li>Autobot planning (<code>plan</code> skill) creates task issues from
+approved design. Each task is created in <strong>Ready to
+implement</strong> with task marker labels, and the feature issue
+remains a parent/coordinator.</li>
+<li>A human approves a task for coding by adding
+<code>autobot-implementing</code>.</li>
+<li>Autobot implementation (<code>task-to-pr</code> skill) runs for that
+task, moves issue to <strong>Implementing</strong> during active work,
+then sets <code>autobot-in-review</code> when the PR is ready.</li>
+<li>Human reviews the PR:
+<ul>
+<li>If changes are needed, reviewer comments and the task returns to
+implementation flow (<code>autobot-implementing</code>).</li>
+<li>If approved and completed, issue is closed and stage becomes
+<strong>Done</strong>.</li>
+</ul></li>
+</ol>
+</div>
+<div class="source-block" data-source-block="15"
+data-source-sha256="e36f3a1f8b9cc41e0baf87cbcf4c13e2afa5d0128472eb3c68f4c98248f4c0b3">
+<p>Failure outcomes:</p>
+</div>
+<div class="source-block" data-source-block="16"
+data-source-sha256="ab56532c19090de17485e878cc635d68c89393cabe12d1affd8b869fd6ae2d41">
+<ul>
+<li>Missing configuration, invalid provider, or artifact contract
+failure applies <code>autobot-blocked</code> with a single actionable
+comment.</li>
+<li>Retries always require explicit human re-labelling.</li>
+</ul>
+</div>
+<section id="3-technical-design-and-choices" class="source-block"
+data-source-block="17"
+data-source-sha256="a85017480a06b18076467a0c66aa44309a60208f66d349106c8eb1db148c4eb6">
+<h2>3. Technical design and choices</h2>
+</section>
+<section id="label-contract-normalization" class="source-block"
+data-source-block="18"
+data-source-sha256="5b62a6af595e707bbb93e7c35715bf4925ea534db1ff4fbff6f10d6d8db58468">
+<h3>Label contract normalization</h3>
+</section>
+<div class="source-block" data-source-block="19"
+data-source-sha256="219a7927b7850e845e5010a4e951f8f162c6173bbd0c8d966817eb5504b15825">
+<p><strong>Decision:</strong> keep <code>autobot-*</code> as canonical
+labels and add compatibility alias handling for <code>autoboot*</code>
+triggers.<br />
+<strong>Why:</strong> the current repository and workflows already use
+<code>autobot-*</code>; alias support prevents queue loss from typo or
+legacy usage.<br />
+<strong>Tradeoff:</strong> extra routing and cleanup logic until aliases
+are retired.</p>
+</div>
+<div class="source-block" data-source-block="20"
+data-source-sha256="f485f72b487615c8ad182bc953e935db866d87ab8f1a6c9c5539009064472b8a">
+<p>Canonical labels:</p>
+</div>
+<div class="source-block" data-source-block="21"
+data-source-sha256="261767e739ca80c2878e4ca518e7aa4de1e216bd725dc76d5f97fc947c07ec00">
+<ul>
+<li>Phase triggers: <code>autobot-ready-for-spec</code>,
+<code>autobot-ready-to-implement</code>,
+<code>autobot-implementing</code></li>
+<li>Phase states: <code>autobot-creating-specification</code>,
+<code>autobot-review-specification</code>,
+<code>autobot-in-review</code>, <code>autobot-blocked</code></li>
+<li>Task marker: <code>autobot-task</code> (optional companion alias:
+<code>autoboot</code> for discoverability during migration)</li>
+</ul>
+</div>
+<section id="provider-independent-phase-engine" class="source-block"
+data-source-block="22"
+data-source-sha256="d048e6f79d53b59060c35931e8c24096664197325f42c612f4ceab184d0a4403">
+<h3>Provider-independent phase engine</h3>
+</section>
+<div class="source-block" data-source-block="23"
+data-source-sha256="64d89c0c3b3ea25b1e54eade488c173f35ee219673993a6e568b371a9eef4241">
+<p><strong>Decision:</strong> enforce identical phase transitions in
+workflow-owned scripts for both providers.<br />
+<strong>Why:</strong> "regardless of provider" means provider adapters
+may differ in execution mechanics, but not in lifecycle semantics.<br />
+<strong>Tradeoff:</strong> Copilot completion logic must map to the same
+transitions as synchronous Codex runs.</p>
+</div>
+<div class="source-block" data-source-block="24"
+data-source-sha256="223a75e3996b7e4180c421b279bc632eddb046ea41158e9ce6d77f9c589e51bf">
+<p>Required script and workflow changes:</p>
+</div>
+<div class="source-block" data-source-block="25"
+data-source-sha256="d489f9b92fcc3206560e26c17989e991377a57f160d576ff8080fc3e6aced8f0">
+<ul>
+<li>Router triggers implement phase on <code>autobot-implementing</code>
+(not <code>autobot-in-review</code>).</li>
+<li>Implement script sets stage to <strong>Implementing</strong> at
+start, then to <strong>In review</strong> only after successful
+completion.</li>
+<li>Spec script promotes to <code>autobot-review-specification</code>
+once design output is ready; <code>autobot-creating-specification</code>
+remains strictly "work in progress".</li>
+<li>Plan script ensures all created sub-issues receive
+<code>autobot-task</code> and land in <strong>Ready to
+implement</strong>.</li>
+<li>Copilot completion script applies the same terminal labels/stages as
+Codex scripts for each phase.</li>
+</ul>
+</div>
+<section id="invariants" class="source-block role-invariants"
+data-source-block="26"
+data-source-sha256="41701f368993e3f63ab599cb3ebcf32756d56c298bf06612195e918bf86cd6b4">
+<h3>Invariants</h3>
+</section>
+<div class="source-block" data-source-block="27"
+data-source-sha256="e59865cbe2005a67319b2c6687e4c388ffdc741639ae629994f5e0d5b2a346b7">
+<ul>
+<li><strong>INV-1:</strong> Provider selection must never change label
+transition semantics.</li>
+<li><strong>INV-2:</strong> Only one trigger label starts each
+phase.</li>
+<li><strong>INV-3:</strong> <code>autobot-in-review</code> is terminal
+for implementation phase, never a phase trigger.</li>
+<li><strong>INV-4:</strong> Implementation can start only for issues
+marked as Autobot tasks.</li>
+<li><strong>INV-5:</strong> Human approval gates between spec, plan, and
+implementation are mandatory and explicit.</li>
+<li><strong>INV-6:</strong> Issue/project stage mapping is derived from
+current labels and close state, not provider-specific outputs.</li>
+<li><strong>INV-7:</strong> Alias labels (<code>autoboot*</code>) are
+normalized to canonical labels before phase logic executes.</li>
+</ul>
+</div>
+<section id="security-and-operations" class="source-block"
+data-source-block="28"
+data-source-sha256="95a9d578893a4290a69b68c19a560aab6c1c04144f9d3a54489e97b346298f1e">
+<h3>Security and operations</h3>
+</section>
+<div class="source-block" data-source-block="29"
+data-source-sha256="9daae54eb0d875230b62786782e267a741a794e6e58e9486bba0afe31ff50fba">
+<p>Issue and PR text remain untrusted input; scripts continue to own all
+state transitions and secret-guard checks before posting generated
+content. Concurrency remains per issue to prevent duplicate runs.
+Timeouts and provider misconfiguration continue to end in
+<code>autobot-blocked</code> with run URL for operator recovery.</p>
+</div>
+<section id="4-acceptance-and-proof" class="source-block"
+data-source-block="30"
+data-source-sha256="372906f1cdb3dc83bd8f993088fcbd3655fee7cb46ed817e2c7c274f86dad817">
+<h2>4. Acceptance and proof</h2>
+</section>
+<div class="source-block table-wrap" data-source-block="31"
+data-source-sha256="6c1761bcccaba2f2c85f5da081221f84a89374af524aae18b57c41a79c90b956">
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Done when</th>
+<th>How to check</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>AC-1</td>
+<td>Label <code>autobot-ready-for-spec</code> starts spec run and sets
+<code>autobot-creating-specification</code> while work is in
+progress</td>
+<td>Label a sandbox feature issue and inspect labels plus project
+stage</td>
+</tr>
+<tr>
+<td>AC-2</td>
+<td>Completed spec output moves issue to
+<code>autobot-review-specification</code> and <strong>Review
+specification</strong></td>
+<td>Complete a spec run (Codex and Copilot modes) and verify resulting
+labels/stage</td>
+</tr>
+<tr>
+<td>AC-3</td>
+<td>Reviewer rework loop works by commenting and reapplying
+<code>autobot-ready-for-spec</code></td>
+<td>Simulate review feedback and confirm retrigger behavior</td>
+</tr>
+<tr>
+<td>AC-4</td>
+<td>Label <code>autobot-ready-to-implement</code> creates task issues
+with <code>autobot-task</code> in <strong>Ready to
+implement</strong></td>
+<td>Trigger plan and verify issue labels/stage for all created
+tasks</td>
+</tr>
+<tr>
+<td>AC-5</td>
+<td>Label <code>autobot-implementing</code> starts implementation and
+sets stage <strong>Implementing</strong></td>
+<td>Label a task issue and verify run start state</td>
+</tr>
+<tr>
+<td>AC-6</td>
+<td>Successful implementation changes label/state to
+<code>autobot-in-review</code> and stage <strong>In review</strong></td>
+<td>Complete implementation and verify issue label/stage</td>
+</tr>
+<tr>
+<td>AC-7</td>
+<td><code>autobot-in-review</code> does not trigger new implementation
+runs</td>
+<td>Apply <code>autobot-in-review</code> directly and verify no
+implementation workflow dispatch</td>
+</tr>
+<tr>
+<td>AC-8</td>
+<td>Closing approved issue moves stage to <strong>Done</strong></td>
+<td>Close a reviewed task issue and verify stage update</td>
+</tr>
+<tr>
+<td>AC-9</td>
+<td>Codex and Copilot produce identical label/state transitions for same
+phase events</td>
+<td>Run one end-to-end sandbox flow per provider and diff resulting
+issue timelines</td>
+</tr>
+<tr>
+<td>AC-10</td>
+<td><code>autoboot*</code> alias labels are normalized to canonical
+labels without duplicate runs</td>
+<td>Apply alias labels in sandbox and verify canonical label replacement
+plus single run</td>
+</tr>
+</tbody>
+</table>
+</div>
+<section id="5-open-questions" class="source-block role-open-questions"
+data-source-block="32"
+data-source-sha256="028a19fde90928e0153ae234a6da431e92b57e965368d736138d6df706f01023">
+<h2>5. Open questions</h2>
+</section>
+<div class="source-block" data-source-block="33"
+data-source-sha256="18428fb3d63f0f265fcc33253e3bc3cc9c95d939e207ce3e015f252a7b29cd8b">
+<ol type="1">
+<li><strong>Alias retirement timeline.</strong> Recommended: keep
+<code>autoboot*</code> normalization for two release tags, then remove
+once usage telemetry shows near-zero alias events.
+<strong>Non-blocking</strong>.</li>
+<li><strong>Task marker consolidation.</strong> Recommended: keep
+<code>autobot-task</code> as authoritative and optionally add
+<code>autoboot</code> as migration-only companion label, then deprecate
+companion label later. <strong>Non-blocking</strong>.</li>
+</ol>
+</div>
+
+    </main>
+  </div>
+  <footer class="document-footer">Generated from docs\autobot-provider-agnostic-workflow-contract\design.md by blueprint/html-doc@1. Edit the Markdown source, then regenerate.</footer>
+</body>
+</html>
