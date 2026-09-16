@@ -124,20 +124,11 @@ EOF
     echo "skip: spec completion requires docs/${issue_number}-*/design.md in the handoff PR."
     exit 0
   fi
-fi
 
-strict_mode="$(copilot_strict_artifact_mode)"
-if [[ "$artifact_status" != "completed" ]]; then
-  if [[ "$strict_mode" == "true" ]]; then
-    echo "skip: strict artifact mode requires ${artifact_path} status=completed."
-    exit 0
-  fi
-
-  if [[ "$phase" == "spec" ]]; then
-    git show "${ref}:${design_path}" > .autobot/output/spec-design.md 2>/dev/null || true
-    if grep -Fq "Autobot Copilot handoff placeholder." .autobot/output/spec-design.md 2>/dev/null; then
-      if [[ -n "$pending_marker" ]] && ! printf '%s' "$issue_comments" | grep -Fq "$pending_marker"; then
-        cat > .autobot/output/spec-pending-comment.txt <<EOF
+  git show "${ref}:${design_path}" > .autobot/output/spec-design.md 2>/dev/null || true
+  if grep -Fq "Autobot Copilot handoff placeholder." .autobot/output/spec-design.md 2>/dev/null; then
+    if [[ -n "$pending_marker" ]] && ! printf '%s' "$issue_comments" | grep -Fq "$pending_marker"; then
+      cat > .autobot/output/spec-pending-comment.txt <<EOF
 Autobot spec completion is still waiting for real design content.
 
 - Required design file: \`${design_path}\`
@@ -146,31 +137,33 @@ Autobot spec completion is still waiting for real design content.
 
 ${pending_marker}
 EOF
-        if guard_text_file .autobot/output/spec-pending-comment.txt; then
-          gh issue comment "$issue_number" --repo "$REPOSITORY" --body-file .autobot/output/spec-pending-comment.txt >/dev/null || true
-        else
-          gh issue comment "$issue_number" --repo "$REPOSITORY" --body "Autobot spec completion is waiting for non-placeholder design content in \`${design_path}\` (${pending_marker})." >/dev/null || true
-        fi
+      if guard_text_file .autobot/output/spec-pending-comment.txt; then
+        gh issue comment "$issue_number" --repo "$REPOSITORY" --body-file .autobot/output/spec-pending-comment.txt >/dev/null || true
+      else
+        gh issue comment "$issue_number" --repo "$REPOSITORY" --body "Autobot spec completion is waiting for non-placeholder design content in \`${design_path}\` (${pending_marker})." >/dev/null || true
       fi
-      echo "skip: spec design file still contains placeholder handoff text."
-      exit 0
     fi
-    python - "$artifact_file" "$pr_title_current" "$pr_body_current" "$design_path" <<'PY'
-import json
-import pathlib
-import sys
-payload = {
-    "status": "completed",
-    "issue_comment": f"Design draft is ready for review at `{sys.argv[4]}`.",
-    "pr_title": sys.argv[2],
-    "pr_body": sys.argv[3],
-    "blocked_reason": "",
-}
-path = pathlib.Path(sys.argv[1])
-path.parent.mkdir(parents=True, exist_ok=True)
-path.write_text(json.dumps(payload), encoding="utf-8")
-PY
-  elif [[ "$phase" == "implement" ]]; then
+    echo "skip: spec design file still contains placeholder handoff text."
+    exit 0
+  fi
+  if ! grep -q '[^[:space:]]' .autobot/output/spec-design.md 2>/dev/null; then
+    echo "skip: spec design file is empty and must contain final design content."
+    exit 0
+  fi
+fi
+
+strict_mode="$(copilot_strict_artifact_mode)"
+if [[ "$artifact_status" != "completed" ]]; then
+  if [[ "$strict_mode" == "true" || "$phase" == "spec" ]]; then
+    if [[ "$phase" == "spec" ]]; then
+      echo "skip: spec completion requires ${artifact_path} status=completed with completion-ready metadata."
+    else
+      echo "skip: strict artifact mode requires ${artifact_path} status=completed."
+    fi
+    exit 0
+  fi
+
+  if [[ "$phase" == "implement" ]]; then
     changed_files="$(git diff --name-only "origin/${DEFAULT_BRANCH}...${ref}" | grep -Ev '^(\.autobot/|$)' || true)"
     if [[ -z "$changed_files" ]]; then
       echo "skip: relaxed mode still requires non-.autobot changes for implement completion."
@@ -193,6 +186,36 @@ path.write_text(json.dumps(payload), encoding="utf-8")
 PY
   else
     echo "skip: plan phase requires completed artifact payload."
+    exit 0
+  fi
+fi
+
+if [[ "$phase" == "spec" ]]; then
+  if ! spec_artifact_reason="$(python - "$artifact_file" <<'PY'
+import json
+import sys
+
+payload = json.load(open(sys.argv[1], "r", encoding="utf-8"))
+issue_comment = str(payload.get("issue_comment", "")).strip()
+pr_title = str(payload.get("pr_title", "")).strip()
+pr_body = str(payload.get("pr_body", "")).strip()
+blocked_reason = str(payload.get("blocked_reason", "")).strip()
+
+if not issue_comment:
+    print("issue_comment must be non-empty when status=completed.")
+    sys.exit(1)
+if not pr_title:
+    print("pr_title must be non-empty when status=completed.")
+    sys.exit(1)
+if not pr_body:
+    print("pr_body must be non-empty when status=completed.")
+    sys.exit(1)
+if blocked_reason:
+    print("blocked_reason must be empty when status=completed.")
+    sys.exit(1)
+PY
+  )"; then
+    echo "skip: spec completion requires completion-ready metadata in ${artifact_path} (${spec_artifact_reason})"
     exit 0
   fi
 fi

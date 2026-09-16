@@ -1,7 +1,7 @@
 {
-  "status": "in_progress",
-  "blocked_reason": "Copilot handoff initialized; update this artifact to status=completed in the correlated PR.",
-  "issue_comment": "",
-  "pr_title": "",
-  "pr_body": ""
+  "status": "completed",
+  "blocked_reason": "",
+  "issue_comment": "Implemented issue #74 by requiring spec completion checks to validate both final design content and completion-ready spec artifact metadata before phase acceptance.",
+  "pr_title": "Autobot implement handoff for issue #74",
+  "pr_body": "This pull request implements issue #74 by tightening Copilot spec completion behavior:\n- spec completion now requires both a non-placeholder, non-empty design document and a completion-ready `.autobot/output/spec.json`\n- relaxed mode no longer auto-completes spec artifacts\n- spec polling now waits for the merged design contract and emits clear pending reasons when checks are not yet satisfied\n\nRun token: `autobot-implement-74-35123939373`\n\nFixes #74"
 }
