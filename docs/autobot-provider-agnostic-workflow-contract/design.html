@@ -6,7 +6,7 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data:; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'">
   <meta name="document-kind" content="design">
   <meta name="source-path" content="docs\autobot-provider-agnostic-workflow-contract\design.md">
-  <meta name="source-sha256" content="5e9b273005d92d9d2985af351fc275644d2f6330c8037f1615291167fe223f9f">
+  <meta name="source-sha256" content="b1ce5af407e9d5907ca0d526761882c4b7df56e80c7e15fabe205e4cc83243b9">
   <meta name="generator" content="blueprint/html-doc@1">
   <title>Autobot provider-agnostic workflow contract alignment</title>
   <style>:root {
@@ -225,13 +225,13 @@ tbody tr:nth-child(even) { background: #f9fbfc; }
       <dl class="metadata">
         <div class="metadata__item"><dt>Status</dt><dd>Proposed for review</dd></div>
         <div class="metadata__item"><dt>Source</dt><dd>docs\autobot-provider-agnostic-workflow-contract\design.md</dd></div>
-        <div class="metadata__item"><dt>SHA-256</dt><dd><code>5e9b273005d92d9d2985af351fc275644d2f6330c8037f1615291167fe223f9f</code></dd></div>
+        <div class="metadata__item"><dt>SHA-256</dt><dd><code>b1ce5af407e9d5907ca0d526761882c4b7df56e80c7e15fabe205e4cc83243b9</code></dd></div>
       </dl>
     </div>
   </header>
   <div class="page-shell">
-    <nav class="toc" aria-label="Document contents"><p class="toc-title">Contents</p><ol><li data-level="2"><a href="#1-requirements-what-and-why">1. Requirements: what and why</a></li><li data-level="2"><a href="#2-user-experience">2. User experience</a></li><li data-level="2"><a href="#3-technical-design-and-choices">3. Technical design and choices</a></li><li data-level="3"><a href="#label-contract-normalization">Label contract normalization</a></li><li data-level="3"><a href="#provider-independent-phase-engine">Provider-independent phase engine</a></li><li data-level="3"><a href="#invariants">Invariants</a></li><li data-level="3"><a href="#security-and-operations">Security and operations</a></li><li data-level="2"><a href="#4-acceptance-and-proof">4. Acceptance and proof</a></li><li data-level="2"><a href="#5-open-questions">5. Open questions</a></li></ol></nav>
-    <main id="document-content" class="document-content" data-source-block-count="33">
+    <nav class="toc" aria-label="Document contents"><p class="toc-title">Contents</p><ol><li data-level="2"><a href="#1-requirements-what-and-why">1. Requirements: what and why</a></li><li data-level="2"><a href="#2-user-experience">2. User experience</a></li><li data-level="2"><a href="#3-technical-design-and-choices">3. Technical design and choices</a></li><li data-level="3"><a href="#label-contract-normalization">Label contract normalization</a></li><li data-level="3"><a href="#provider-independent-phase-engine">Provider-independent phase engine</a></li><li data-level="3"><a href="#main-feature-issue-contract">Main feature issue contract</a></li><li data-level="3"><a href="#invariants">Invariants</a></li><li data-level="3"><a href="#security-and-operations">Security and operations</a></li><li data-level="2"><a href="#4-acceptance-and-proof">4. Acceptance and proof</a></li><li data-level="2"><a href="#5-open-questions">5. Open questions</a></li></ol></nav>
+    <main id="document-content" class="document-content" data-source-block-count="37">
 <section id="autobot-provider-agnostic-workflow-contract-alignment"
 class="source-block" data-source-block="1"
 data-source-sha256="0a1e7afd69ac8565fb24e5f337a2c6ceddf28c85d6f58a965bf076965347032e">
@@ -249,14 +249,14 @@ data-source-sha256="97c886c1e41bd4a5bb4fe29a0dbfa859d88226e2df3d51627c0eea774bb6
 <h2>1. Requirements: what and why</h2>
 </section>
 <div class="source-block" data-source-block="4"
-data-source-sha256="c6cf191d102b028b0f831fe9f759429356f34117fa286434eb53b5e7fd0f468e">
+data-source-sha256="bbe714a5002636838b6c9594df6407aacca63af807fb63b056bdf8b5bb632621">
 <p>Autobot already supports both Codex and GitHub Copilot execution
-paths, but the current workflow state machine does not fully match the
-intended human-gated delivery process. In particular, implementation
-currently starts from <code>autobot-in-review</code>, which conflates
-"start coding" and "human PR review", and the handoff between approved
-specification and implementation-ready tasks is underspecified for
-cross-provider consistency.</p>
+paths, but the workflow contract still has gaps against the intended
+human-gated operating model. The biggest gap is around
+<code>autobot-ready-to-implement</code>: today planning creates tasks,
+but the parent issue lifecycle does not match the desired behavior where
+the original issue is closed and work continues in a new main feature
+tracker.</p>
 </div>
 <div class="source-block" data-source-block="5"
 data-source-sha256="0b97176bfd77424a67dc92b6657ec9562df5bfce3da396d9615863a21d600cd6">
@@ -265,7 +265,7 @@ Codex and Copilot runs must follow the same issue lifecycle and
 project-stage mapping:</p>
 </div>
 <div class="source-block" data-source-block="6"
-data-source-sha256="1be62c6c65bd30fbceaae7e7ca399e4b44bca022da72e78619a83caaa62944a0">
+data-source-sha256="bfd4d5c56da68de5930304728f9e63f0e8d694c6d82f566d110ac6bfc01c99aa">
 <ul>
 <li><code>autobot-ready-for-spec</code> starts specification work.</li>
 <li><code>autobot-creating-specification</code> means Autobot is
@@ -273,14 +273,20 @@ producing the design artifact.</li>
 <li><code>autobot-review-specification</code> is the explicit human gate
 for design acceptance or rework.</li>
 <li><code>autobot-ready-to-implement</code> starts planning from
-approved design.</li>
+approved design on the original issue, then closes that original issue
+as superseded.</li>
+<li>Planning creates a new main feature issue that contains a short
+human-readable design summary and links to full design and
+implementation tasks.</li>
 <li>Planned task issues are created in <strong>Ready to
-implement</strong> and are explicitly marked as Autobot tasks.</li>
+implement</strong>, are explicitly marked as Autobot tasks, and are
+linked from the new main feature issue.</li>
 <li><code>autobot-implementing</code> starts implementation for one
 approved task.</li>
 <li><code>autobot-in-review</code> means implementation is complete and
 awaiting human PR review.</li>
-<li>Closing an approved issue moves it to <strong>Done</strong>.</li>
+<li>Closing an approved task or main feature issue moves it to
+<strong>Done</strong>.</li>
 </ul>
 </div>
 <div class="source-block" data-source-block="7"
@@ -288,9 +294,16 @@ data-source-sha256="b6e1a17f7fd1219d9597f5a57343e336542eb28d4631c66a5612b1580bfb
 <p>Constraints:</p>
 </div>
 <div class="source-block" data-source-block="8"
-data-source-sha256="d3ddfd3946648031866c1b8db705400cf383bb2f88c3ddfecb6d75dc9a28a200">
+data-source-sha256="12b99f70602ebd5f468c6ff7a645594b77dadff3f70194749d28bafdfa7dd293">
 <ul>
-<li>No automatic phase skipping, regardless of provider.</li>
+<li>No automatic phase skipping, regardless of provider. In this
+contract that means Autobot can only do immediate next-step transitions
+for the active phase, and must never jump across a human gate. Examples:
+it may move <code>autobot-ready-for-spec</code> to
+<code>autobot-creating-specification</code>, but it must not jump
+directly to <code>autobot-ready-to-implement</code>; it may complete
+<code>autobot-implementing</code> to <code>autobot-in-review</code>, but
+it must not auto-close the issue as approved.</li>
 <li>Workflow-owned label and project-stage side effects remain
 deterministic.</li>
 <li>Existing repositories must have a migration path from typo-prone
@@ -324,7 +337,7 @@ data-source-sha256="5e0028e433aa5a62cb090b7c8c1865d93c2386db8ce60540241301ad9cb0
 <p>Main flow:</p>
 </div>
 <div class="source-block" data-source-block="14"
-data-source-sha256="067185ee359b776783aff5a3b1ae7361dbc0bfddc3442035e64c4b1fb728e750">
+data-source-sha256="5ef0e09ff4e0f21ef66409d836a0991219867f6b19d8a5e5f71708c3a2dc81d9">
 <ol type="1">
 <li>A feature issue is moved to <strong>Ready for spec</strong> and
 labelled <code>autobot-ready-for-spec</code>.</li>
@@ -343,12 +356,19 @@ producing or updating the design PR/artifact.</li>
 <li>If approved, the reviewer applies
 <code>autobot-ready-to-implement</code>.</li>
 </ul></li>
-<li>Autobot planning (<code>plan</code> skill) creates task issues from
-approved design. Each task is created in <strong>Ready to
-implement</strong> with task marker labels, and the feature issue
-remains a parent/coordinator.</li>
+<li>Autobot planning (<code>plan</code> skill) runs on the original
+issue and creates:
+<ul>
+<li>one new main feature issue that becomes the execution parent;</li>
+<li>a short design summary section for human readability;</li>
+<li>links to the approved design document and source issue;</li>
+<li>implementation task issues linked under the main feature.</li>
+</ul></li>
+<li>After successful main feature and task creation, Autobot closes the
+original issue with a "superseded by main feature" comment and
+links.</li>
 <li>A human approves a task for coding by adding
-<code>autobot-implementing</code>.</li>
+<code>autobot-implementing</code> on a task issue.</li>
 <li>Autobot implementation (<code>task-to-pr</code> skill) runs for that
 task, moves issue to <strong>Implementing</strong> during active work,
 then sets <code>autobot-in-review</code> when the PR is ready.</li>
@@ -359,6 +379,8 @@ implementation flow (<code>autobot-implementing</code>).</li>
 <li>If approved and completed, issue is closed and stage becomes
 <strong>Done</strong>.</li>
 </ul></li>
+<li>The main feature issue stays as the execution summary issue. Humans
+close it when its linked implementation tasks are done.</li>
 </ol>
 </div>
 <div class="source-block" data-source-block="15"
@@ -431,7 +453,7 @@ data-source-sha256="223a75e3996b7e4180c421b279bc632eddb046ea41158e9ce6d77f9c589e
 <p>Required script and workflow changes:</p>
 </div>
 <div class="source-block" data-source-block="25"
-data-source-sha256="d489f9b92fcc3206560e26c17989e991377a57f160d576ff8080fc3e6aced8f0">
+data-source-sha256="31e8d2280bfbe459fc327e13855f4e9e9c9a637bafddefa08689d0be4f571814">
 <ul>
 <li>Router triggers implement phase on <code>autobot-implementing</code>
 (not <code>autobot-in-review</code>).</li>
@@ -441,20 +463,57 @@ completion.</li>
 <li>Spec script promotes to <code>autobot-review-specification</code>
 once design output is ready; <code>autobot-creating-specification</code>
 remains strictly "work in progress".</li>
-<li>Plan script ensures all created sub-issues receive
-<code>autobot-task</code> and land in <strong>Ready to
-implement</strong>.</li>
+<li>Plan script creates or reuses a deterministic main feature issue
+keyed to the original issue, writes a short design summary in that
+issue, creates linked <code>autobot-task</code> sub-issues, and places
+both main feature and tasks in <strong>Ready to implement</strong>.</li>
+<li>Plan script closes the original approved-spec issue after successful
+main feature and sub-issue creation, with a comment linking to the new
+main feature issue.</li>
 <li>Copilot completion script applies the same terminal labels/stages as
 Codex scripts for each phase.</li>
 </ul>
 </div>
-<section id="invariants" class="source-block role-invariants"
+<section id="main-feature-issue-contract" class="source-block"
 data-source-block="26"
+data-source-sha256="d496ceff0472207709e0f6bcef22596e6d7062a8224a08c6444065a27500d256">
+<h3>Main feature issue contract</h3>
+</section>
+<div class="source-block" data-source-block="27"
+data-source-sha256="e4325d9d522038f84931ac5df603647ae562749a653e678fc43477014b43f065">
+<p><strong>Decision:</strong> planning rolls work over from original
+issue to a new main feature issue instead of keeping the original
+open.<br />
+<strong>Why:</strong> it matches the required operating model and gives
+one clean implementation tracker with readable summary plus subtask
+links.<br />
+<strong>Tradeoff:</strong> one additional issue object per feature and
+stricter idempotency requirements.</p>
+</div>
+<div class="source-block" data-source-block="28"
+data-source-sha256="aca7226d97b8608862a7c5a4589c4552d4e1e0e47a6575660777a683290e4994">
+<p>Main feature issue content:</p>
+</div>
+<div class="source-block" data-source-block="29"
+data-source-sha256="45bb5d6be763eff8ef233169b4e9e7f735dd29b9d621bf1d00c1623080d1a77a">
+<ul>
+<li>Short summary section generated from approved design intent and
+lifecycle decisions, formatted for quick human reading.</li>
+<li>Link to full design document
+(<code>docs/&lt;issue&gt;-&lt;slug&gt;/design.md</code>).</li>
+<li>Link back to closed original issue.</li>
+<li>Checklist or ordered list of implementation task issue links.</li>
+<li>Marker metadata for idempotent reruns (for example
+<code>Autobot Main Parent: #&lt;original-issue&gt;</code>).</li>
+</ul>
+</div>
+<section id="invariants" class="source-block role-invariants"
+data-source-block="30"
 data-source-sha256="41701f368993e3f63ab599cb3ebcf32756d56c298bf06612195e918bf86cd6b4">
 <h3>Invariants</h3>
 </section>
-<div class="source-block" data-source-block="27"
-data-source-sha256="e59865cbe2005a67319b2c6687e4c388ffdc741639ae629994f5e0d5b2a346b7">
+<div class="source-block" data-source-block="31"
+data-source-sha256="92c6910a64113008cb2c1cf12dfc9b417867b11a33330e22857245ad8c03e939">
 <ul>
 <li><strong>INV-1:</strong> Provider selection must never change label
 transition semantics.</li>
@@ -470,28 +529,38 @@ implementation are mandatory and explicit.</li>
 current labels and close state, not provider-specific outputs.</li>
 <li><strong>INV-7:</strong> Alias labels (<code>autoboot*</code>) are
 normalized to canonical labels before phase logic executes.</li>
+<li><strong>INV-8:</strong> <code>autobot-ready-to-implement</code> must
+close the original issue only after a main feature issue and all planned
+tasks are successfully materialized.</li>
+<li><strong>INV-9:</strong> The main feature issue must always contain
+links to every planned implementation task issue.</li>
+<li><strong>INV-10:</strong> "No automatic phase skipping" means
+transitions are limited to one phase step and can never cross a human
+review gate.</li>
 </ul>
 </div>
 <section id="security-and-operations" class="source-block"
-data-source-block="28"
+data-source-block="32"
 data-source-sha256="95a9d578893a4290a69b68c19a560aab6c1c04144f9d3a54489e97b346298f1e">
 <h3>Security and operations</h3>
 </section>
-<div class="source-block" data-source-block="29"
-data-source-sha256="9daae54eb0d875230b62786782e267a741a794e6e58e9486bba0afe31ff50fba">
+<div class="source-block" data-source-block="33"
+data-source-sha256="45a4fd3017f2ea7ab732f07281a3daeb60f787fe70a69c8b698d0d07417e6507">
 <p>Issue and PR text remain untrusted input; scripts continue to own all
 state transitions and secret-guard checks before posting generated
 content. Concurrency remains per issue to prevent duplicate runs.
-Timeouts and provider misconfiguration continue to end in
-<code>autobot-blocked</code> with run URL for operator recovery.</p>
+Planning reruns must be idempotent for both main feature creation and
+task creation to avoid duplicate trackers. Timeouts and provider
+misconfiguration continue to end in <code>autobot-blocked</code> with
+run URL for operator recovery.</p>
 </div>
 <section id="4-acceptance-and-proof" class="source-block"
-data-source-block="30"
+data-source-block="34"
 data-source-sha256="372906f1cdb3dc83bd8f993088fcbd3655fee7cb46ed817e2c7c274f86dad817">
 <h2>4. Acceptance and proof</h2>
 </section>
-<div class="source-block table-wrap" data-source-block="31"
-data-source-sha256="6c1761bcccaba2f2c85f5da081221f84a89374af524aae18b57c41a79c90b956">
+<div class="source-block table-wrap" data-source-block="35"
+data-source-sha256="b71412904f97b51bcbad3fc246822942e223797188221aaaf19eb62e84d38396">
 <table>
 <thead>
 <tr>
@@ -525,60 +594,82 @@ labels/stage</td>
 </tr>
 <tr>
 <td>AC-4</td>
-<td>Label <code>autobot-ready-to-implement</code> creates task issues
-with <code>autobot-task</code> in <strong>Ready to
-implement</strong></td>
-<td>Trigger plan and verify issue labels/stage for all created
-tasks</td>
+<td>Label <code>autobot-ready-to-implement</code> creates a new main
+feature issue with short design summary, design link, source issue link,
+and task links</td>
+<td>Trigger plan and verify main feature issue body content and
+links</td>
 </tr>
 <tr>
 <td>AC-5</td>
+<td>Successful planning closes the original issue only after main
+feature and tasks exist</td>
+<td>Trigger plan and verify close event order in issue timeline</td>
+</tr>
+<tr>
+<td>AC-6</td>
+<td>Planning creates task issues with <code>autobot-task</code> in
+<strong>Ready to implement</strong> and links them from main feature
+issue</td>
+<td>Verify labels/stage for created tasks and backlink list in main
+feature</td>
+</tr>
+<tr>
+<td>AC-7</td>
 <td>Label <code>autobot-implementing</code> starts implementation and
 sets stage <strong>Implementing</strong></td>
 <td>Label a task issue and verify run start state</td>
 </tr>
 <tr>
-<td>AC-6</td>
+<td>AC-8</td>
 <td>Successful implementation changes label/state to
 <code>autobot-in-review</code> and stage <strong>In review</strong></td>
 <td>Complete implementation and verify issue label/stage</td>
 </tr>
 <tr>
-<td>AC-7</td>
+<td>AC-9</td>
 <td><code>autobot-in-review</code> does not trigger new implementation
 runs</td>
 <td>Apply <code>autobot-in-review</code> directly and verify no
 implementation workflow dispatch</td>
 </tr>
 <tr>
-<td>AC-8</td>
-<td>Closing approved issue moves stage to <strong>Done</strong></td>
-<td>Close a reviewed task issue and verify stage update</td>
+<td>AC-10</td>
+<td>Closing approved task or main feature issue moves stage to
+<strong>Done</strong></td>
+<td>Close reviewed issue and verify stage update</td>
 </tr>
 <tr>
-<td>AC-9</td>
+<td>AC-11</td>
 <td>Codex and Copilot produce identical label/state transitions for same
 phase events</td>
 <td>Run one end-to-end sandbox flow per provider and diff resulting
 issue timelines</td>
 </tr>
 <tr>
-<td>AC-10</td>
+<td>AC-12</td>
 <td><code>autoboot*</code> alias labels are normalized to canonical
 labels without duplicate runs</td>
 <td>Apply alias labels in sandbox and verify canonical label replacement
 plus single run</td>
 </tr>
+<tr>
+<td>AC-13</td>
+<td>No automatic phase skipping occurs: workflows only perform one-step
+transitions and never cross human gates</td>
+<td>Attempt to force skipped transitions by labels/comments and verify
+workflow blocks or ignores them</td>
+</tr>
 </tbody>
 </table>
 </div>
 <section id="5-open-questions" class="source-block role-open-questions"
-data-source-block="32"
+data-source-block="36"
 data-source-sha256="028a19fde90928e0153ae234a6da431e92b57e965368d736138d6df706f01023">
 <h2>5. Open questions</h2>
 </section>
-<div class="source-block" data-source-block="33"
-data-source-sha256="18428fb3d63f0f265fcc33253e3bc3cc9c95d939e207ce3e015f252a7b29cd8b">
+<div class="source-block" data-source-block="37"
+data-source-sha256="bfec859e4f8619786c8dddd89ec945fa64a28eb0656bde0cab0dbd876a112416">
 <ol type="1">
 <li><strong>Alias retirement timeline.</strong> Recommended: keep
 <code>autoboot*</code> normalization for two release tags, then remove
@@ -588,6 +679,10 @@ once usage telemetry shows near-zero alias events.
 <code>autobot-task</code> as authoritative and optionally add
 <code>autoboot</code> as migration-only companion label, then deprecate
 companion label later. <strong>Non-blocking</strong>.</li>
+<li><strong>Main feature closure policy.</strong> Recommended: keep
+human-controlled closure for the main feature issue in v1, and evaluate
+auto-close only after reliable dependency completeness checks are
+available. <strong>Non-blocking</strong>.</li>
 </ol>
 </div>
 
