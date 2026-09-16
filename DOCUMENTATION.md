@@ -153,6 +153,7 @@ Use:
 - `.github/autobot/README.md`
 - `.github/autobot/examples/autobot.yml`
 - `.github/workflows/autobot-setup.yml`
+- `docs/autobot-provider-agnostic-workflow-contract/design.md` (canonical workflow contract)
 
 Minimal setup:
 
@@ -178,7 +179,21 @@ Minimal setup:
    - optional `AUTOBOT_PROJECT_STATUS_FIELD` (defaults to `Status`)
 6. Grant `AUTOBOT_PROJECT_TOKEN` when project-scope write is required by the org project permissions model.
    - If Actions reports `Could not resolve to a ProjectV2 with the number <n> (organization.projectV2)`, verify `AUTOBOT_PROJECT_OWNER` / `AUTOBOT_PROJECT_NUMBER` and ensure `AUTOBOT_PROJECT_TOKEN` can access that org project.
-7. Drive phases by labels: `autobot-ready-for-spec`, `autobot-review-specification`, `autobot-ready-to-implement`, `autobot-in-review`.
+7. Drive phases by labels with explicit human gates:
+   - spec trigger: `autobot-ready-for-spec`
+   - review gate label: `autobot-review-specification`
+   - plan trigger: `autobot-ready-to-implement`
+   - implementation trigger: `autobot-implementing`
+   - implementation review state: `autobot-in-review` (not a trigger)
+8. Planning rollover behavior:
+   - planning runs on the original approved-spec issue,
+   - creates or reuses a new main feature issue,
+   - creates/reuses linked `autobot-task` issues,
+   - then closes the original specification issue as superseded.
+9. Spec artifact mirror behavior (optional, SAS-only):
+   - configure variables: `AUTOBOT_SPEC_ARTIFACTS_ENABLED`, `AUTOBOT_SPEC_ARTIFACTS_STORAGE_ACCOUNT`, `AUTOBOT_SPEC_ARTIFACTS_CONTAINER`, optional `AUTOBOT_SPEC_ARTIFACTS_PREFIX`, optional `AUTOBOT_SPEC_ARTIFACTS_ENDPOINT_SUFFIX`
+   - configure secrets: `AUTOBOT_SPEC_ARTIFACTS_WRITE_SAS`, `AUTOBOT_SPEC_ARTIFACTS_READ_SAS`
+   - in this increment, only spec artifacts are mirrored (`design.md`, `design.html`) plus a branch-scoped `latest.json` pointer.
    - If Actions reports `bash: .autobot-baseline/machinist/scripts/install-autoplan-skills.sh: No such file or directory`, ensure `AUTOBOT_BASELINE_REPOSITORY` points to `AutoplanAS/AutoplanArchitectureSetup` (or another baseline containing Machinist scripts) and `AUTOBOT_BASELINE_REF` exists there.
 
 ---
@@ -255,13 +270,20 @@ Use managed mode only after direct mode is validated for your repo and CI rules.
 
 ### 6.5 Autobot operations (optional)
 
-Autobot is intentionally label-driven and phase-gated:
+Autobot is intentionally label-driven and phase-gated, with the same behavior for Codex and
+GitHub Copilot providers:
 
-1. `autobot-ready-for-spec` starts design generation.
-2. Human merges design PR.
-3. `autobot-review-specification` is the human review and rework gate.
-4. `autobot-ready-to-implement` creates task issues.
-5. `autobot-in-review` on a task issue starts implementation into one PR.
+1. A feature issue labeled `autobot-ready-for-spec` starts specification work.
+2. Autobot moves the issue to `autobot-creating-specification` while producing/updating the design PR.
+3. When ready, Autobot sets `autobot-review-specification` and posts design links.
+4. Human review gate:
+   - for rework, comment and relabel `autobot-ready-for-spec`;
+   - for approval, label `autobot-ready-to-implement`.
+5. Planning runs on the original approved-spec issue and creates/reuses a main feature issue and linked `autobot-task` issues.
+6. After successful rollover, Autobot closes the original specification issue as superseded by the main feature.
+7. Human starts task implementation by labeling the task issue `autobot-implementing`.
+8. Autobot implements to a deterministic branch/PR and, on success, sets `autobot-in-review`.
+9. If PR changes are requested, implementation does not auto-restart; a human must reapply `autobot-implementing`.
 
 If a phase cannot proceed, workflows remove the trigger label and add `autobot-blocked` with a
 comment containing the reason and run link.
@@ -283,6 +305,9 @@ Provider routing behavior:
    artifacts.
 7. Spec completion requires a design file at `docs/<issue-number>-*/design.md` in the handoff PR.
 8. There is no automatic fallback to Codex when Copilot mode fails.
+9. External spec artifact publishing is optional and non-blocking; canonical repository links remain source of truth.
+10. External spec artifact publishing uses SAS-only Azure Blob access with separate write/read SAS tokens.
+11. Rejected implementation PR feedback is included in rework context, but rework run start still requires explicit relabel.
 
 Project stage sync mapping:
 
@@ -290,9 +315,10 @@ Project stage sync mapping:
 2. `autobot-creating-specification` -> `Creating specification`
 3. `autobot-review-specification` -> `Review specification`
 4. `autobot-ready-to-implement` and new `autobot-task` issues -> `Ready to implement`
-5. `autobot-in-review` -> `In review`
-6. `autobot-blocked` -> `Blocked`
-7. issue closed -> `Done`
+5. `autobot-implementing` -> `Implementing`
+6. `autobot-in-review` -> `In review`
+7. `autobot-blocked` -> `Blocked`
+8. issue closed -> `Done`
 
 ---
 
