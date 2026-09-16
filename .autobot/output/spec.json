@@ -1,7 +1,7 @@
 {
   "status": "completed",
   "blocked_reason": "",
-  "issue_comment": "Spec design document for issue #69 is ready for review.",
-  "pr_title": "Autobot spec handoff for issue #69",
-  "pr_body": "This pull request is the Autobot spec handoff for #69.\n\nRun token: `autobot-spec-69-35102007359`\nExpected assignee: @JoergenAmrudHagen\n\nDesign artifact created at `docs/69-autonomous-copilot-spec-e2e-test-20260916-152707/design.md`."
+  "issue_comment": "Design draft is ready for review at `docs/54-add-dynamics-skillset/design.md`.",
+  "pr_title": "Autobot spec handoff for issue #54",
+  "pr_body": "This pull request is the Autobot spec handoff for #54.\n\nRun token: `autobot-spec-54-35128161820`\nExpected assignee: @JoergenAmrudHagen\nPhase artifact: `.autobot/output/spec.json`\nStrict artifact mode: `false`\n\nCompletion contract:\n1. Keep this PR referencing #54.\n2. Keep the run token in PR body or PR comments.\n3. For spec phase, create or update the expected design file with the actual design content.\n4. Update `.autobot/output/spec.json` with final phase output. In strict mode it must set `status` to `completed`.\n- Required spec file path: `docs/54-add-dynamics-skillset/design.md`."
 }
