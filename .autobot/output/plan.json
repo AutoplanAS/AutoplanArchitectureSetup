@@ -1,6 +1,35 @@
 {
-  "status": "in_progress",
-  "blocked_reason": "Copilot handoff initialized; update this artifact to status=completed in the correlated PR.",
-  "feature_comment": "",
-  "tasks": []
+  "status": "completed",
+  "blocked_reason": "",
+  "feature_comment": "Implementation plan ready for the Dynamics 365 skillset rollout. The work is split into package scaffolding, authoring the Dynamics-specific skill content, and updating repository documentation so the new bundle installs and appears alongside the existing backend and webapp skillsets.",
+  "tasks": [
+    {
+      "title": "Scaffold the Dynamics skill package",
+      "body": "## Summary\nCreate the new `autoplan-dynamics-skills/` package so it matches the installable structure already used by the backend and webapp bundles.\n\n## Scope\n- Add `autoplan-dynamics-skills/README.md`.\n- Add `autoplan-dynamics-skills/scripts/Install-Skills.ps1` and `autoplan-dynamics-skills/scripts/Uninstall-Skills.ps1`.\n- Create the initial `skills/<name>/SKILL.md` + `references/` folder layout for the Dynamics bundle.\n- Keep script behavior aligned with the existing target and auto symlink/copy conventions.\n\n## Done when\n- The package layout satisfies AC-1 from `docs/54-add-dynamics-skillset/design.md`.\n- The installer and uninstaller expose the same user-facing workflow as the existing skill packages.",
+      "depends_on_titles": []
+    },
+    {
+      "title": "Author Dynamics architecture and Dataverse modeling skills",
+      "body": "## Summary\nAdd the first Dynamics guidance package content covering solution boundaries and Dataverse design decisions.\n\n## Scope\n- Write actionable `SKILL.md` guidance for Dynamics solution architecture and bounded-context decisions.\n- Add Dataverse-focused guidance for tables, relationships, ownership, lifecycle, and performance.\n- Place deeper supporting material in `references/` so the top-level skill instructions stay concise.\n- Ground the content in Microsoft Dynamics 365 and Dataverse developer documentation called out by the design.\n\n## Done when\n- The new skill content clearly distinguishes Dynamics platform concerns from generic backend integration work.\n- At least one substantive Dynamics skill exists with task-facing instructions plus deeper references, satisfying AC-2 and AC-4.",
+      "depends_on_titles": [
+        "Scaffold the Dynamics skill package"
+      ]
+    },
+    {
+      "title": "Author Dynamics extensibility, integration, and release skills",
+      "body": "## Summary\nComplete the initial Dynamics bundle with guidance for server-side execution, external integrations, and delivery quality.\n\n## Scope\n- Add skills or reference content for plugins, custom workflow/actions, execution pipeline behavior, telemetry, and failure handling.\n- Add guidance for Dynamics Web API usage, authentication expectations, and integration patterns with external systems.\n- Add testing, ALM, and deployment-check guidance for Dynamics-focused delivery work.\n- Keep the content consistent with the portable skill pattern already used in this repository.\n\n## Done when\n- The initial skill set from section 3.2 of the design is covered across the Dynamics package.\n- The package gives teams actionable guidance for build, test, and release decisions in Dynamics projects.",
+      "depends_on_titles": [
+        "Scaffold the Dynamics skill package"
+      ]
+    },
+    {
+      "title": "Document and verify the Dynamics skillset rollout",
+      "body": "## Summary\nUpdate repository-level documentation so Dynamics is discoverable as an official Autoplan option and verify the package behaves like the existing bundles.\n\n## Scope\n- Update `README.md` and `DOCUMENTATION.md` to include the Dynamics skillset in the layered model, install flow, and skillset-selection guidance.\n- Add Dynamics-specific setup examples for Dynamics-only and mixed integration scenarios.\n- Verify the new install/uninstall scripts against the expected target-path and symlink/copy behavior in a sandbox or dry-run flow.\n- Confirm no generated cache artifacts are committed as part of the change.\n\n## Done when\n- Documentation satisfies AC-3 from the design.\n- Validation shows the new package can be installed and removed consistently with the existing skill packages.",
+      "depends_on_titles": [
+        "Scaffold the Dynamics skill package",
+        "Author Dynamics architecture and Dataverse modeling skills",
+        "Author Dynamics extensibility, integration, and release skills"
+      ]
+    }
+  ]
 }
