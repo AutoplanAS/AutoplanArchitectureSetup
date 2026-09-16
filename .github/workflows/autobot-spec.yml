@@ -136,6 +136,7 @@ jobs:
           AUTOBOT_PROJECT_TOKEN: ${{ secrets.AUTOBOT_PROJECT_TOKEN }}
           AUTOBOT_SPEC_PROVIDER: ${{ inputs.spec_provider }}
           AUTOBOT_COPILOT_ASSIGNEE: ${{ inputs.copilot_assignee }}
+          AUTOBOT_COPILOT_TRIGGER_HANDLE: ${{ vars.AUTOBOT_COPILOT_TRIGGER_HANDLE }}
           AUTOBOT_COPILOT_TIMEOUT_MINUTES: ${{ inputs.copilot_timeout_minutes }}
           AUTOBOT_COPILOT_STRICT_ARTIFACT: ${{ inputs.copilot_strict_artifact }}
           AUTOBOT_SPEC_ARTIFACTS_ENABLED: ${{ vars.AUTOBOT_SPEC_ARTIFACTS_ENABLED != '' && vars.AUTOBOT_SPEC_ARTIFACTS_ENABLED || 'false' }}

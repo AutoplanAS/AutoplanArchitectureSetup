@@ -510,6 +510,15 @@ copilot_strict_artifact_mode() {
   esac
 }
 
+copilot_trigger_handle() {
+  local raw="${AUTOBOT_COPILOT_TRIGGER_HANDLE:-@copilot}"
+  if [[ "$raw" =~ ^@[A-Za-z0-9_.-]+$ ]]; then
+    printf '%s' "$raw"
+    return 0
+  fi
+  printf '%s' "@copilot"
+}
+
 copilot_run_token() {
   local phase="$1"
   local issue_number="$2"
@@ -602,6 +611,25 @@ start_copilot_handoff() {
   if [[ -n "$pr_number" ]]; then
     if ! gh pr edit "$pr_number" --repo "$repo" --add-assignee "$AUTOBOT_COPILOT_ASSIGNEE" >/dev/null 2>&1; then
       blocked_and_exit "$repo" "$issue_number" "$trigger_label" "Failed to assign PR #${pr_number} to @${AUTOBOT_COPILOT_ASSIGNEE} for Copilot provider." "$run_url"
+    fi
+  fi
+
+  if [[ "$phase" == "spec" && -n "$pr_number" && -n "$expected_design_path" ]]; then
+    local trigger_handle
+    trigger_handle="$(copilot_trigger_handle)"
+    cat > .autobot/output/spec-copilot-instruction.md <<EOF
+${trigger_handle} Generate the specification design document for issue #${issue_number}.
+
+Required actions:
+1. Create or update \`${expected_design_path}\` with the full design content for this issue.
+2. Keep the run token \`${run_token}\` in this PR body or comments.
+3. Update \`${artifact_path}\` with final phase output. In strict mode, set \`status\` to \`completed\`.
+
+After committing, leave a short summary comment.
+EOF
+    guard_text_file .autobot/output/spec-copilot-instruction.md || blocked_and_exit "$repo" "$issue_number" "$trigger_label" "Copilot instruction comment was blocked by secret guard." "$run_url"
+    if ! gh pr comment "$pr_number" --repo "$repo" --body-file .autobot/output/spec-copilot-instruction.md >/dev/null 2>&1; then
+      blocked_and_exit "$repo" "$issue_number" "$trigger_label" "Failed to post Copilot spec instruction comment to PR #${pr_number}." "$run_url"
     fi
   fi
 
