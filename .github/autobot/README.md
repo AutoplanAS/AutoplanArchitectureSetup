@@ -64,7 +64,7 @@ The Codex and GitHub Copilot providers use the same lifecycle semantics:
 - `AUTOBOT_PROJECT_TOKEN` (required for organization-owned project boards such as `AutoplanAS#8`)
 - `AUTOBOT_SPEC_ARTIFACTS_WRITE_SAS` (optional; required only when `AUTOBOT_SPEC_ARTIFACTS_ENABLED=true`)
 - `AUTOBOT_SPEC_ARTIFACTS_READ_SAS` (optional; required only when `AUTOBOT_SPEC_ARTIFACTS_ENABLED=true`)
-- `AUTOBOT_COPILOT_TRIGGER_TOKEN` (optional; PAT used to post the spec handoff `@copilot` instruction as a human account when bot-originated mentions are ignored)
+- `AUTOBOT_COPILOT_TRIGGER_TOKEN` (optional; PAT used to post the spec handoff `@copilot` instruction as a human account when bot-originated mentions are ignored; if unset, `BASELINE_REPO_TOKEN` is used when available)
 
 When Codex is used, `CODEX_API_KEY` should be managed as an org-level secret and granted to each
 adopting repository.
@@ -100,6 +100,7 @@ Provider routing uses repository variables:
 - `AUTOBOT_IMPLEMENT_PROVIDER` (`codex` or `github-copilot`, default `codex`)
 - `AUTOBOT_COPILOT_ASSIGNEE` (required when any phase uses `github-copilot`; must be a real assignable GitHub login in the target repository)
 - `AUTOBOT_COPILOT_TRIGGER_HANDLE` (optional, defaults to `@copilot`; mention used in spec handoff PR instruction comment)
+- `AUTOBOT_COPILOT_SPEC_AUTOCOMPLETE_WAIT_MINUTES` (optional, defaults to `20`, max `180`; how long the issue-triggered spec job waits and self-runs completion checks)
 - `AUTOBOT_COPILOT_TIMEOUT_MINUTES` (optional handoff SLA hint in comments, default `90`, max `360`)
 - `AUTOBOT_COPILOT_STRICT_ARTIFACT` (`true`/`false`, default `false`; strict mode requires explicit completed phase artifact payloads before acceptance)
 

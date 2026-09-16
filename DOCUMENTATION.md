@@ -171,6 +171,7 @@ Minimal setup:
    - `AUTOBOT_COPILOT_ASSIGNEE` required when any phase uses `github-copilot`
    - optional `AUTOBOT_COPILOT_TRIGGER_HANDLE` (default `@copilot`) for spec handoff PR instruction mentions
    - optional `AUTOBOT_COPILOT_TRIGGER_TOKEN` secret to post spec handoff instruction comments as a human identity
+   - optional `AUTOBOT_COPILOT_SPEC_AUTOCOMPLETE_WAIT_MINUTES` (default `20`, max `180`) to keep the issue-triggered spec run open and self-evaluate completion when design appears
    - optional `AUTOBOT_COPILOT_TIMEOUT_MINUTES` (handoff SLA hint in comments, default `90`, max `360`)
    - optional `AUTOBOT_COPILOT_STRICT_ARTIFACT` (`false` default; set `true` to require explicit completed phase artifacts in Copilot mode)
    - optional `AUTOBOT_BASELINE_REPOSITORY` (defaults to `AutoplanAS/AutoplanArchitectureSetup`)

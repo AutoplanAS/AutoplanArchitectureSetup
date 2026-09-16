@@ -80,6 +80,56 @@ EOF
   fi
   gh issue edit "$ISSUE_NUMBER" --repo "$REPOSITORY" --remove-label "$TRIGGER_LABEL" --remove-label autobot-review-specification --remove-label autobot-blocked --add-label autobot-creating-specification >/dev/null || true
   sync_project_stage_with_warning "$REPOSITORY" "$ISSUE_NUMBER" "Creating specification" || true
+
+  pr_number="${pr_url##*/}"
+  wait_minutes_raw="${AUTOBOT_COPILOT_SPEC_AUTOCOMPLETE_WAIT_MINUTES:-20}"
+  if [[ ! "$wait_minutes_raw" =~ ^[0-9]+$ ]]; then
+    wait_minutes_raw=20
+  fi
+  if (( wait_minutes_raw < 1 )); then
+    wait_minutes_raw=1
+  fi
+  if (( wait_minutes_raw > 180 )); then
+    wait_minutes_raw=180
+  fi
+
+  strict_mode="$(copilot_strict_artifact_mode)"
+  autocomplete_deadline=$(( $(date +%s) + wait_minutes_raw * 60 ))
+  while true; do
+    git fetch origin "$branch_name" >/dev/null 2>&1 || true
+
+    design_present="false"
+    if git ls-tree -r --name-only "origin/${branch_name}" | grep -Fxq "$design_path"; then
+      design_present="true"
+    fi
+
+    artifact_completed="false"
+    if git show "origin/${branch_name}:.autobot/output/spec.json" > .autobot/output/spec-check.json 2>/dev/null; then
+      artifact_status="$(python -c "import json;print(str(json.load(open('.autobot/output/spec-check.json','r',encoding='utf-8')).get('status','')).strip().lower())" 2>/dev/null || true)"
+      if [[ "$artifact_status" == "completed" ]]; then
+        artifact_completed="true"
+      fi
+    fi
+
+    if [[ "$design_present" == "true" ]]; then
+      if [[ "$strict_mode" == "true" ]]; then
+        if [[ "$artifact_completed" == "true" ]]; then
+          PR_NUMBER="$pr_number" bash "$SCRIPT_DIR/run_copilot_completion_phase.sh" || true
+          break
+        fi
+      else
+        PR_NUMBER="$pr_number" bash "$SCRIPT_DIR/run_copilot_completion_phase.sh" || true
+        break
+      fi
+    fi
+
+    now_epoch="$(date +%s)"
+    if (( now_epoch >= autocomplete_deadline )); then
+      break
+    fi
+    sleep 60
+  done
+
   printf 'Copilot spec handoff started with PR: %s\n' "$pr_url"
   rm -rf .autobot
   exit 0

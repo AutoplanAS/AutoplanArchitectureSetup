@@ -523,7 +523,7 @@ post_pr_comment() {
   local repo="$1"
   local pr_number="$2"
   local body_file="$3"
-  local trigger_token="${AUTOBOT_COPILOT_TRIGGER_TOKEN:-}"
+  local trigger_token="${AUTOBOT_COPILOT_TRIGGER_TOKEN:-${BASELINE_REPO_TOKEN:-}}"
   local previous_token="${GH_TOKEN:-}"
 
   if [[ -n "$trigger_token" ]]; then

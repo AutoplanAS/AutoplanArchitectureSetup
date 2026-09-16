@@ -52,6 +52,7 @@ For full reference, see [DOCUMENTATION.md](DOCUMENTATION.md).
      - `AUTOBOT_COPILOT_ASSIGNEE` is required if any phase uses `github-copilot`
      - optional `AUTOBOT_COPILOT_TRIGGER_HANDLE` (default `@copilot`) for spec handoff PR instruction mentions
      - optional `AUTOBOT_COPILOT_TRIGGER_TOKEN` secret to post the `@copilot` instruction as a human identity
+     - optional `AUTOBOT_COPILOT_SPEC_AUTOCOMPLETE_WAIT_MINUTES` (default `20`, max `180`) for in-run spec completion polling
      - optional `AUTOBOT_COPILOT_TIMEOUT_MINUTES` (default `90`)
      - timeout value is a handoff SLA hint in Copilot comments (no long-running workflow polling)
      - optional `AUTOBOT_COPILOT_STRICT_ARTIFACT` (`false` default; set `true` to require explicit completed phase artifacts in Copilot mode)
