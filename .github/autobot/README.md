@@ -23,16 +23,39 @@ the agent work.
 | `autobot-ready-for-spec` | Spec phase starts | Codex: direct design PR and move to `autobot-review-specification`. Copilot: handoff PR + `autobot-creating-specification`, then `autobot-review-specification` on completion |
 | `autobot-ready-to-implement` | Plan phase starts | Create or reuse main feature issue, create task issues, then close the original specification issue as superseded |
 | `autobot-implementing` | Implement phase starts | Codex: direct task PR updates. Copilot: handoff PR, then completion moves task to `autobot-in-review` |
-| `autobot-creating-specification` | No | Design waiting for human review |
+| `autobot-creating-specification` | No | Specification work is in progress |
 | `autobot-review-specification` | No | Human review/rework gate before planning |
 | `autobot-task` | No | Marks issue as implementation task |
 | `autoboot` | No | Compatibility task marker label for autobot-generated tasks |
 | `autobot-in-review` | No | Human PR review gate for completed implementation |
 | `autobot-blocked` | No | Phase needs human decision |
 
-When spec completes, the issue moves to `autobot-review-specification` and Autobot posts the design
-PR and design file link. Human approval is the PR merge: review and merge that PR, then add
-`autobot-ready-to-implement` to the same feature issue to start plan generation.
+## Provider-agnostic workflow (implemented)
+
+The Codex and GitHub Copilot providers use the same lifecycle semantics:
+
+1. Human labels a feature issue `autobot-ready-for-spec`.
+2. Autobot starts specification, sets `autobot-creating-specification`, and generates/updates a design PR.
+3. When spec output is ready, Autobot sets `autobot-review-specification` and posts canonical design links (plus external spec artifact links when enabled).
+4. Human reviews the spec:
+   - for rework: comment and relabel `autobot-ready-for-spec`;
+   - for approval: label `autobot-ready-to-implement`.
+5. Autobot planning runs on the original approved-spec issue.
+6. Planning creates or reuses a new **main feature** issue, creates/reuses linked `autobot-task` issues, and keeps work in **Ready to implement**.
+7. After successful rollover, Autobot closes the original specification issue as superseded by the main feature issue.
+8. Human selects a task for coding by labeling that task issue `autobot-implementing`.
+9. Autobot implements on deterministic branch/PR, then sets `autobot-in-review` when ready for human PR review.
+10. If PR changes are requested, reviewer feedback does not auto-restart implementation; a human must reapply `autobot-implementing` on the task issue.
+
+## Hard constraints
+
+- No automatic phase skipping across human gates.
+- `autobot-in-review` is terminal for implementation; it never triggers implementation.
+- Implementation rework is label-driven only (manual relabel required).
+- Rework uses the same implementation branch and PR for the task issue.
+- Entering a phase removes stale conflicting phase-state labels.
+- External artifact publishing is spec-only in this increment (`design.md`, `design.html`, and branch-scoped `latest.json` pointer).
+- External spec artifacts are optional and non-blocking; canonical repository/PR links remain source of truth.
 
 ## Required secrets
 
@@ -86,6 +109,15 @@ Spec artifact publishing uses repository variables:
 - `AUTOBOT_SPEC_ARTIFACTS_PREFIX` (optional, defaults to `autobot-spec`)
 - `AUTOBOT_SPEC_ARTIFACTS_ENDPOINT_SUFFIX` (optional, defaults to `blob.core.windows.net`)
 
+Spec artifact path contract:
+
+- Prefix root: `autobot-spec/<owner>/<repo>/<branch>/issue-<issue-number>/`
+- Immutable run artifacts:
+  - `runs/<run-id>/design.md`
+  - `runs/<run-id>/design.html`
+- Branch-scoped pointer:
+  - `latest.json` (same prefix)
+
 Baseline source selection (optional) uses repository variables:
 
 - `AUTOBOT_BASELINE_REPOSITORY` (defaults to `AutoplanAS/AutoplanArchitectureSetup`)
@@ -112,10 +144,16 @@ Baseline source selection (optional) uses repository variables:
 - INV-4: Per-issue concurrency group prevents race duplicates.
 - INV-5: Deterministic per-issue branch reuse for PR updates.
 - INV-6: Missing `CODEX_API_KEY` blocks before agent run for phases configured with provider `codex`.
-- INV-7: Plan phase issue creation is idempotent.
-- INV-8: Issue text is treated as untrusted input and side effects are workflow-owned.
-- INV-9: Copilot mode completion is accepted only for PRs that include the expected assignee and run token.
-- INV-10: No automatic fallback from `github-copilot` to `codex` is allowed.
+- INV-7: Plan phase issue creation is idempotent for both main feature and task issues.
+- INV-8: `autobot-ready-to-implement` closes the original issue only after successful rollover to main feature + tasks.
+- INV-9: Main feature issue always carries the design summary and task links.
+- INV-10: Issue text is treated as untrusted input and side effects are workflow-owned.
+- INV-11: Copilot mode completion is accepted only for PRs that include the expected assignee and run token.
+- INV-12: No automatic fallback from `github-copilot` to `codex` is allowed.
+- INV-13: No automatic phase skipping across human gates.
+- INV-14: Rejected implementation PRs do not auto-restart; human relabel is required.
+- INV-15: Rework input includes PR requested-changes/review comments plus task issue comments.
+- INV-16: Spec artifact upload uses SAS-only access with separate write/read SAS; write SAS must never be exposed in comments/logs.
 
 Copilot handoff details:
 
@@ -141,8 +179,8 @@ Project sync mapping handled by router and phase scripts:
 
 ## Release contract for reusable workflows
 
-Tags are published only after sandbox validation of AC-1 through AC-14 in
-`docs/autobot-pipeline/design.md`. Consumer repositories should pin either:
+Tags are published only after sandbox validation of AC-1 through AC-27 in
+`docs/autobot-provider-agnostic-workflow-contract/design.md`. Consumer repositories should pin either:
 
 - a major compatibility tag (`@v1`), or
 - an exact release tag (`@v1.2.0`).
@@ -167,5 +205,6 @@ When no release tag is available yet, pin temporarily to `@main` until a release
 
 ## Sandbox validation checklist
 
-Run the acceptance checks AC-1 through AC-14 from `docs/autobot-pipeline/design.md` in a sandbox
-repository before cutting a reusable workflow tag.
+Run the acceptance checks AC-1 through AC-27 from
+`docs/autobot-provider-agnostic-workflow-contract/design.md` in a sandbox repository before cutting
+a reusable workflow tag.
