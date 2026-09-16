@@ -45,6 +45,7 @@ For full reference, see [DOCUMENTATION.md](DOCUMENTATION.md).
    - `.github/autobot/README.md`
    - `.github/workflows/autobot.yml`
    - `.github/workflows/autobot-setup.yml`
+   - canonical workflow contract: `docs/autobot-provider-agnostic-workflow-contract/design.md`
    - set provider routing variables:
      - `AUTOBOT_SPEC_PROVIDER`, `AUTOBOT_PLAN_PROVIDER`, `AUTOBOT_IMPLEMENT_PROVIDER`
      - optional values: `codex` or `github-copilot` (default is `codex`)
@@ -52,11 +53,26 @@ For full reference, see [DOCUMENTATION.md](DOCUMENTATION.md).
      - optional `AUTOBOT_COPILOT_TIMEOUT_MINUTES` (default `90`)
      - timeout value is a handoff SLA hint in Copilot comments (no long-running workflow polling)
      - optional `AUTOBOT_COPILOT_STRICT_ARTIFACT` (`false` default; set `true` to require explicit completed phase artifacts in Copilot mode)
+   - set optional spec artifact mirror variables:
+     - `AUTOBOT_SPEC_ARTIFACTS_ENABLED` (`true`/`false`, default `false`)
+     - `AUTOBOT_SPEC_ARTIFACTS_STORAGE_ACCOUNT` (required when enabled)
+     - `AUTOBOT_SPEC_ARTIFACTS_CONTAINER` (required when enabled)
+     - optional `AUTOBOT_SPEC_ARTIFACTS_PREFIX` (default `autobot-spec`)
+     - optional `AUTOBOT_SPEC_ARTIFACTS_ENDPOINT_SUFFIX` (default `blob.core.windows.net`)
+   - set optional spec artifact mirror secrets (required when enabled):
+     - `AUTOBOT_SPEC_ARTIFACTS_WRITE_SAS`
+     - `AUTOBOT_SPEC_ARTIFACTS_READ_SAS`
    - set repository variables for project sync:
      - `AUTOBOT_PROJECT_OWNER` (example: `AutoplanAS`)
      - `AUTOBOT_PROJECT_NUMBER` (example: `8`)
      - optional `AUTOBOT_PROJECT_STATUS_FIELD` (default: `Status`)
    - grant `AUTOBOT_PROJECT_TOKEN` if project-scope write is required
+   - run lifecycle with explicit human gates:
+     - `autobot-ready-for-spec` -> `autobot-creating-specification` -> `autobot-review-specification`
+     - human approval applies `autobot-ready-to-implement`
+     - planning creates/reuses a new main feature + task issues, then closes the original specification issue as superseded
+     - human starts each task by labeling it `autobot-implementing`
+     - implementation completion sets `autobot-in-review`
 
 ## Which skillsets to use
 
