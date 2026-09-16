@@ -215,6 +215,9 @@ if blocked_reason:
     sys.exit(1)
 PY
   )"; then
+    if [[ -z "${spec_artifact_reason//[[:space:]]/}" ]]; then
+      spec_artifact_reason="spec.json is invalid or missing required completion fields."
+    fi
     echo "skip: spec completion requires completion-ready metadata in ${artifact_path} (${spec_artifact_reason})"
     exit 0
   fi
