@@ -172,7 +172,7 @@ Copilot handoff details:
 - When `AUTOBOT_COPILOT_TRIGGER_TOKEN` is set, those instruction comments are posted with the token owner identity (recommended when Copilot ignores bot-authored mentions).
 - Completion is event-driven: `autobot-copilot-complete.yml` runs on PR updates/comments, validates assignee + issue reference + run token, and applies workflow-owned side effects.
 - Spec completion requires a design document at `docs/<issue-number>-*/design.md` in the handoff PR branch.
-- With `AUTOBOT_COPILOT_STRICT_ARTIFACT=false`, spec/implement can be accepted without manually editing the artifact when required branch changes are present. Set strict mode to `true` to require explicit `status=completed` artifacts.
+- With `AUTOBOT_COPILOT_STRICT_ARTIFACT=false`, implement can be accepted without manually editing the artifact when required branch changes are present. Spec still requires a completed `.autobot/output/spec.json` with completion-ready metadata.
 - Issue-triggered Copilot phase runs can wait briefly and self-evaluate completion for spec/plan/implement; this reduces dependence on follow-up PR event approvals.
 
 Project sync mapping handled by router and phase scripts:

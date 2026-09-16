@@ -93,38 +93,73 @@ EOF
     wait_minutes_raw=180
   fi
 
-  strict_mode="$(copilot_strict_artifact_mode)"
   autocomplete_deadline=$(( $(date +%s) + wait_minutes_raw * 60 ))
+  last_pending_reason="spec completion is waiting for design and artifact contract checks."
   while true; do
     git fetch origin "$branch_name" >/dev/null 2>&1 || true
 
-    design_present="false"
-    if git ls-tree -r --name-only "origin/${branch_name}" | grep -Fxq "$design_path"; then
-      design_present="true"
-    fi
-
-    artifact_completed="false"
-    if git show "origin/${branch_name}:.autobot/output/spec.json" > .autobot/output/spec-check.json 2>/dev/null; then
-      artifact_status="$(python -c "import json;print(str(json.load(open('.autobot/output/spec-check.json','r',encoding='utf-8')).get('status','')).strip().lower())" 2>/dev/null || true)"
-      if [[ "$artifact_status" == "completed" ]]; then
-        artifact_completed="true"
-      fi
-    fi
-
-    if [[ "$design_present" == "true" ]]; then
-      if [[ "$strict_mode" == "true" ]]; then
-        if [[ "$artifact_completed" == "true" ]]; then
-          PR_NUMBER="$pr_number" bash "$SCRIPT_DIR/run_copilot_completion_phase.sh" || true
-          break
-        fi
+    design_ready="false"
+    if design_content="$(git show "origin/${branch_name}:${design_path}" 2>/dev/null)"; then
+      if printf '%s' "$design_content" | grep -Fq "Autobot Copilot handoff placeholder."; then
+        last_pending_reason="spec completion is waiting for non-placeholder design content in ${design_path}."
+      elif [[ -z "${design_content//[[:space:]]/}" ]]; then
+        last_pending_reason="spec completion is waiting for non-empty design content in ${design_path}."
       else
+        design_ready="true"
+      fi
+    else
+      last_pending_reason="spec completion is waiting for design file ${design_path}."
+    fi
+
+    artifact_ready="false"
+    if git show "origin/${branch_name}:.autobot/output/spec.json" > .autobot/output/spec-check.json 2>/dev/null; then
+      if artifact_reason="$(python - ".autobot/output/spec-check.json" <<'PY'
+import json
+import sys
+
+payload = json.load(open(sys.argv[1], "r", encoding="utf-8"))
+status = str(payload.get("status", "")).strip().lower()
+issue_comment = str(payload.get("issue_comment", "")).strip()
+pr_title = str(payload.get("pr_title", "")).strip()
+pr_body = str(payload.get("pr_body", "")).strip()
+blocked_reason = str(payload.get("blocked_reason", "")).strip()
+
+if status != "completed":
+    print("spec.json status must be completed.")
+    sys.exit(1)
+if not issue_comment:
+    print("spec.json issue_comment must be non-empty when status=completed.")
+    sys.exit(1)
+if not pr_title:
+    print("spec.json pr_title must be non-empty when status=completed.")
+    sys.exit(1)
+if not pr_body:
+    print("spec.json pr_body must be non-empty when status=completed.")
+    sys.exit(1)
+if blocked_reason:
+    print("spec.json blocked_reason must be empty when status=completed.")
+    sys.exit(1)
+PY
+      )"; then
+        artifact_ready="true"
+      else
+        if [[ -z "${artifact_reason//[[:space:]]/}" ]]; then
+          artifact_reason="spec.json is invalid or missing required completion fields."
+        fi
+        last_pending_reason="spec completion is waiting for completion-ready .autobot/output/spec.json (${artifact_reason})."
+      fi
+    else
+      last_pending_reason="spec completion is waiting for .autobot/output/spec.json."
+    fi
+
+    if [[ "$design_ready" == "true" && "$artifact_ready" == "true" ]]; then
         PR_NUMBER="$pr_number" bash "$SCRIPT_DIR/run_copilot_completion_phase.sh" || true
         break
-      fi
     fi
 
     now_epoch="$(date +%s)"
     if (( now_epoch >= autocomplete_deadline )); then
+      echo "skip: ${last_pending_reason}"
       break
     fi
     sleep 60
