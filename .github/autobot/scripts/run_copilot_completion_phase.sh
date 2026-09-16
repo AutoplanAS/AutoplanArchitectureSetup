@@ -126,7 +126,7 @@ EOF
   fi
 
   git show "${ref}:${design_path}" > .autobot/output/spec-design.md 2>/dev/null || true
-  if grep -Eq '^[[:space:]]*Autobot Copilot handoff placeholder\.[[:space:]]*$' .autobot/output/spec-design.md 2>/dev/null; then
+  if grep -Fq "Autobot Copilot handoff placeholder." .autobot/output/spec-design.md 2>/dev/null; then
     if [[ -n "$pending_marker" ]] && ! printf '%s' "$issue_comments" | grep -Fq "$pending_marker"; then
       cat > .autobot/output/spec-pending-comment.txt <<EOF
 Autobot spec completion is still waiting for real design content.
