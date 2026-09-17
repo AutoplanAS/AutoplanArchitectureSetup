@@ -71,11 +71,17 @@ foreach ($agent in $targets) {
         $marker = Join-Path $skillPath $markerName
         $isOurCopy = (-not $existing.LinkType) -and (Test-Path $marker) -and
             ((Get-Content $marker -Raw -ErrorAction SilentlyContinue).Trim() -eq $skill.FullName.TrimEnd('\', '/'))
+        $isOurLink = $existing.LinkType -and $existing.Target -and
+            ((@($existing.Target)[0]).TrimEnd('\', '/') -eq $skill.FullName.TrimEnd('\', '/'))
 
-        if ($existing.LinkType) {
+        if ($isOurLink) {
             $existing.Delete()
             Write-Host "  - $($skill.Name) (link removed)"
             $removed++
+        }
+        elseif ($existing.LinkType) {
+            Write-Warning "  ! $($skill.Name) is a symlink this script did not install. Remove it manually if you want to replace it."
+            $kept++
         }
         elseif ($isOurCopy -or $IncludeCopies) {
             Remove-Item $skillPath -Recurse -Force
