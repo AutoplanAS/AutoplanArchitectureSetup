@@ -180,10 +180,10 @@ if ($skipped -gt 0) {
 }
 
 if ($useSymlink) {
-    Write-Host 'Mode: symlink - future `git pull` updates apply automatically.'
+    Write-Host 'Mode: symlink - future git pull updates apply automatically.'
 }
 else {
-    Write-Host 'Mode: copy - re-run this script after every `git pull`.' -ForegroundColor Yellow
+    Write-Host 'Mode: copy - re-run this script after every git pull.' -ForegroundColor Yellow
     Write-Host 'Tip: enable Windows developer mode to get symlinks and skip that step.'
 }
 
