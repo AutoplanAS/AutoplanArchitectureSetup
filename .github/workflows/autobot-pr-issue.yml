@@ -1,0 +1,39 @@
+name: autobot-pr-issue
+
+on:
+  workflow_call:
+    inputs:
+      repository:
+        required: true
+        type: string
+      pr_number:
+        required: true
+        type: number
+    outputs:
+      issue_number:
+        description: Issue number from the deterministic Autobot PR branch
+        value: ${{ jobs.resolve.outputs.issue_number }}
+
+permissions:
+  pull-requests: read
+
+jobs:
+  resolve:
+    runs-on: ubuntu-latest
+    outputs:
+      issue_number: ${{ steps.issue.outputs.issue_number }}
+    steps:
+      - name: Resolve issue before acquiring its lifecycle lock
+        id: issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ inputs.repository }}
+          PR_NUMBER: ${{ inputs.pr_number }}
+        run: |
+          set -euo pipefail
+          branch="$(gh api "repos/${REPOSITORY}/pulls/${PR_NUMBER}" --jq .head.ref)"
+          if [[ "$branch" =~ ^autobot(-plan)?/([1-9][0-9]*)-[a-z0-9-]+$ ]]; then
+            echo "issue_number=${BASH_REMATCH[2]}" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip: PR #${PR_NUMBER} does not use an Autobot branch"
+          fi

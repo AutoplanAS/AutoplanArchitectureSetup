@@ -12,9 +12,12 @@ the agent work.
 | `.github/workflows/autobot-plan.yml` | Reusable | Create task issues from merged design |
 | `.github/workflows/autobot-implement.yml` | Reusable | Implement one task issue into one PR |
 | `.github/workflows/autobot-copilot-complete.yml` | Reusable | Evaluate Copilot handoff PR updates and apply phase side effects |
+| `.github/workflows/autobot-complete.yml` | Reusable | Complete the task and sync Done after its implementation PR merges |
+| `.github/workflows/autobot-pr-issue.yml` | Reusable | Resolve the PR's issue number before acquiring its lifecycle lock |
 | `.github/workflows/autobot-project-sync.yml` | Reusable | Add issue to project and set stage/status field |
 | `.github/workflows/autobot-setup.yml` | Dispatch | Create or refresh required labels |
 | `.github/workflows/autobot.yml` | Router | Label + pull-request event router for this repository |
+| `.github/workflows/autobot-tests.yml` | CI | Run completion regression tests and phase script syntax checks |
 
 ## Label contract
 
@@ -28,6 +31,7 @@ the agent work.
 | `autobot-task` | No | Marks issue as implementation task |
 | `autoboot` | No | Compatibility task marker label for autobot-generated tasks |
 | `autobot-in-review` | No | Human PR review gate for completed implementation |
+| `autobot-done` | No | Implementation PR merged; task closed as completed |
 | `autobot-blocked` | No | Phase needs human decision |
 
 ## Provider-agnostic workflow (implemented)
@@ -46,11 +50,15 @@ The Codex and GitHub Copilot providers use the same lifecycle semantics:
 8. Human selects a task for coding by labeling that task issue `autobot-implementing`.
 9. Autobot implements on deterministic branch/PR, then sets `autobot-in-review` when ready for human PR review.
 10. If PR changes are requested, reviewer feedback does not auto-restart implementation; a human must reapply `autobot-implementing` on the task issue.
+11. A human approves and merges the implementation PR into the default branch. Autobot replaces phase labels with `autobot-done`, closes the task as completed, and directly syncs its project stage to **Done**.
 
 ## Hard constraints
 
 - No automatic phase skipping across human gates.
-- `autobot-in-review` is terminal for implementation; it never triggers implementation.
+- `autobot-in-review` never triggers implementation. Only a merged implementation PR advances the task to `autobot-done`.
+- Approval alone and closing a PR without merging do not complete tasks. The merge handler never approves or merges PRs.
+- Required human approval is enforced by default-branch protection/rulesets, not by counting historical PR approvals.
+- Completing one task does not complete its parent feature or other referenced issues.
 - Implementation rework is label-driven only (manual relabel required).
 - Rework uses the same implementation branch and PR for the task issue.
 - Entering a phase removes stale conflicting phase-state labels.
@@ -163,6 +171,50 @@ Baseline source selection (optional) uses repository variables:
    - `AUTOBOT_COPILOT_TRIGGER_TOKEN` (optional, recommended when any phase uses `github-copilot`)
    - `AUTOBOT_SPEC_ARTIFACTS_WRITE_SAS` and `AUTOBOT_SPEC_ARTIFACTS_READ_SAS` when spec artifact publishing is enabled.
 4. Configure provider routing variables for your preferred execution model.
+5. Require human PR approval on the default branch using branch protection or a ruleset, including dismissal of stale approvals and restrictions on bypass. Without this policy, a bypassed/unreviewed merge is still treated as merged by the completion handler.
+6. Ensure the configured project status field has a **Done** option. Existing consumers must copy the updated router and use a workflow release and `AUTOBOT_BASELINE_REF` containing `autobot-complete.yml` and `complete_merged_pr.py`. An older `v1` tag must be updated/published before consumers can use this addition.
+
+## Merge completion and recovery
+
+The router handles `pull_request_target: closed` using default-branch workflow configuration.
+The merge job only checks out trusted baseline tooling, never the PR head or consumer code.
+It reads current PR metadata from GitHub and accepts only a merged PR into the default branch
+whose head belongs to the same repository and follows `autobot/<task-issue-number>-<slug>`.
+Both providers already use this deterministic branch contract. The referenced issue must have
+`autobot-task` and either `autobot-in-review` or `autobot-done`; spec, planning, parent-feature,
+fork, and unrelated PRs are ignored. PR-body issue mentions do not select completion targets.
+
+The handler preserves non-phase labels, including `autobot-task` and `autoboot`. It also works
+when GitHub closing keywords have already closed the task. Every accepted invocation syncs
+the project directly, because `GITHUB_TOKEN` label/closure writes do not trigger another
+Actions run. The project token is used only for project commands; issue writes use the
+repository workflow token. With neither project variable configured, board sync is explicitly
+skipped. Partial project configuration fails the job.
+
+Rerun a failed merge-completion job to repair partial progress. Labels and closure are
+idempotent, and `autobot-done` tasks remain eligible for project repair. A project API failure
+leaves the task completed, posts an issue warning with the run link, and fails the job rather
+than claiming the board was updated. Fix the project field/option, token permissions, or SSO,
+then rerun. Other API errors also fail the job. Copilot acceptance is serialized with merge
+completion and skips closed PRs and already-done issues to avoid moving them back to review.
+All issue-triggered phases, PR completion jobs, and event-driven project sync share a
+per-issue lifecycle lock. PR jobs resolve the branch's issue number before acquiring it;
+issue-triggered polling stays inside the phase's existing lock. Project sync also reads
+current terminal state so a queued old label event cannot overwrite **Done**.
+The shared concurrency group uses `queue: max` so later events do not replace a
+pending merge job. GitHub permits up to 100 pending runs in that group; if the queue is full
+or a run is manually canceled, rerun the merge job after the queue clears.
+
+Regression coverage runs in `autobot-tests.yml`. Locally:
+
+```powershell
+python -B -m unittest discover -s .github\autobot\tests -v
+```
+
+The tests mock GitHub command responses; they do not prove live branch rules, token access,
+or project configuration. Before releasing, use a sandbox repository to approve/merge a task
+PR and verify the label, completed closure, and **Done** project stage, then rerun the job.
+Also check that approval without merge and an unmerged PR closure leave the task in review.
 
 ## Invariants enforced by workflows
 
@@ -182,6 +234,8 @@ Baseline source selection (optional) uses repository variables:
 - INV-14: Rejected implementation PRs do not auto-restart; human relabel is required.
 - INV-15: Rework input includes PR requested-changes/review comments plus task issue comments.
 - INV-16: Spec artifact upload uses SAS-only access with separate write/read SAS; write SAS must never be exposed in comments/logs.
+- INV-17: Merge completion applies only to the correlated task after a same-repository implementation PR merges into the default branch.
+- INV-18: Completion retries preserve non-phase labels and repair closure/project state without completing parent features.
 
 Copilot handoff details:
 
@@ -206,6 +260,7 @@ Project sync mapping handled by router and phase scripts:
 - `autobot-implementing` -> `Implementing`
 - `autobot-in-review` -> `In review`
 - `autobot-blocked` -> `Blocked`
+- `autobot-done` -> `Done` (synced directly by merge completion)
 - issue closed -> `Done`
 
 ## Release contract for reusable workflows

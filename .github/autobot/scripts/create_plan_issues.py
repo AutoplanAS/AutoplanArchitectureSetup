@@ -22,8 +22,10 @@ def run(command: list[str]) -> str:
     return result.stdout
 
 
-def run_result(command: list[str]) -> subprocess.CompletedProcess[str]:
-    return subprocess.run(command, text=True, capture_output=True, check=False)
+def run_result(
+    command: list[str], *, env: dict[str, str] | None = None
+) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(command, text=True, capture_output=True, check=False, env=env)
 
 
 def run_json(command: list[str]) -> object:
@@ -80,6 +82,8 @@ def sync_project_stage(
     status_field: str,
     issue_url: str,
     stage: str,
+    *,
+    env: dict[str, str] | None = None,
 ) -> str | None:
     if not owner or not number:
         return None
@@ -96,7 +100,8 @@ def sync_project_stage(
             issue_url,
             "--format",
             "json",
-        ]
+        ],
+        env=env,
     )
     if add_result.returncode != 0:
         combined = f"{add_result.stdout}\n{add_result.stderr}".lower()
@@ -125,7 +130,8 @@ def sync_project_stage(
             stage,
             "--format",
             "json",
-        ]
+        ],
+        env=env,
     )
     if edit_result.returncode != 0:
         combined = f"{edit_result.stdout}\n{edit_result.stderr}".lower()

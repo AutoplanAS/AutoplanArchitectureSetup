@@ -82,6 +82,9 @@ For full reference, see [DOCUMENTATION.md](DOCUMENTATION.md).
      - planning creates/reuses a new main feature + task issues, then closes the original specification issue as superseded
      - human starts each task by labeling it `autobot-implementing`
      - implementation completion sets `autobot-in-review`
+     - human approval and merge into the default branch sets `autobot-done`, closes the task as completed, and moves it to **Done**
+   - require human approval through default-branch protection/rulesets; approval alone or closing an unmerged PR does not complete a task
+   - existing consumers must copy the updated router and select a workflow/baseline release containing the merge-completion handler; see [completion and recovery](.github/autobot/README.md#merge-completion-and-recovery)
 
 ## Which skillsets to use
 

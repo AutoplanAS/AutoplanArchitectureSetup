@@ -1,0 +1,30 @@
+name: autobot-tests
+
+on:
+  push:
+    paths:
+      - '.github/autobot/**'
+      - '.github/workflows/autobot*.yml'
+  pull_request:
+    paths:
+      - '.github/autobot/**'
+      - '.github/workflows/autobot*.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Test Autobot completion
+        run: python -B -m unittest discover -s .github/autobot/tests -v
+      - name: Check phase script syntax
+        run: |
+          set -euo pipefail
+          for script in .github/autobot/scripts/*.sh; do
+            bash -n "$script"
+          done

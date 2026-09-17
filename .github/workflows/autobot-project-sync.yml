@@ -36,6 +36,11 @@ permissions:
   issues: write
   repository-projects: write
 
+concurrency:
+  group: autobot-${{ inputs.repository }}-${{ inputs.issue_number }}
+  cancel-in-progress: false
+  queue: max
+
 jobs:
   sync:
     runs-on: ubuntu-latest
@@ -59,6 +64,10 @@ jobs:
           fi
 
           export GH_TOKEN="$GITHUB_TOKEN"
+          terminal="$(gh api "repos/${REPOSITORY}/issues/${ISSUE_NUMBER}" --jq '.state == "closed" or any(.labels[]; .name == "autobot-done")')"
+          if [[ "$terminal" == "true" ]]; then
+            PROJECT_STAGE="Done"
+          fi
           if [[ -n "${PROJECT_TOKEN:-}" ]]; then
             export GH_TOKEN="$PROJECT_TOKEN"
           fi
