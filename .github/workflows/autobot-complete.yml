@@ -1,0 +1,83 @@
+name: autobot-complete
+
+on:
+  workflow_call:
+    inputs:
+      repository:
+        description: Target repository in owner/repo form
+        required: true
+        type: string
+      pr_number:
+        description: Merged implementation pull request number
+        required: true
+        type: number
+      default_branch:
+        description: Target repository default branch
+        required: true
+        type: string
+      project_owner:
+        required: false
+        type: string
+      project_number:
+        required: false
+        type: string
+      project_status_field:
+        required: false
+        type: string
+        default: Status
+    secrets:
+      BASELINE_REPO_TOKEN:
+        required: false
+      AUTOBOT_PROJECT_TOKEN:
+        required: false
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: read
+
+jobs:
+  resolve:
+    uses: ./.github/workflows/autobot-pr-issue.yml
+    with:
+      repository: ${{ inputs.repository }}
+      pr_number: ${{ inputs.pr_number }}
+
+  complete:
+    needs: resolve
+    if: needs.resolve.outputs.issue_number != ''
+    runs-on: ubuntu-latest
+    concurrency:
+      group: autobot-${{ inputs.repository }}-${{ needs.resolve.outputs.issue_number }}
+      cancel-in-progress: false
+      queue: max
+    steps:
+      - name: Checkout trusted baseline tooling only
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ vars.AUTOBOT_BASELINE_REPOSITORY != '' && vars.AUTOBOT_BASELINE_REPOSITORY || 'AutoplanAS/AutoplanArchitectureSetup' }}
+          ref: ${{ vars.AUTOBOT_BASELINE_REF != '' && vars.AUTOBOT_BASELINE_REF || 'v1' }}
+          token: ${{ secrets.BASELINE_REPO_TOKEN != '' && secrets.BASELINE_REPO_TOKEN || github.token }}
+          persist-credentials: false
+          sparse-checkout: .github/autobot/scripts
+
+      - name: Complete merged task and sync project
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ inputs.repository }}
+          PR_NUMBER: ${{ inputs.pr_number }}
+          DEFAULT_BRANCH: ${{ inputs.default_branch }}
+          PROJECT_OWNER: ${{ inputs.project_owner }}
+          PROJECT_NUMBER: ${{ inputs.project_number }}
+          PROJECT_STATUS_FIELD: ${{ inputs.project_status_field }}
+          AUTOBOT_PROJECT_TOKEN: ${{ secrets.AUTOBOT_PROJECT_TOKEN }}
+          WORKFLOW_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          python .github/autobot/scripts/complete_merged_pr.py \
+            --repo "$REPOSITORY" \
+            --pr-number "$PR_NUMBER" \
+            --default-branch "$DEFAULT_BRANCH" \
+            --project-owner "$PROJECT_OWNER" \
+            --project-number "$PROJECT_NUMBER" \
+            --project-status-field "$PROJECT_STATUS_FIELD"

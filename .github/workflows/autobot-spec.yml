@@ -74,6 +74,7 @@ permissions:
 concurrency:
   group: autobot-${{ inputs.repository }}-${{ inputs.issue_number }}
   cancel-in-progress: false
+  queue: max
 
 jobs:
   run:

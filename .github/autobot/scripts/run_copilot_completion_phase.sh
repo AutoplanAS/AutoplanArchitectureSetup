@@ -16,6 +16,12 @@ mkdir -p .autobot/copilot .autobot/output
 pr_json_path=".autobot/copilot/pr.json"
 gh pr view "$PR_NUMBER" --repo "$REPOSITORY" --json number,title,body,author,assignees,headRefName,baseRefName,url,state,isDraft > "$pr_json_path"
 
+pr_state="$(python -c "import json;print(json.load(open('$pr_json_path','r',encoding='utf-8'))['state'])")"
+if [[ "$pr_state" != "OPEN" ]]; then
+  echo "skip: PR #${PR_NUMBER} is no longer open."
+  exit 0
+fi
+
 pr_head="$(python -c "import json;print(json.load(open('$pr_json_path','r',encoding='utf-8')).get('headRefName',''))")"
 pr_url="$(python -c "import json;print(json.load(open('$pr_json_path','r',encoding='utf-8')).get('url',''))")"
 pr_title_current="$(python -c "import json;print(json.load(open('$pr_json_path','r',encoding='utf-8')).get('title',''))")"
@@ -73,6 +79,10 @@ fi
 issue_json_path=".autobot/copilot/issue.json"
 gh api "repos/${REPOSITORY}/issues/${issue_number}" > "$issue_json_path"
 labels="$(issue_labels_from_json "$issue_json_path")"
+if printf '%s\n' "$labels" | grep -Fxq autobot-done; then
+  echo "skip: issue #${issue_number} is already done."
+  exit 0
+fi
 
 git fetch origin "$DEFAULT_BRANCH" >/dev/null 2>&1 || true
 git fetch origin "$pr_head" >/dev/null 2>&1 || true

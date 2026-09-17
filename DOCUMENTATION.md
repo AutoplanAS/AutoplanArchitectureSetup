@@ -195,6 +195,8 @@ Minimal setup:
    - plan trigger: `autobot-ready-to-implement`
    - implementation trigger: `autobot-implementing`
    - implementation review state: `autobot-in-review` (not a trigger)
+   - merged implementation state: `autobot-done` (not a trigger)
+   - enforce required human approval using default-branch protection/rulesets, dismiss stale approvals, and restrict bypass; the completion handler trusts the merge decision rather than historical review records
 8. Planning rollover behavior:
    - planning runs on the original approved-spec issue,
    - creates or reuses a new main feature issue,
@@ -295,6 +297,24 @@ GitHub Copilot providers:
 7. Human starts task implementation by labeling the task issue `autobot-implementing`.
 8. Autobot implements to a deterministic branch/PR and, on success, sets `autobot-in-review`.
 9. If PR changes are requested, implementation does not auto-restart; a human must reapply `autobot-implementing`.
+10. After human approval and merge into the default branch, Autobot sets `autobot-done`, removes conflicting phase labels, closes the task as completed, and directly syncs its project stage to **Done**.
+
+Merge completion uses a same-repository `autobot/<task-issue-number>-<slug>` PR and an issue
+labeled `autobot-task` plus `autobot-in-review` (or `autobot-done` for recovery). Approval
+without merge, unmerged closure, fork PRs, and merges into another branch do not complete
+tasks. A task merge does not complete the parent feature. No approval or merge is automated.
+
+The `pull_request_target: closed` route runs trusted baseline tooling, not PR-head code.
+It directly updates the project rather than depending on another label/closure event from
+`GITHUB_TOKEN`. Already-auto-closed issues are supported. Failed project updates post an
+issue warning and fail the job; after correcting permissions/configuration, rerun the job
+to repair the board without repeating issue transitions. No project owner/number means
+an explicit board-sync skip; partial configuration fails.
+
+Existing consumers must copy the updated example router and pin workflows and
+`AUTOBOT_BASELINE_REF` to a release containing the merge-completion handler. See
+[merge completion and recovery](.github/autobot/README.md#merge-completion-and-recovery)
+for rollout requirements and sandbox checks.
 
 If a phase cannot proceed, workflows remove the trigger label and add `autobot-blocked` with a
 comment containing the reason and run link.
@@ -332,6 +352,7 @@ Project stage sync mapping:
 6. `autobot-in-review` -> `In review`
 7. `autobot-blocked` -> `Blocked`
 8. issue closed -> `Done`
+9. `autobot-done` -> `Done` (direct merge-completion sync, including retry after auto-closure)
 
 ---
 

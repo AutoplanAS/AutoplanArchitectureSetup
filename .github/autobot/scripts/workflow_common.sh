@@ -124,6 +124,7 @@ ensure_autobot_labels() {
   gh label create autoboot --repo "$repo" --color FBCA04 --description "Compatibility task marker label for autobot-generated implementation tasks" --force >/dev/null
   gh label create autobot-implementing --repo "$repo" --color D4C5F9 --description "Task implementation is in progress" --force >/dev/null
   gh label create autobot-in-review --repo "$repo" --color B60205 --description "Implementation is complete and awaits human PR review" --force >/dev/null
+  gh label create autobot-done --repo "$repo" --color 0E8A16 --description "Implementation PR merged; task completed" --force >/dev/null
   gh label create autobot-blocked --repo "$repo" --color D93F0B --description "Needs human decision before continuing" --force >/dev/null
 }
 

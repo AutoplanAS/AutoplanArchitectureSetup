@@ -68,13 +68,21 @@ permissions:
   pull-requests: write
   repository-projects: write
 
-concurrency:
-  group: autobot-copilot-complete-${{ inputs.repository }}-${{ inputs.pr_number }}
-  cancel-in-progress: true
-
 jobs:
+  resolve:
+    uses: ./.github/workflows/autobot-pr-issue.yml
+    with:
+      repository: ${{ inputs.repository }}
+      pr_number: ${{ inputs.pr_number }}
+
   run:
+    needs: resolve
+    if: needs.resolve.outputs.issue_number != ''
     runs-on: ubuntu-latest
+    concurrency:
+      group: autobot-${{ inputs.repository }}-${{ needs.resolve.outputs.issue_number }}
+      cancel-in-progress: false
+      queue: max
     steps:
       - name: Checkout target repository
         uses: actions/checkout@v4
