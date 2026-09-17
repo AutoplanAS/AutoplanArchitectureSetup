@@ -183,6 +183,11 @@ Minimal setup:
    - `AUTOBOT_PROJECT_NUMBER` (for Project #8 this is `8`)
    - optional `AUTOBOT_PROJECT_STATUS_FIELD` (defaults to `Status`)
 6. Grant `AUTOBOT_PROJECT_TOKEN` when project-scope write is required by the org project permissions model.
+   - Create a PAT on a maintainer or bot account:
+     - Fine-grained PAT (recommended): org owner `AutoplanAS`, repository access to the target repo(s), **Organization permissions -> Projects: Read and write**, and at least **Repository permissions -> Issues: Read**.
+     - Classic PAT fallback: `repo`, `project`, `read:org`.
+   - If your organization enforces SSO, authorize the token for the org before using it.
+   - Store it in the target repo as Actions secret `AUTOBOT_PROJECT_TOKEN`.
    - If Actions reports `Could not resolve to a ProjectV2 with the number <n> (organization.projectV2)`, verify `AUTOBOT_PROJECT_OWNER` / `AUTOBOT_PROJECT_NUMBER`, ensure `AUTOBOT_PROJECT_TOKEN` can access that org project, and ensure SSO is authorized for the token when required.
 7. Drive phases by labels with explicit human gates:
    - spec trigger: `autobot-ready-for-spec`
