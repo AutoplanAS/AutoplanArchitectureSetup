@@ -71,7 +71,11 @@ For full reference, see [DOCUMENTATION.md](DOCUMENTATION.md).
      - `AUTOBOT_PROJECT_OWNER` (example: `AutoplanAS`)
      - `AUTOBOT_PROJECT_NUMBER` (example: `8`)
      - optional `AUTOBOT_PROJECT_STATUS_FIELD` (default: `Status`)
-   - grant `AUTOBOT_PROJECT_TOKEN` if project-scope write is required
+   - grant `AUTOBOT_PROJECT_TOKEN` if project-scope write is required:
+     - preferred: fine-grained PAT with org **Projects: Read and write** + repo access
+     - fallback: classic PAT with `repo`, `project`, `read:org`
+     - authorize token for org SSO when required
+     - store as repo secret `AUTOBOT_PROJECT_TOKEN`
    - run lifecycle with explicit human gates:
      - `autobot-ready-for-spec` -> `autobot-creating-specification` -> `autobot-review-specification`
      - human approval applies `autobot-ready-to-implement`

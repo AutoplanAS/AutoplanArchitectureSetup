@@ -80,6 +80,28 @@ adopting repository.
 Do not commit API keys to the repository. For rotation, create a new provider key, update the
 organization secret, then revoke the old key.
 
+### Obtaining `AUTOBOT_PROJECT_TOKEN`
+
+Use a dedicated bot account or maintainer account PAT, then store it as a repository secret.
+
+Fine-grained PAT (recommended):
+
+1. GitHub -> **Settings** -> **Developer settings** -> **Personal access tokens** -> **Fine-grained tokens**.
+2. Create a token with:
+   - **Resource owner**: your org (for example `AutoplanAS`)
+   - **Repository access**: the target repository (or all repos that run this workflow)
+   - **Organization permissions**: **Projects = Read and write**
+   - **Repository permissions**: at least **Issues = Read** (Write recommended)
+3. If your org enforces SSO, authorize the token for the org.
+4. In the target repository, set **Settings -> Secrets and variables -> Actions -> New repository secret**:
+   - **Name**: `AUTOBOT_PROJECT_TOKEN`
+   - **Value**: the PAT
+
+Classic PAT fallback:
+
+- Minimum scopes: `repo`, `project`, `read:org`
+- SSO authorization is still required when the org enforces it.
+
 ### Codex runtime on GitHub Actions
 
 Autobot runs Codex in non-interactive mode with `--sandbox workspace-write --approve-for-me`.
