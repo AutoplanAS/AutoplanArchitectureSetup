@@ -101,6 +101,12 @@ def sync_project_stage(
     if add_result.returncode != 0:
         combined = f"{add_result.stdout}\n{add_result.stderr}".lower()
         if not re.search(r"already (exists|added)|item .* already", combined):
+            if "could not resolve to a projectv2" in combined:
+                return (
+                    f"failed to add {issue_url} to project {owner}#{number}: "
+                    "GraphQL could not resolve ProjectV2. Verify AUTOBOT_PROJECT_OWNER/AUTOBOT_PROJECT_NUMBER, "
+                    "and ensure AUTOBOT_PROJECT_TOKEN has org ProjectV2 write access (and SSO authorization when required)."
+                )
             return f"failed to add {issue_url} to project {owner}#{number}: {(add_result.stderr or add_result.stdout).strip()}"
 
     edit_result = run_result(
@@ -122,6 +128,13 @@ def sync_project_stage(
         ]
     )
     if edit_result.returncode != 0:
+        combined = f"{edit_result.stdout}\n{edit_result.stderr}".lower()
+        if "could not resolve to a projectv2" in combined:
+            return (
+                f"failed to set project stage '{stage}' for {issue_url}: "
+                "GraphQL could not resolve ProjectV2. Verify AUTOBOT_PROJECT_OWNER/AUTOBOT_PROJECT_NUMBER, "
+                "and ensure AUTOBOT_PROJECT_TOKEN has org ProjectV2 write access (and SSO authorization when required)."
+            )
         return f"failed to set project stage '{stage}' for {issue_url}: {(edit_result.stderr or edit_result.stdout).strip()}"
     return None
 
