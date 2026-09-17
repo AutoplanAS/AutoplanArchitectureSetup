@@ -1,7 +1,7 @@
 {
-  "status": "in_progress",
-  "blocked_reason": "Copilot handoff initialized; create docs/90-skillset-for-powerbi-reporting/design.md and update this artifact to status=completed in the correlated PR (required when strict artifact mode is enabled).",
-  "issue_comment": "",
-  "pr_title": "",
-  "pr_body": ""
+  "status": "completed",
+  "blocked_reason": "",
+  "issue_comment": "Design draft is ready for review at `docs/90-skillset-for-powerbi-reporting/design.md`.",
+  "pr_title": "Autobot spec handoff for issue #90",
+  "pr_body": "This pull request is the Autobot spec handoff for #90.\n\nRun token: `autobot-spec-90-35215354779`\nExpected assignee: @JoergenAmrudHagen\nPhase artifact: `.autobot/output/spec.json`\nStrict artifact mode: `false`\n\nCompletion contract:\n1. Keep this PR referencing #90.\n2. Keep the run token in PR body or PR comments.\n3. For spec phase, create or update the expected design file with the actual design content.\n4. Update `.autobot/output/spec.json` with final phase output. In strict mode it must set `status` to `completed`.\n- Required spec file path: `docs/90-skillset-for-powerbi-reporting/design.md`."
 }
