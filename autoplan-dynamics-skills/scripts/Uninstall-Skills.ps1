@@ -98,5 +98,5 @@ foreach ($agent in $targets) {
 Write-Host ''
 Write-Host "Removed $removed skill(s) across $($targets.Count) agent(s): $($targets -join ', ')" -ForegroundColor Green
 if ($kept -gt 0) {
-    Write-Host "Left $kept directory-installed skill(s) in place. Re-run with -IncludeCopies to remove them." -ForegroundColor Yellow
+    Write-Host "Left $kept existing skill path(s) in place because they were not installed by this script." -ForegroundColor Yellow
 }

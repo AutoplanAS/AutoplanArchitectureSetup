@@ -91,6 +91,7 @@ if ($Mode -eq 'Symlink' -and -not (Test-SymlinkSupport)) {
 }
 
 $installed = 0
+$linked = 0
 $skipped = 0
 $updated = 0
 $markerName = '.autoplan-skill-source'
@@ -107,6 +108,7 @@ foreach ($agent in $targets) {
     Write-Host "$agent -> $targetRoot" -ForegroundColor Cyan
 
     $agentInstalled = 0
+    $agentLinked = 0
     $agentSkipped = 0
     $agentUpdated = 0
 
@@ -121,7 +123,7 @@ foreach ($agent in $targets) {
 
             if ($isOurLink -and $useSymlink) {
                 Write-Host "  = $($skill.Name) (already linked)"
-                $agentInstalled++
+                $agentLinked++
                 continue
             }
 
@@ -163,15 +165,22 @@ foreach ($agent in $targets) {
         $agentInstalled++
     }
 
-    Write-Host "  $agentInstalled skill(s) into $targetRoot" -ForegroundColor Green
+    Write-Host "  $agentInstalled skill(s) installed into $targetRoot" -ForegroundColor Green
+    if ($agentLinked -gt 0) {
+        Write-Host "  $agentLinked skill(s) already linked in $targetRoot" -ForegroundColor Green
+    }
 
     $installed += $agentInstalled
+    $linked += $agentLinked
     $skipped += $agentSkipped
     $updated += $agentUpdated
 }
 
 Write-Host ''
 Write-Host "Installed $installed skill(s) across $($targets.Count) agent(s): $($targets -join ', ')" -ForegroundColor Green
+if ($linked -gt 0) {
+    Write-Host "$linked skill(s) were already linked and left unchanged." -ForegroundColor Green
+}
 if ($updated -gt 0) {
     Write-Host "$updated of them were refreshed from an earlier copy-install." -ForegroundColor Green
 }
