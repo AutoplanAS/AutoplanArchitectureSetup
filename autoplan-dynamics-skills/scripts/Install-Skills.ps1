@@ -119,7 +119,7 @@ foreach ($agent in $targets) {
             $isOurLink = $existing.LinkType -and $existing.Target -and
                 ((@($existing.Target)[0]).TrimEnd('\', '/') -eq $skill.FullName.TrimEnd('\', '/'))
 
-            if ($isOurLink) {
+            if ($isOurLink -and $useSymlink) {
                 Write-Host "  = $($skill.Name) (already linked)"
                 $agentInstalled++
                 continue
@@ -129,7 +129,7 @@ foreach ($agent in $targets) {
             $isOurCopy = (-not $existing.LinkType) -and (Test-Path $marker) -and
                 ((Get-Content $marker -Raw -ErrorAction SilentlyContinue).Trim() -eq $skill.FullName.TrimEnd('\', '/'))
 
-            if (-not ($isOurCopy -or $Force)) {
+            if (-not ($isOurLink -or $isOurCopy -or $Force)) {
                 Write-Warning "  ! $($skill.Name) already exists at $skillPath and was not installed by this script. Use -Force to replace it."
                 $agentSkipped++
                 continue
