@@ -7,6 +7,7 @@ Autoplan bundles.
 ## Included skills
 
 - `autoplan-dynamics-architecture`
+- `autoplan-dataverse-modeling`
 
 ## Skill format
 

@@ -30,3 +30,6 @@ workflow behavior, and integration responsibilities.
 5. Define validation, test coverage, and deployment gates before implementation starts.
 
 Read `references/solution-boundaries.md` first, then `references/implementation-checklist.md`.
+
+If the request is primarily table schema, ownership, lifecycle, or performance design, use
+`autoplan-dataverse-modeling` together with this skill.

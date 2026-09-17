@@ -1,7 +1,7 @@
 {
-  "status": "in_progress",
-  "blocked_reason": "Copilot handoff initialized; update this artifact to status=completed in the correlated PR.",
-  "issue_comment": "",
-  "pr_title": "",
-  "pr_body": ""
+  "status": "completed",
+  "blocked_reason": "",
+  "issue_comment": "Implemented issue #83 by adding substantive Dynamics architecture and Dataverse modeling skill guidance with deeper references for boundaries, ownership, lifecycle, and performance.",
+  "pr_title": "Autobot implement handoff for issue #83",
+  "pr_body": "This pull request is the Autobot implement handoff for #83.\n\nRun token: `autobot-implement-83-35223380292`\nExpected assignee: @JoergenAmrudHagen\nPhase artifact: `.autobot/output/implement.json`\nStrict artifact mode: `false`\n\nCompletion contract:\n1. Keep this PR referencing #83.\n2. Keep the run token in PR body or PR comments.\n3. For implement phase, commit real task implementation changes and do not include generated cache artifacts.\n4. Update `.autobot/output/implement.json` with final phase output. In strict mode it must set `status` to `completed`.\n\nValidation notes:\n- Added new `autoplan-dataverse-modeling` skill with task-facing instructions and reference docs.\n- Updated Dynamics skill README and architecture skill linkage.\n- Verified changed files only; no generated cache artifacts included."
 }
