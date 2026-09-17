@@ -92,6 +92,7 @@ if ($Mode -eq 'Symlink' -and -not (Test-SymlinkSupport)) {
 
 $installed = 0
 $linked = 0
+$replaced = 0
 $skipped = 0
 $updated = 0
 $markerName = '.autoplan-skill-source'
@@ -109,12 +110,14 @@ foreach ($agent in $targets) {
 
     $agentInstalled = 0
     $agentLinked = 0
+    $agentReplaced = 0
     $agentSkipped = 0
     $agentUpdated = 0
 
     foreach ($skill in $skills) {
         $skillPath = Join-Path $targetRoot $skill.Name
         $isUpdate = $false
+        $isReplace = $false
 
         if (Test-Path $skillPath) {
             $existing = Get-Item $skillPath -Force
@@ -138,6 +141,7 @@ foreach ($agent in $targets) {
             }
 
             $isUpdate = $isOurCopy
+            $isReplace = -not $isOurCopy
 
             if ($existing.LinkType) {
                 $existing.Delete()
@@ -158,6 +162,10 @@ foreach ($agent in $targets) {
                 Write-Host "  ~ $($skill.Name) (updated)"
                 $agentUpdated++
             }
+            elseif ($isReplace) {
+                Write-Host "  ~ $($skill.Name) (replaced)"
+                $agentReplaced++
+            }
             else {
                 Write-Host "  + $($skill.Name) (copied)"
             }
@@ -172,6 +180,7 @@ foreach ($agent in $targets) {
 
     $installed += $agentInstalled
     $linked += $agentLinked
+    $replaced += $agentReplaced
     $skipped += $agentSkipped
     $updated += $agentUpdated
 }
@@ -183,6 +192,9 @@ if ($linked -gt 0) {
 }
 if ($updated -gt 0) {
     Write-Host "$updated of them were refreshed from an earlier copy-install." -ForegroundColor Green
+}
+if ($replaced -gt 0) {
+    Write-Host "$replaced existing skill path(s) were replaced during install." -ForegroundColor Green
 }
 if ($skipped -gt 0) {
     Write-Host "Skipped $skipped existing skill(s). Re-run with -Force to replace them." -ForegroundColor Yellow
