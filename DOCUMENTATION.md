@@ -183,7 +183,7 @@ Minimal setup:
    - `AUTOBOT_PROJECT_NUMBER` (for Project #8 this is `8`)
    - optional `AUTOBOT_PROJECT_STATUS_FIELD` (defaults to `Status`)
 6. Grant `AUTOBOT_PROJECT_TOKEN` when project-scope write is required by the org project permissions model.
-   - If Actions reports `Could not resolve to a ProjectV2 with the number <n> (organization.projectV2)`, verify `AUTOBOT_PROJECT_OWNER` / `AUTOBOT_PROJECT_NUMBER` and ensure `AUTOBOT_PROJECT_TOKEN` can access that org project.
+   - If Actions reports `Could not resolve to a ProjectV2 with the number <n> (organization.projectV2)`, verify `AUTOBOT_PROJECT_OWNER` / `AUTOBOT_PROJECT_NUMBER`, ensure `AUTOBOT_PROJECT_TOKEN` can access that org project, and ensure SSO is authorized for the token when required.
 7. Drive phases by labels with explicit human gates:
    - spec trigger: `autobot-ready-for-spec`
    - review gate label: `autobot-review-specification`
@@ -198,6 +198,7 @@ Minimal setup:
 9. Spec artifact mirror behavior (optional, SAS-only):
    - configure variables: `AUTOBOT_SPEC_ARTIFACTS_ENABLED`, `AUTOBOT_SPEC_ARTIFACTS_STORAGE_ACCOUNT`, `AUTOBOT_SPEC_ARTIFACTS_CONTAINER`, optional `AUTOBOT_SPEC_ARTIFACTS_PREFIX`, optional `AUTOBOT_SPEC_ARTIFACTS_ENDPOINT_SUFFIX`
    - configure secrets: `AUTOBOT_SPEC_ARTIFACTS_WRITE_SAS`, `AUTOBOT_SPEC_ARTIFACTS_READ_SAS`
+   - uploads are skipped when `AUTOBOT_SPEC_ARTIFACTS_ENABLED=false`
    - in this increment, only spec artifacts are mirrored (`design.md`, `design.html`) plus a branch-scoped `latest.json` pointer.
    - If Actions reports `bash: .autobot-baseline/machinist/scripts/install-autoplan-skills.sh: No such file or directory`, ensure `AUTOBOT_BASELINE_REPOSITORY` points to `AutoplanAS/AutoplanArchitectureSetup` (or another baseline containing Machinist scripts) and `AUTOBOT_BASELINE_REF` exists there.
 

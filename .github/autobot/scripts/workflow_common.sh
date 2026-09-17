@@ -144,6 +144,7 @@ sync_project_stage_for_issue() {
   local status_field="${PROJECT_STATUS_FIELD:-Status}"
   local token="${AUTOBOT_PROJECT_TOKEN:-${GH_TOKEN:-${GITHUB_TOKEN:-}}}"
   local previous_gh_token="${GH_TOKEN:-}"
+  SYNC_PROJECT_LAST_ERROR=""
 
   if [[ -n "$token" ]]; then
     export GH_TOKEN="$token"
@@ -155,6 +156,7 @@ sync_project_stage_for_issue() {
       if [[ -n "$previous_gh_token" ]]; then
         export GH_TOKEN="$previous_gh_token"
       fi
+      SYNC_PROJECT_LAST_ERROR="$add_output"
       echo "project sync add failed: $add_output" >&2
       return 1
     fi
@@ -165,6 +167,7 @@ sync_project_stage_for_issue() {
     if [[ -n "$previous_gh_token" ]]; then
       export GH_TOKEN="$previous_gh_token"
     fi
+    SYNC_PROJECT_LAST_ERROR="$edit_output"
     echo "project sync edit failed: $edit_output" >&2
     return 1
   fi
@@ -181,16 +184,31 @@ sync_project_stage_with_warning() {
   local stage="$3"
 
   if ! sync_project_stage_for_issue "$repo" "$issue_number" "$stage"; then
+    local details="${SYNC_PROJECT_LAST_ERROR:-}"
+    local resolution_hint=""
+    if printf '%s' "$details" | grep -Fq "Could not resolve to a ProjectV2"; then
+      resolution_hint=$(
+        cat <<EOF
+
+Detected ProjectV2 lookup failure.
+Verify:
+- \`AUTOBOT_PROJECT_OWNER\` and \`AUTOBOT_PROJECT_NUMBER\`
+- \`AUTOBOT_PROJECT_TOKEN\` is valid and has org project read/write access
+- SSO is authorized for the token if your org requires it
+EOF
+      )
+    fi
     local warning
     warning=$(
       cat <<EOF
 Autobot warning: failed to sync Project stage to \`${stage}\`.
 
 Configure Project sync with:
-- PROJECT_OWNER
-- PROJECT_NUMBER
-- optional PROJECT_STATUS_FIELD (defaults to Status)
-- AUTOBOT_PROJECT_TOKEN with project write access
+- \`AUTOBOT_PROJECT_OWNER\`
+- \`AUTOBOT_PROJECT_NUMBER\`
+- optional \`AUTOBOT_PROJECT_STATUS_FIELD\` (defaults to \`Status\`)
+- \`AUTOBOT_PROJECT_TOKEN\` with project write access
+${resolution_hint}
 EOF
     )
     gh issue comment "$issue_number" --repo "$repo" --body "$warning" >/dev/null || true

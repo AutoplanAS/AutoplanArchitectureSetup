@@ -59,7 +59,7 @@ For full reference, see [DOCUMENTATION.md](DOCUMENTATION.md).
      - timeout value is a handoff SLA hint in Copilot comments; short in-run completion polling is controlled by the phase-specific autocomplete variables
      - optional `AUTOBOT_COPILOT_STRICT_ARTIFACT` (`false` default; set `true` to require explicit completed phase artifacts in Copilot mode)
    - set optional spec artifact mirror variables:
-     - `AUTOBOT_SPEC_ARTIFACTS_ENABLED` (`true`/`false`, default `false`)
+     - `AUTOBOT_SPEC_ARTIFACTS_ENABLED` (`true`/`false`, default `false`; when `false`, no Azure Blob upload is attempted)
      - `AUTOBOT_SPEC_ARTIFACTS_STORAGE_ACCOUNT` (required when enabled)
      - `AUTOBOT_SPEC_ARTIFACTS_CONTAINER` (required when enabled)
      - optional `AUTOBOT_SPEC_ARTIFACTS_PREFIX` (default `autobot-spec`)
